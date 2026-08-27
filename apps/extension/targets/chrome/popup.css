@@ -1,0 +1,47 @@
+:root {
+  color-scheme: light dark;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  padding: 16px;
+}
+
+header,
+.mod-heading,
+label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+#mods {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mod {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.capabilities {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.required {
+  opacity: 0.7;
+}

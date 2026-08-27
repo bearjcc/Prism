@@ -8,4 +8,5 @@ References/
 node_modules/
 dist/
 *.tsbuildinfo
+apps/extension/targets/chrome/bundled-mods.json
 

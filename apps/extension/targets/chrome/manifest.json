@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Prism",
+  "version": "0.1.0",
+  "description": "Run capability-scoped Prism mods.",
+  "permissions": ["activeTab", "storage"],
+  "optional_host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "dist/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content-script.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

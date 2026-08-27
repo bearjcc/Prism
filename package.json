@@ -9,12 +9,14 @@
   ],
   "scripts": {
     "build": "tsc -b",
+    "postbuild": "node scripts/generate-bundled-mods.mjs",
     "test": "vitest run",
     "lint": "eslint . && node scripts/check-text.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
     "@types/node": "^26.4.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.34.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",
