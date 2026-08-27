@@ -8,9 +8,9 @@ Agreed. Scaffold is in the tree.
 
 Three products:
 
-1. **Website** — install funnel and marketplace. No DNS or host privileges.
-2. **Native Prism** — one installer. Host process (service + DNS/proxy) plus UI. Tray is the UI binary in tray mode. Closing windows does not stop the host. Sideload and marketplace install both go through the host.
-3. **Browser extension** — Chromium first; Firefox is a second build target of the same tree.
+1. **Website**  -  install funnel and marketplace. No DNS or host privileges.
+2. **Native Prism**  -  one installer. Host process (service + DNS/proxy) plus UI. Tray is the UI binary in tray mode. Closing windows does not stop the host. Sideload and marketplace install both go through the host.
+3. **Browser extension**  -  Chromium first; Firefox is a second build target of the same tree.
 
 Hosted sync/registry can later sit behind `apps/web` or a new `apps/control`. Not a folder until needed.
 
@@ -46,8 +46,8 @@ Do not import `References/` as a runtime dependency. Copy into `apps/` or `packa
 
 ## Shared packages
 
-- `packages/schema` — mod format, capabilities, policy documents.
-- `packages/ipc` — host <-> UI <-> extension. No shell, filesystem, or generic network primitives.
+- `packages/schema`  -  mod format, capabilities, policy documents.
+- `packages/ipc`  -  host <-> UI <-> extension. No shell, filesystem, or generic network primitives.
 
 ## References restore
 
