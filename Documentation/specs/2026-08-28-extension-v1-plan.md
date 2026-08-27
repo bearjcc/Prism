@@ -89,11 +89,11 @@ Exit: golden valid package accepted; rejection suite fails closed.
 
 Entry: Phase B.
 
-- [ ] MV3 service worker loads bundled mods from a build-time generated `bundled-mods.json` (or equivalent) produced from `mods/*/prism.yaml`.
-- [ ] Content script at `document_start` on `<all_urls>` or declared matches; **mods still scoped** by package `scopes`.
-- [ ] Popup or side panel: list mods, enable/disable, required vs optional caps, grant/revoke optional.
-- [ ] Undo last visual change per tab (kitten replace / allowlist hide).
-- [ ] Isolation test: mod A cannot call a capability only B declared.
+- [~] agent 2026-08-28 MV3 service worker loads bundled mods from a build-time generated `bundled-mods.json` (or equivalent) produced from `mods/*/prism.yaml`.
+- [~] agent 2026-08-28 Content script at `document_start` on `<all_urls>` or declared matches; **mods still scoped** by package `scopes`.
+- [~] agent 2026-08-28 Popup or side panel: list mods, enable/disable, required vs optional caps, grant/revoke optional.
+- [~] agent 2026-08-28 Undo last visual change per tab (kitten replace / allowlist hide).
+- [~] agent 2026-08-28 Isolation test: mod A cannot call a capability only B declared.
 
 Exit: empty native mod with no caps loads and does nothing; a test mod with `visual.hide` cannot `prism.extract('reddit.comments.search')`.
 
