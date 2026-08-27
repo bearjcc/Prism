@@ -6,9 +6,20 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "@prism/schema": path.join(root, "packages/schema/src/index.ts"),
-    },
+    alias: [
+      {
+        find: "@prism/schema/capabilities",
+        replacement: path.join(root, "packages/schema/src/capabilities.ts"),
+      },
+      {
+        find: "@prism/schema/validate",
+        replacement: path.join(root, "packages/schema/src/validate.ts"),
+      },
+      {
+        find: "@prism/schema",
+        replacement: path.join(root, "packages/schema/src/index.ts"),
+      },
+    ],
   },
   test: {
     include: [
