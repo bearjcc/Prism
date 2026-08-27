@@ -1,3 +1,11 @@
 # Cloned third-party trees. Restore with scripts/restore-references.ps1
-# (or scripts/restore-references.sh). See references.lock.json.
+# (or scripts/restore-references.sh). Default skips enabled:false.
+# Archived: -IncludeArchived / --include-archived. See references.lock.json.
 References/
+
+.superpowers/
+
+node_modules/
+dist/
+*.tsbuildinfo
+
