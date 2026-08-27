@@ -1,0 +1,23 @@
+id: golden.mod
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - visual.ad-slot.replace
+  optional:
+    - network.egress
+scopes:
+  - https://*.example.com/*
+egress:
+  contracts:
+    - id: remote-images
+      url: https://images.example.com/*
+      methods:
+        - GET
+filters:
+  browser:
+    - filters/browser/ads.txt
+assets:
+  - assets/kitten.txt
+fixtures:
+  - fixtures/page.html
