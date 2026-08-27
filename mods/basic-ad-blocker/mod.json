@@ -1,0 +1,8 @@
+{
+  "id": "basic-ad-blocker",
+  "name": "Basic Ad Blocker",
+  "version": "0.0.0",
+  "publisher": "prism",
+  "status": "stub",
+  "defaultEnabled": true
+}

@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "notes": "Study trees only. Do not import as a runtime dependency. Copy into apps/ or packages/ only after a Documentation licence check. Prism is AGPL-3.0-only (Documentation/adr/0001-project-licence.md): GPL-3/AGPL inbound allowed into the combined work; MIT/Apache-2.0 inbound keep their notices; GPL-2-only cannot combine. Wholesale import is still a product decision, not automatic. Letters: a=Chrome+Firefox extension, b=userscript runner, c=custom DNS, d=local proxy, e=mod marketplace, f=native compiled desktop core (Win/Linux/Mac, not Electron/Java).",
+  "references": [
+    {
+      "id": "violentmonkey",
+      "url": "https://github.com/violentmonkey/violentmonkey.git",
+      "ref": "refs/tags/v2.48.0",
+      "sha": "db8c4c01603fd24fd9e11a80e1a81b933dd1e4aa",
+      "dest": "violentmonkey",
+      "license": "MIT",
+      "covers": [
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "id": "stylus",
+      "url": "https://github.com/openstyles/stylus.git",
+      "ref": "refs/tags/v2.4.11",
+      "sha": "76805e7555cc2d80133a7fb07f55812d5811b6b0",
+      "dest": "stylus",
+      "license": "GPL-3.0",
+      "covers": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "id": "adguard-home",
+      "url": "https://github.com/AdguardTeam/AdGuardHome.git",
+      "ref": "refs/tags/v0.107.79",
+      "sha": "05ba17b282da1c4393d6a4ba4db0cf519194a362",
+      "dest": "AdGuardHome",
+      "license": "GPL-3.0",
+      "covers": [
+        "c"
+      ]
+    },
+    {
+      "id": "rethink-app",
+      "url": "https://github.com/celzero/rethink-app.git",
+      "ref": "refs/tags/v0.5.6",
+      "sha": "21b8206b778f46ea2a5193f80b0414188ac78608",
+      "dest": "rethink-app",
+      "license": "Apache-2.0",
+      "covers": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "id": "mitmproxy",
+      "url": "https://github.com/mitmproxy/mitmproxy.git",
+      "ref": "refs/tags/v12.2.3",
+      "sha": "6c09d56e4c29a92f5ad01b03199977584b8ea14f",
+      "dest": "mitmproxy",
+      "license": "MIT",
+      "covers": [
+        "d"
+      ]
+    },
+    {
+      "id": "userstyles-world",
+      "url": "https://github.com/userstyles-world/userstyles.world.git",
+      "ref": "refs/heads/main",
+      "sha": "2f6a31cc73168796ce7962fee56c122e9001e30b",
+      "dest": "userstyles.world",
+      "license": "AGPL-3.0",
+      "covers": [
+        "e"
+      ]
+    },
+    {
+      "id": "keepassxc",
+      "url": "https://github.com/keepassxreboot/keepassxc.git",
+      "ref": "refs/tags/2.7.12",
+      "sha": "860e51d8e9a5a67e73de79b173ae9bd5bdb5ebda",
+      "dest": "keepassxc",
+      "license": "GPL-2.0-or-later",
+      "covers": [
+        "f"
+      ]
+    }
+  ]
+}

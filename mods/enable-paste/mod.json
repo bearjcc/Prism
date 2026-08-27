@@ -1,0 +1,8 @@
+{
+  "id": "enable-paste",
+  "name": "Enable Paste",
+  "version": "0.0.0",
+  "publisher": "prism",
+  "status": "stub",
+  "defaultEnabled": true
+}

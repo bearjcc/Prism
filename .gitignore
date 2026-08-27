@@ -1,0 +1,3 @@
+# Cloned third-party trees. Restore with scripts/restore-references.ps1
+# (or scripts/restore-references.sh). See references.lock.json.
+References/
