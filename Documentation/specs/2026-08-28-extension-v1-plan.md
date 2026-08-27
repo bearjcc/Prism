@@ -75,11 +75,11 @@ Exit: clone, install, `build` and `test` succeed with empty/placeholder tests.
 
 Entry: Phase A.
 
-- [ ] `prism.yaml` schema: id, version, runtime `native`, required/optional capabilities, site scopes, optional egress contracts, optional `filters/browser` paths, assets, fixtures.
-- [ ] Validator rejects unknown fields, missing id, undeclared capability names, egress without contract.
-- [ ] Capability registry for the seven v1 ids in the spec, each with JSON result schema where applicable.
-- [ ] Gate tests: call without grant throws; optional grant off throws; activity event names layer, mod id, capability, outcome.
-- [ ] Pack: `src/*.ts` -> JS; zip; content hash. Unpacked dir load uses the same validate function.
+- [~] agent 2026-08-28 `prism.yaml` schema: id, version, runtime `native`, required/optional capabilities, site scopes, optional egress contracts, optional `filters/browser` paths, assets, fixtures.
+- [~] agent 2026-08-28 Validator rejects unknown fields, missing id, undeclared capability names, egress without contract.
+- [~] agent 2026-08-28 Capability registry for the seven v1 ids in the spec, each with JSON result schema where applicable.
+- [~] agent 2026-08-28 Gate tests: call without grant throws; optional grant off throws; activity event names layer, mod id, capability, outcome.
+- [~] agent 2026-08-28 Pack: `src/*.ts` -> JS; zip; content hash. Unpacked dir load uses the same validate function.
 
 Exit: golden valid package accepted; rejection suite fails closed.
 
