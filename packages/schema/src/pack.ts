@@ -90,7 +90,14 @@ export function loadPackedMod(
   archive: Uint8Array,
   archiveName = "mod.prism",
 ): LoadedMod {
-  const files = unzipSync(archive);
+  const files: Record<string, Uint8Array> = {};
+  for (const [path, content] of Object.entries(unzipSync(archive))) {
+    const archivePath = normalisePath(path);
+    if (isIgnoredPath(archivePath)) {
+      continue;
+    }
+    files[archivePath] = content;
+  }
   const encodedManifest = files["prism.yaml"];
   const manifestSource =
     encodedManifest === undefined ? "" : strFromU8(encodedManifest);
@@ -108,10 +115,10 @@ function listFiles(root: string): string[] {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
       const relativePath = normalisePath(relative(root, path));
-      if (
-        entry.isDirectory() &&
-        !IGNORED_DIRECTORIES.has(relativePath)
-      ) {
+      if (isIgnoredPath(relativePath)) {
+        continue;
+      }
+      if (entry.isDirectory()) {
         visit(path);
       } else if (entry.isFile()) {
         files.push(path);
@@ -167,6 +174,18 @@ function lintSource(file: string, source: string): PackWarning[] {
     }
   }
   return warnings;
+}
+
+function isIgnoredPath(relativePath: string): boolean {
+  for (const ignored of IGNORED_DIRECTORIES) {
+    if (
+      relativePath === ignored ||
+      relativePath.startsWith(`${ignored}/`)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function normalisePath(path: string): string {

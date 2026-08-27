@@ -58,6 +58,27 @@ describe("packMod", () => {
     );
   });
 
+  test("drops filters/dns and gateway zip entries when loading a packed mod", () => {
+    const packed = packMod(goldenDir);
+    const files = unzipSync(packed.archive);
+    const archiveWithDeferredTrees = zipSync({
+      ...files,
+      "filters/dns/ignored.txt": strToU8("dns\n"),
+      "gateway/proxy.yaml": strToU8("proxy: true\n"),
+    });
+
+    const loaded = loadPackedMod(archiveWithDeferredTrees, "golden.prism");
+
+    expect(Object.keys(loaded.files).sort()).toEqual([
+      "assets/kitten.txt",
+      "filters/browser/ads.txt",
+      "prism.yaml",
+      "src/index.js",
+    ]);
+    expect(loaded.files["filters/dns/ignored.txt"]).toBeUndefined();
+    expect(loaded.files["gateway/proxy.yaml"]).toBeUndefined();
+  });
+
   test("fails closed for invalid unpacked and packed manifests", () => {
     const directory = makeTemporaryDirectory();
     writeFileSync(join(directory, "prism.yaml"), "runtime: native\n", "utf8");
