@@ -3,7 +3,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 import { SCHEMA_PACKAGE_NAME } from "@prism/schema";
-import { EXTENSION_PACKAGE_NAME, SCHEMA_NAME_FROM_EXTENSION } from "./index.js";
+import {
+  EXTENSION_PACKAGE_NAME,
+  SCHEMA_NAME_FROM_EXTENSION,
+  createCapabilityGate,
+} from "./index.js";
 
 const extRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -27,4 +31,8 @@ test("extension TypeScript project references schema", () => {
   expect(tsconfig.references).toEqual(
     expect.arrayContaining([{ path: "../../packages/schema" }]),
   );
+});
+
+test("extension entry point exports the capability gate", () => {
+  expect(createCapabilityGate).toBeTypeOf("function");
 });
