@@ -129,6 +129,56 @@ describe("Phase D kitten tracer", () => {
     );
   });
 
+  test("activates a later native mod when the page has no ad slots", async () => {
+    const dom = new JSDOM("<main></main>", { url: "https://example.test/page" });
+    const kittenManifest = loadUnpackedMod(kittenModRoot).manifest;
+    const siblingManifest = {
+      id: "fixture.sibling",
+      version: "1.0.0",
+      runtime: "native" as const,
+      capabilities: { required: [] },
+      scopes: ["<all_urls>"],
+    };
+    const siblingActivate = vi.fn();
+    const loadEntry = vi.fn(async (entry: string) => {
+      if (entry.endsWith("sibling.js")) {
+        return { activate: siblingActivate };
+      }
+      return { activate: activateKittenMod };
+    });
+
+    const activation = activateContentMods({
+      url: dom.window.location.href,
+      requestActiveMods: vi.fn().mockResolvedValue({
+        mods: [
+          {
+            manifest: kittenManifest,
+            entry: "bundled-mods/prism.kitten-ad-replace/src/index.js",
+            grants: ["visual.ad-slot.replace"],
+          },
+          {
+            manifest: siblingManifest,
+            entry: "bundled-mods/fixture.sibling/src/sibling.js",
+            grants: [],
+          },
+        ],
+      }),
+      loadEntry,
+      handlers: createContentHandlers(dom.window.document),
+      undo: new TabUndoStack(),
+      contentDocument: dom.window.document,
+      adSlotWaitMs: 250,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(siblingActivate).toHaveBeenCalledOnce();
+
+    await expect(activation).resolves.toEqual([
+      { id: "prism.kitten-ad-replace", status: "active" },
+      { id: "fixture.sibling", status: "active" },
+    ]);
+  });
+
   test("replaces every slot in the kitten fixture without page network access", async () => {
     const fixture = readFileSync(
       join(kittenModRoot, "fixtures", "ads.html"),

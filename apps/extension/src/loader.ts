@@ -41,44 +41,39 @@ export async function loadNativeMods(
   mods: readonly NativeMod[],
   options: LoadNativeModsOptions,
 ): Promise<ModLoadState[]> {
-  const states: ModLoadState[] = [];
+  return Promise.all(
+    mods.map(async (mod): Promise<ModLoadState> => {
+      if (options.enabledByMod?.[mod.manifest.id] === false) {
+        return { id: mod.manifest.id, status: "disabled" };
+      }
+      if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
+        return { id: mod.manifest.id, status: "out-of-scope" };
+      }
 
-  for (const mod of mods) {
-    if (options.enabledByMod?.[mod.manifest.id] === false) {
-      states.push({ id: mod.manifest.id, status: "disabled" });
-      continue;
-    }
-    if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
-      states.push({ id: mod.manifest.id, status: "out-of-scope" });
-      continue;
-    }
+      const grants = options.grantsByMod[mod.manifest.id] ?? [];
+      if (
+        mod.manifest.capabilities.required.some(
+          (capability) => !grants.includes(capability),
+        )
+      ) {
+        return {
+          id: mod.manifest.id,
+          status: "missing-required-capability",
+        };
+      }
 
-    const grants = options.grantsByMod[mod.manifest.id] ?? [];
-    if (
-      mod.manifest.capabilities.required.some(
-        (capability) => !grants.includes(capability),
-      )
-    ) {
-      states.push({
-        id: mod.manifest.id,
-        status: "missing-required-capability",
+      const prism = createPrismApi({
+        manifest: mod.manifest,
+        grants,
+        tabId: options.tabId,
+        handlers: options.handlers,
+        ...(options.undo === undefined ? {} : { undo: options.undo }),
       });
-      continue;
-    }
-
-    const prism = createPrismApi({
-      manifest: mod.manifest,
-      grants,
-      tabId: options.tabId,
-      handlers: options.handlers,
-      ...(options.undo === undefined ? {} : { undo: options.undo }),
-    });
-    const loaded = mod.load === undefined ? mod : await mod.load();
-    await loaded.activate?.(prism);
-    states.push({ id: mod.manifest.id, status: "active" });
-  }
-
-  return states;
+      const loaded = mod.load === undefined ? mod : await mod.load();
+      await loaded.activate?.(prism);
+      return { id: mod.manifest.id, status: "active" };
+    }),
+  );
 }
 
 export function parseBundledMods(source: string): BundledMod[] {

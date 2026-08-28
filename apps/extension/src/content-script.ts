@@ -54,7 +54,10 @@ export interface ActivateContentModsOptions {
   readonly handlers: PrismApiHandlers;
   readonly undo: TabUndoStack;
   readonly contentDocument?: Document;
+  readonly adSlotWaitMs?: number;
 }
+
+export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 
 const CONTENT_TAB_STACK = 0;
 
@@ -76,7 +79,10 @@ export async function activateContentMods(
           options.contentDocument !== undefined &&
           manifest.capabilities.required.includes("visual.ad-slot.replace")
         ) {
-          await waitForAdSlot(options.contentDocument);
+          await waitForAdSlot(
+            options.contentDocument,
+            options.adSlotWaitMs ?? DEFAULT_AD_SLOT_WAIT_MS,
+          );
         }
         return options.loadEntry(entry);
       },
@@ -170,24 +176,50 @@ export function createContentHandlers(
   };
 }
 
-export function waitForAdSlot(contentDocument: Document): Promise<void> {
-  if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
+export function waitForAdSlot(
+  contentDocument: Document,
+  timeoutMs: number = DEFAULT_AD_SLOT_WAIT_MS,
+): Promise<void> {
+  if (
+    timeoutMs <= 0 ||
+    contentDocument.querySelector("[data-prism-ad-slot]") !== null
+  ) {
     return Promise.resolve();
   }
 
-  const MutationObserver = contentDocument.defaultView?.MutationObserver;
-  if (MutationObserver === undefined) {
-    return Promise.reject(new Error("MutationObserver is not available"));
-  }
-
   return new Promise((resolve) => {
-    const observer = new MutationObserver(() => {
-      if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
-        observer.disconnect();
-        resolve();
+    const view = contentDocument.defaultView;
+    let settled = false;
+    let observer: MutationObserver | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const finish = (): void => {
+      if (settled) {
+        return;
       }
-    });
-    observer.observe(contentDocument, { childList: true, subtree: true });
+      settled = true;
+      observer?.disconnect();
+      if (timer !== undefined) {
+        view?.clearTimeout(timer);
+      }
+      resolve();
+    };
+
+    const MutationObserverCtor = view?.MutationObserver;
+    if (MutationObserverCtor !== undefined) {
+      observer = new MutationObserverCtor(() => {
+        if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
+          finish();
+        }
+      });
+      observer.observe(contentDocument, { childList: true, subtree: true });
+    }
+
+    if (view === undefined) {
+      finish();
+      return;
+    }
+    timer = view.setTimeout(finish, timeoutMs);
   });
 }
 
