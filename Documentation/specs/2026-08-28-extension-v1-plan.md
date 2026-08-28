@@ -130,11 +130,11 @@ Exit: fixture Home is videos only. Record YouTube drift as adapter bugs, not mod
 
 Entry: Phase C, youtube-watch extractor.
 
-- [ ] `youtube-watch.ts`: `{ videoId }` from watch URL or fixture.
-- [ ] `reddit-comments.ts`: given a query string (e.g. video title + "site:reddit.com" or a documented search URL), `fetch` as extension, parse comments to `{ author, body, permalink }[]`. Never pass HTML to the mod.
-- [ ] Host permission `https://www.reddit.com/*` requested **only** when the user enables `reddit.comments.search`.
-- [ ] `mods/youtube-reddit-comments`: replace comments slot with rendered JSON. Optional cap off: fallback copy, watch still works.
-- [ ] Tests: parser over saved Reddit HTML fixtures (no live network in CI). Gate: mod cannot read raw HTML.
+- [~] agent 2026-08-28 `youtube-watch.ts`: `{ videoId }` from watch URL or fixture.
+- [~] agent 2026-08-28 `reddit-comments.ts`: given a query string (e.g. video title + "site:reddit.com" or a documented search URL), `fetch` as extension, parse comments to `{ author, body, permalink }[]`. Never pass HTML to the mod.
+- [~] agent 2026-08-28 Host permission `https://www.reddit.com/*` requested **only** when the user enables `reddit.comments.search`.
+- [~] agent 2026-08-28 `mods/youtube-reddit-comments`: replace comments slot with rendered JSON. Optional cap off: fallback copy, watch still works.
+- [~] agent 2026-08-28 Tests: parser over saved Reddit HTML fixtures (no live network in CI). Gate: mod cannot read raw HTML.
 
 Exit: fixture watch page + fixture Reddit HTML -> comments listed. Live Reddit may fail (bot wall); CI must not depend on live Reddit.
 
