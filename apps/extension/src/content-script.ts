@@ -53,6 +53,7 @@ interface ActiveModsResponse {
 
 interface ContentMessage {
   readonly type: string;
+  readonly modId?: string;
 }
 
 interface ContentModModule {
@@ -144,9 +145,13 @@ export async function activateContentMods(
 export function handleContentMessage(
   message: ContentMessage,
   undo: TabUndoStack,
+  activeModIds: ReadonlySet<string> = new Set(),
 ): unknown {
   if (message.type === "undo-last") {
     return { undone: undo.undoLast(CONTENT_TAB_STACK) };
+  }
+  if (message.type === "is-mod-active" && message.modId !== undefined) {
+    return { active: activeModIds.has(message.modId) };
   }
   return { ok: false };
 }
@@ -525,8 +530,9 @@ export function createChromeContentHandlers(
 
 if (typeof chrome !== "undefined") {
   const undo = new TabUndoStack();
+  const activeModIds = new Set<string>();
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    sendResponse(handleContentMessage(message, undo));
+    sendResponse(handleContentMessage(message, undo, activeModIds));
   });
   void activateContentMods({
     url: globalThis.location.href,
@@ -540,5 +546,14 @@ if (typeof chrome !== "undefined") {
     handlers: createChromeContentHandlers(document, chrome.runtime),
     undo,
     contentDocument: document,
-  });
+  }).then(
+    (states) => {
+      for (const state of states) {
+        if (state.status === "active") {
+          activeModIds.add(state.id);
+        }
+      }
+    },
+    () => undefined,
+  );
 }

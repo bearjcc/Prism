@@ -265,15 +265,24 @@ describe("Phase D kitten tracer", () => {
       setState: vi.fn(),
       sendToTab: vi.fn(),
       reloadTab: vi.fn(),
+      queryTabs: vi.fn().mockResolvedValue([]),
       syncBrowserRules: vi.fn(),
     };
     const sendMessage = vi.fn(
       (message: Parameters<typeof handleRuntimeMessage>[0]) =>
         handleRuntimeMessage(
           message,
-          1,
+          {
+            id: "fixture-extension",
+            url: "https://example.test/page",
+            tab: { id: 1 },
+          },
           Promise.resolve([{ manifest, entry: null }]),
           dependencies,
+          {
+            extensionId: "fixture-extension",
+            popupUrl: "chrome-extension://fixture-extension/popup.html",
+          },
         ),
     );
     const prism = createPrismApi({
@@ -300,9 +309,12 @@ describe("Phase D kitten tracer", () => {
     });
   });
 
-  test("reloads the affected tab when a mod is disabled", async () => {
+  test("reloads every matching tab when a mod is disabled", async () => {
     const manifest = loadUnpackedMod(kittenModRoot).manifest;
     const reloadTab = vi.fn().mockResolvedValue(undefined);
+    const sendToTab = vi.fn(async (tabId: number) => ({
+      active: tabId === 7 || tabId === 8,
+    }));
     const syncBrowserRules = vi.fn().mockResolvedValue(undefined);
     const dependencies: ServiceWorkerDependencies = {
       getState: vi.fn().mockResolvedValue({
@@ -310,8 +322,13 @@ describe("Phase D kitten tracer", () => {
         grants: {},
       }),
       setState: vi.fn().mockResolvedValue(undefined),
-      sendToTab: vi.fn(),
+      sendToTab,
       reloadTab,
+      queryTabs: vi.fn().mockResolvedValue([
+        { id: 7 },
+        { id: 8 },
+        { id: 9 },
+      ]),
       syncBrowserRules,
     };
 
@@ -321,15 +338,24 @@ describe("Phase D kitten tracer", () => {
           type: "set-enabled",
           modId: manifest.id,
           enabled: false,
-          tabId: 7,
         },
-        undefined,
+        {
+          id: "fixture-extension",
+          url: "chrome-extension://fixture-extension/popup.html",
+        },
         Promise.resolve([{ manifest, entry: null }]),
         dependencies,
+        {
+          extensionId: "fixture-extension",
+          popupUrl: "chrome-extension://fixture-extension/popup.html",
+        },
       ),
     ).resolves.toEqual({ ok: true });
 
     expect(reloadTab).toHaveBeenCalledWith(7);
+    expect(reloadTab).toHaveBeenCalledWith(8);
+    expect(reloadTab).not.toHaveBeenCalledWith(9);
+    expect(sendToTab).toHaveBeenCalledTimes(3);
     expect(syncBrowserRules).toHaveBeenCalledOnce();
   });
 

@@ -13,8 +13,10 @@ import {
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 import {
   forwardUndoToTab,
+  handleRuntimeMessage,
   loadBundledModIndex,
   selectActiveMods,
+  type ServiceWorkerDependencies,
   updateOptionalGrant,
 } from "./service-worker.js";
 
@@ -88,6 +90,37 @@ describe("Phase C extension runtime", () => {
     expect(activate).not.toHaveBeenCalled();
   });
 
+  test("continues activating sibling mods after one mod fails", async () => {
+    const siblingActivate = vi.fn();
+
+    await expect(
+      loadNativeMods(
+        [
+          {
+            manifest: emptyManifest,
+            activate: () => {
+              throw new Error("broken mod");
+            },
+          },
+          {
+            manifest: { ...emptyManifest, id: "fixture.sibling" },
+            activate: siblingActivate,
+          },
+        ],
+        {
+          url: "https://example.com/page",
+          tabId: 1,
+          grantsByMod: {},
+          handlers: {},
+        },
+      ),
+    ).resolves.toEqual([
+      { id: "fixture.empty", status: "failed" },
+      { id: "fixture.sibling", status: "active" },
+    ]);
+    expect(siblingActivate).toHaveBeenCalledOnce();
+  });
+
   test("content message path loads, activates, and undoes a bundled mod", async () => {
     const undo = new TabUndoStack();
     const reverted = vi.fn();
@@ -133,6 +166,25 @@ describe("Phase C extension runtime", () => {
       undone: true,
     });
     expect(sendToTab).toHaveBeenCalledWith(7, { type: "undo-last" });
+  });
+
+  test("content script reports whether a mod is active in its tab", () => {
+    const activeModIds = new Set(["fixture.hide"]);
+
+    expect(
+      handleContentMessage(
+        { type: "is-mod-active", modId: "fixture.hide" },
+        new TabUndoStack(),
+        activeModIds,
+      ),
+    ).toEqual({ active: true });
+    expect(
+      handleContentMessage(
+        { type: "is-mod-active", modId: "fixture.other" },
+        new TabUndoStack(),
+        activeModIds,
+      ),
+    ).toEqual({ active: false });
   });
 
   test("matches package scopes independently of all_urls injection", () => {
@@ -236,6 +288,15 @@ describe("Phase C extension runtime", () => {
     expect(() => sanitiseCss("/* @updateURL https://x.test/a */")).toThrow(
       "update URL",
     );
+    expect(() =>
+      sanitiseCss("a { background: u\\72l(https://x.test/a); }"),
+    ).toThrow("url(");
+    expect(() =>
+      sanitiseCss("a { background: u\\\nrl(https://x.test/a); }"),
+    ).toThrow("url(");
+    expect(() =>
+      sanitiseCss('@\\69mport "https://x.test/a.css";'),
+    ).toThrow("@import");
     expect(sanitiseCss(".advert { display: none; }")).toBe(
       ".advert { display: none; }",
     );
@@ -252,6 +313,15 @@ describe("Phase C extension runtime", () => {
     );
 
     expect(mods).toEqual([{ manifest: emptyManifest, entry: null }]);
+  });
+
+  test("rejects duplicate ids in the bundled mod index", () => {
+    const source = JSON.stringify([
+      { manifest: emptyManifest, entry: null },
+      { manifest: emptyManifest, entry: null },
+    ]);
+
+    expect(() => parseBundledMods(source)).toThrow("Duplicate bundled mod id");
   });
 
   test("service worker loads the generated bundled mod index", async () => {
@@ -299,5 +369,127 @@ describe("Phase C extension runtime", () => {
     expect(() =>
       updateOptionalGrant(manifest, [], "network.egress", true),
     ).toThrow("not optional");
+  });
+
+  test("rejects privileged service-worker messages from foreign senders", async () => {
+    const setState = vi.fn();
+    const dependencies: ServiceWorkerDependencies = {
+      getState: vi.fn().mockResolvedValue({ enabled: {}, grants: {} }),
+      setState,
+      sendToTab: vi.fn(),
+      reloadTab: vi.fn(),
+      queryTabs: vi.fn().mockResolvedValue([]),
+      syncBrowserRules: vi.fn(),
+    };
+    const mods = Promise.resolve([{ manifest: emptyManifest, entry: null }]);
+    const auth = {
+      extensionId: "fixture-extension",
+      popupUrl: "chrome-extension://fixture-extension/popup.html",
+    };
+
+    for (const message of [
+      { type: "list-mods" },
+      { type: "set-enabled", modId: emptyManifest.id, enabled: false },
+      {
+        type: "set-capability",
+        modId: emptyManifest.id,
+        capability: "network.egress",
+        granted: true,
+      },
+      {
+        type: "network-request",
+        modId: emptyManifest.id,
+        contractId: "remote",
+      },
+      {
+        type: "reddit-comments-search",
+        modId: emptyManifest.id,
+        query: "video",
+      },
+    ]) {
+      await expect(
+        handleRuntimeMessage(
+          message,
+          { id: "foreign-extension" },
+          mods,
+          dependencies,
+          auth,
+        ),
+      ).resolves.toEqual({ ok: false });
+    }
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  test("allows grants only from this extension popup", async () => {
+    const manifest: PrismManifest = {
+      ...emptyManifest,
+      capabilities: {
+        required: [],
+        optional: ["reddit.comments.search"],
+      },
+    };
+    const setState = vi.fn();
+    const dependencies: ServiceWorkerDependencies = {
+      getState: vi.fn().mockResolvedValue({ enabled: {}, grants: {} }),
+      setState,
+      sendToTab: vi.fn(),
+      reloadTab: vi.fn(),
+      queryTabs: vi.fn().mockResolvedValue([]),
+      syncBrowserRules: vi.fn(),
+    };
+    const mods = Promise.resolve([{ manifest, entry: null }]);
+    const message = {
+      type: "set-capability",
+      modId: manifest.id,
+      capability: "reddit.comments.search",
+      granted: true,
+    };
+    const auth = {
+      extensionId: "fixture-extension",
+      popupUrl: "chrome-extension://fixture-extension/popup.html",
+    };
+    const contentSender = {
+      id: "fixture-extension",
+      url: "https://example.com/page",
+      tab: { id: 7 },
+    };
+
+    await expect(
+      handleRuntimeMessage(
+        message,
+        contentSender,
+        mods,
+        dependencies,
+        auth,
+      ),
+    ).resolves.toEqual({ ok: false });
+    await expect(
+      handleRuntimeMessage(
+        { type: "set-enabled", modId: manifest.id, enabled: false },
+        contentSender,
+        mods,
+        dependencies,
+        auth,
+      ),
+    ).resolves.toEqual({ ok: false });
+    expect(setState).not.toHaveBeenCalled();
+
+    await expect(
+      handleRuntimeMessage(
+        message,
+        {
+          id: "fixture-extension",
+          url: "chrome-extension://fixture-extension/popup.html",
+        },
+        mods,
+        dependencies,
+        auth,
+      ),
+    ).resolves.toEqual({ ok: true });
+    expect(setState).toHaveBeenCalledWith({
+      grants: {
+        [manifest.id]: ["reddit.comments.search"],
+      },
+    });
   });
 });

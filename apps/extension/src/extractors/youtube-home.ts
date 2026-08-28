@@ -78,6 +78,9 @@ function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {
   }
 
   const url = new URL(href, "https://www.youtube.com");
+  if (url.hostname !== "youtube.com" && url.hostname !== "www.youtube.com") {
+    return undefined;
+  }
   const id = url.pathname === "/watch" ? url.searchParams.get("v")?.trim() : "";
   const title = (
     link.getAttribute("title") ??

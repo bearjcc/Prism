@@ -12,6 +12,7 @@ interface PopupChromeApi {
   };
   readonly permissions: {
     request(permissions: { origins: string[] }): Promise<boolean>;
+    remove(permissions: { origins: string[] }): Promise<boolean>;
   };
   readonly tabs: {
     query(query: { active: true; currentWindow: true }): Promise<
@@ -69,6 +70,9 @@ export async function applyOptionalCapabilityChange(
     capability,
     granted,
   });
+  if (!granted && capability === "reddit.comments.search") {
+    await api.permissions.remove({ origins: REDDIT_ORIGINS });
+  }
   return true;
 }
 

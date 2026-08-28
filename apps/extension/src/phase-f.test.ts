@@ -195,9 +195,10 @@ describe("Phase F Reddit comments on YouTube", () => {
   test("popup requests Reddit host access only while enabling the capability", async () => {
     const sendMessage = vi.fn().mockResolvedValue({ ok: true });
     const request = vi.fn().mockResolvedValue(true);
+    const remove = vi.fn().mockResolvedValue(true);
     const api = {
       runtime: { sendMessage },
-      permissions: { request },
+      permissions: { request, remove },
     };
 
     await expect(
@@ -222,13 +223,19 @@ describe("Phase F Reddit comments on YouTube", () => {
       ),
     ).resolves.toBe(true);
     expect(request).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledWith({
+      origins: ["https://www.reddit.com/*"],
+    });
   });
 
   test("popup does not grant the capability when host access is denied", async () => {
     const sendMessage = vi.fn();
     const api = {
       runtime: { sendMessage },
-      permissions: { request: vi.fn().mockResolvedValue(false) },
+      permissions: {
+        request: vi.fn().mockResolvedValue(false),
+        remove: vi.fn(),
+      },
     };
 
     await expect(
@@ -258,6 +265,7 @@ describe("Phase F Reddit comments on YouTube", () => {
       setState: vi.fn(),
       sendToTab: vi.fn(),
       reloadTab: vi.fn(),
+      queryTabs: vi.fn().mockResolvedValue([]),
       syncBrowserRules: vi.fn(),
       fetchRedditHtml,
     };
@@ -270,9 +278,17 @@ describe("Phase F Reddit comments on YouTube", () => {
           modId: manifest.id,
           query: "fixture-video-id",
         },
-        1,
+        {
+          id: "fixture-extension",
+          url: "https://www.youtube.com/watch?v=fixture-video-id",
+          tab: { id: 1 },
+        },
         mods,
         dependencies,
+        {
+          extensionId: "fixture-extension",
+          popupUrl: "chrome-extension://fixture-extension/popup.html",
+        },
       ),
     ).resolves.toEqual({
       comments: expect.arrayContaining([
@@ -296,9 +312,17 @@ describe("Phase F Reddit comments on YouTube", () => {
           modId: manifest.id,
           query: "fixture-video-id",
         },
-        1,
+        {
+          id: "fixture-extension",
+          url: "https://www.youtube.com/watch?v=fixture-video-id",
+          tab: { id: 1 },
+        },
         mods,
         deniedDependencies,
+        {
+          extensionId: "fixture-extension",
+          popupUrl: "chrome-extension://fixture-extension/popup.html",
+        },
       ),
     ).resolves.toEqual({ status: 403, error: "Reddit comments denied" });
     expect(fetchRedditHtml).not.toHaveBeenCalled();

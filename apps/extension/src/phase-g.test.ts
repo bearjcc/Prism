@@ -166,7 +166,7 @@ describe("Phase G popup disclosure", () => {
     await mountPopup(
       {
         runtime: { sendMessage },
-        permissions: { request: vi.fn() },
+        permissions: { request: vi.fn(), remove: vi.fn() },
         tabs: { query: vi.fn().mockResolvedValue([]) },
       },
       dom.window.document,

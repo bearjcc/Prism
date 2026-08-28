@@ -83,6 +83,16 @@ export function validateManifest(
   rejectUnknownFields(value, ROOT_FIELDS, "", source, file, issues);
 
   const id = requireString(value, "id", source, file, issues);
+  if (id === "." || id === ".." || /[\\/]/u.test(id)) {
+    issues.push(
+      issueAt(
+        source,
+        file,
+        "id must be a safe path segment without dot segments or separators",
+        findKeyLine(source, "id"),
+      ),
+    );
+  }
   const version = requireString(value, "version", source, file, issues);
   const runtime = value.runtime;
   if (runtime !== "native") {

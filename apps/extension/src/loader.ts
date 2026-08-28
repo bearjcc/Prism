@@ -20,6 +20,7 @@ export interface NativeMod {
 export type ModLoadStatus =
   | "active"
   | "disabled"
+  | "failed"
   | "missing-required-capability"
   | "out-of-scope";
 
@@ -43,35 +44,39 @@ export async function loadNativeMods(
 ): Promise<ModLoadState[]> {
   return Promise.all(
     mods.map(async (mod): Promise<ModLoadState> => {
-      if (options.enabledByMod?.[mod.manifest.id] === false) {
-        return { id: mod.manifest.id, status: "disabled" };
-      }
-      if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
-        return { id: mod.manifest.id, status: "out-of-scope" };
-      }
+      try {
+        if (options.enabledByMod?.[mod.manifest.id] === false) {
+          return { id: mod.manifest.id, status: "disabled" };
+        }
+        if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
+          return { id: mod.manifest.id, status: "out-of-scope" };
+        }
 
-      const grants = options.grantsByMod[mod.manifest.id] ?? [];
-      if (
-        mod.manifest.capabilities.required.some(
-          (capability) => !grants.includes(capability),
-        )
-      ) {
-        return {
-          id: mod.manifest.id,
-          status: "missing-required-capability",
-        };
-      }
+        const grants = options.grantsByMod[mod.manifest.id] ?? [];
+        if (
+          mod.manifest.capabilities.required.some(
+            (capability) => !grants.includes(capability),
+          )
+        ) {
+          return {
+            id: mod.manifest.id,
+            status: "missing-required-capability",
+          };
+        }
 
-      const prism = createPrismApi({
-        manifest: mod.manifest,
-        grants,
-        tabId: options.tabId,
-        handlers: options.handlers,
-        ...(options.undo === undefined ? {} : { undo: options.undo }),
-      });
-      const loaded = mod.load === undefined ? mod : await mod.load();
-      await loaded.activate?.(prism);
-      return { id: mod.manifest.id, status: "active" };
+        const prism = createPrismApi({
+          manifest: mod.manifest,
+          grants,
+          tabId: options.tabId,
+          handlers: options.handlers,
+          ...(options.undo === undefined ? {} : { undo: options.undo }),
+        });
+        const loaded = mod.load === undefined ? mod : await mod.load();
+        await loaded.activate?.(prism);
+        return { id: mod.manifest.id, status: "active" };
+      } catch {
+        return { id: mod.manifest.id, status: "failed" };
+      }
     }),
   );
 }
@@ -82,6 +87,7 @@ export function parseBundledMods(source: string): BundledMod[] {
     throw new Error("Bundled mod index must be an array");
   }
 
+  const ids = new Set<string>();
   return value.map((entry, index) => {
     if (!isRecord(entry) || !isRecord(entry.manifest)) {
       throw new Error(`Bundled mod ${index} must contain a manifest`);
@@ -93,11 +99,16 @@ export function parseBundledMods(source: string): BundledMod[] {
     ) {
       throw new Error(`Bundled mod ${index} entry must be a string or null`);
     }
+    const manifest = validateManifest(
+      JSON.stringify(entry.manifest),
+      `bundled-mods.json[${index}]`,
+    );
+    if (ids.has(manifest.id)) {
+      throw new Error(`Duplicate bundled mod id ${manifest.id}`);
+    }
+    ids.add(manifest.id);
     return {
-      manifest: validateManifest(
-        JSON.stringify(entry.manifest),
-        `bundled-mods.json[${index}]`,
-      ),
+      manifest,
       entry: entry.entry ?? null,
     };
   });

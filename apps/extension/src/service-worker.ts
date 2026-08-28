@@ -28,6 +28,17 @@ interface RuntimeMessage {
   readonly query?: string;
 }
 
+export interface RuntimeMessageSender {
+  readonly id?: string;
+  readonly url?: string;
+  readonly tab?: { readonly id?: number };
+}
+
+export interface RuntimeMessageAuthentication {
+  readonly extensionId: string;
+  readonly popupUrl: string;
+}
+
 export interface StoredState {
   enabled?: Record<string, boolean>;
   grants?: Record<string, string[]>;
@@ -35,12 +46,13 @@ export interface StoredState {
 
 interface ChromeApi {
   readonly runtime: {
+    readonly id: string;
     getURL(path: string): string;
     readonly onMessage: {
       addListener(
         listener: (
           message: RuntimeMessage,
-          sender: { tab?: { id?: number } },
+          sender: RuntimeMessageSender,
           sendResponse: (response: unknown) => void,
         ) => boolean | void,
       ): void;
@@ -53,6 +65,7 @@ interface ChromeApi {
     };
   };
   readonly tabs: {
+    query(query: Record<string, never>): Promise<Array<{ id?: number }>>;
     sendMessage(tabId: number, message: unknown): Promise<unknown>;
     reload(tabId: number): Promise<void>;
   };
@@ -68,6 +81,7 @@ export interface ServiceWorkerDependencies {
     tabId: number,
     message: unknown,
   ) => Promise<unknown>;
+  readonly queryTabs: () => Promise<ReadonlyArray<{ readonly id?: number }>>;
   readonly reloadTab: (tabId: number) => Promise<void>;
   readonly syncBrowserRules: (
     mods: readonly BundledMod[],
@@ -157,10 +171,14 @@ if (typeof chrome !== "undefined") {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     void handleRuntimeMessage(
       message,
-      sender.tab?.id,
+      sender,
       mods,
       dependencies,
-    ).then(sendResponse);
+      {
+        extensionId: chrome.runtime.id,
+        popupUrl: chrome.runtime.getURL("popup.html"),
+      },
+    ).then(sendResponse, () => sendResponse({ ok: false }));
     return true;
   });
   void syncInitialBrowserRules(mods, dependencies);
@@ -168,10 +186,14 @@ if (typeof chrome !== "undefined") {
 
 export async function handleRuntimeMessage(
   message: RuntimeMessage,
-  tabId: number | undefined,
+  sender: RuntimeMessageSender,
   modsPromise: Promise<BundledMod[]>,
   dependencies: ServiceWorkerDependencies,
+  authentication: RuntimeMessageAuthentication,
 ): Promise<unknown> {
+  if (!isAuthorisedRuntimeMessage(message, sender, authentication)) {
+    return { ok: false };
+  }
   const mods = await modsPromise;
   const state = await dependencies.getState();
   const enabled = { ...state.enabled };
@@ -192,12 +214,17 @@ export async function handleRuntimeMessage(
     message.modId !== undefined &&
     message.enabled !== undefined
   ) {
+    const manifest = mods.find(
+      (mod) => mod.manifest.id === message.modId,
+    )?.manifest;
+    if (manifest === undefined) {
+      return { ok: false };
+    }
     enabled[message.modId] = message.enabled;
     await dependencies.syncBrowserRules(mods, enabled, grants);
     await dependencies.setState({ enabled });
-    const requestedTabId = message.tabId ?? tabId;
-    if (!message.enabled && requestedTabId !== undefined) {
-      await dependencies.reloadTab(requestedTabId);
+    if (!message.enabled) {
+      await reloadTabsWithActiveMod(message.modId, dependencies);
     }
     return { ok: true };
   }
@@ -258,7 +285,7 @@ export async function handleRuntimeMessage(
       message.contractId,
     );
   }
-  const requestedTabId = message.tabId ?? tabId;
+  const requestedTabId = message.tabId ?? sender.tab?.id;
   if (message.type === "undo-last" && requestedTabId !== undefined) {
     return forwardUndoToTab(
       dependencies.sendToTab,
@@ -266,6 +293,59 @@ export async function handleRuntimeMessage(
     );
   }
   return { ok: false };
+}
+
+const EXTENSION_MESSAGE_TYPES = new Set([
+  "active-mods",
+  "list-mods",
+  "network-request",
+  "reddit-comments-search",
+  "set-capability",
+  "set-enabled",
+  "undo-last",
+]);
+const POPUP_ONLY_MESSAGE_TYPES = new Set(["set-capability", "set-enabled"]);
+
+export function isAuthorisedRuntimeMessage(
+  message: RuntimeMessage,
+  sender: RuntimeMessageSender,
+  authentication: RuntimeMessageAuthentication,
+): boolean {
+  if (
+    !EXTENSION_MESSAGE_TYPES.has(message.type) ||
+    sender.id !== authentication.extensionId
+  ) {
+    return false;
+  }
+  if (!POPUP_ONLY_MESSAGE_TYPES.has(message.type)) {
+    return true;
+  }
+  return sender.tab === undefined && sender.url === authentication.popupUrl;
+}
+
+async function reloadTabsWithActiveMod(
+  modId: string,
+  dependencies: ServiceWorkerDependencies,
+): Promise<void> {
+  const tabs = await dependencies.queryTabs();
+  await Promise.all(
+    tabs.map(async ({ id }) => {
+      if (id === undefined) {
+        return;
+      }
+      try {
+        const response = await dependencies.sendToTab(id, {
+          type: "is-mod-active",
+          modId,
+        });
+        if (isRecord(response) && response.active === true) {
+          await dependencies.reloadTab(id);
+        }
+      } catch {
+        // Tabs without the Prism content script cannot have an active mod.
+      }
+    }),
+  );
 }
 
 export function handleBrokerRequest(
@@ -302,6 +382,7 @@ function createChromeDependencies(): ServiceWorkerDependencies {
     setState: (state) => chrome.storage.local.set(state),
     sendToTab: (tabId, message) =>
       chrome.tabs.sendMessage(tabId, message),
+    queryTabs: () => chrome.tabs.query({}),
     reloadTab: (tabId) => chrome.tabs.reload(tabId),
     syncBrowserRules: (mods, enabled, grants) =>
       syncBrowserBlockRules(
@@ -362,4 +443,8 @@ async function syncInitialBrowserRules(
     state.enabled ?? {},
     state.grants ?? {},
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

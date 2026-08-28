@@ -60,6 +60,21 @@ scopes: []
     expectValidationIssue(source, "id is required", 1);
   });
 
+  test.each([".", "..", "nested/mod", "nested\\mod"])(
+    "rejects unsafe mod id %s",
+    (id) => {
+      const source = `id: ${JSON.stringify(id)}
+version: 1.0.0
+runtime: native
+capabilities:
+  required: []
+scopes: []
+`;
+
+      expectValidationIssue(source, "safe path segment", 1);
+    },
+  );
+
   test("rejects a capability outside the v1 registry", () => {
     const source = `id: example.mod
 version: 1.0.0
