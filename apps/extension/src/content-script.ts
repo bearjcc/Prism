@@ -1,6 +1,11 @@
-import type { CapabilityId } from "@prism/schema";
+import type {
+  AdSlotHandle,
+  CapabilityId,
+  TrustedReplacement,
+} from "@prism/schema";
 import type { BundledMod, NativeMod } from "./loader.js";
 import { loadNativeMods, type ModLoadState } from "./loader.js";
+import { extractAdSlots } from "./extractors/ad-slot.js";
 import {
   type PrismApiHandlers,
   TabUndoStack,
@@ -85,8 +90,36 @@ export function handleContentMessage(
 
 export function createContentHandlers(
   contentDocument: Document,
+  resolveAsset: (asset: string) => string = (asset) => asset,
 ): PrismApiHandlers {
   return {
+    async extract(capability): Promise<unknown> {
+      if (capability !== "visual.ad-slot.replace") {
+        throw new Error(`No extractor registered for ${capability}`);
+      }
+      return extractAdSlots(contentDocument);
+    },
+    replaceSlot(
+      slot: AdSlotHandle,
+      content: TrustedReplacement,
+    ): () => void {
+      const element = findAdSlot(contentDocument, slot);
+      if (element === undefined) {
+        throw new Error(`Ad slot ${slot.id} is not available`);
+      }
+      const previousChildren = Array.from(element.childNodes);
+      const image = contentDocument.createElement("img");
+      image.dataset.prismOwned = "true";
+      image.src = resolveAsset(content.asset);
+      image.alt = content.alt;
+      element.replaceChildren(image);
+
+      return () => {
+        if (image.parentNode === element) {
+          element.replaceChildren(...previousChildren);
+        }
+      };
+    },
     applyCss(cssText): () => void {
       const style = contentDocument.createElement("style");
       style.dataset.prismOwned = "true";
@@ -99,6 +132,17 @@ export function createContentHandlers(
       return () => style.remove();
     },
   };
+}
+
+function findAdSlot(
+  contentDocument: Document,
+  slot: AdSlotHandle,
+): Element | undefined {
+  return Array.from(
+    contentDocument.querySelectorAll("[data-prism-ad-slot]"),
+  ).find(
+    (element) => element.getAttribute("data-prism-ad-slot")?.trim() === slot.id,
+  );
 }
 
 if (typeof chrome !== "undefined") {
@@ -115,7 +159,9 @@ if (typeof chrome !== "undefined") {
       }),
     loadEntry: async (entry) =>
       import(chrome.runtime.getURL(entry)) as Promise<ContentModModule>,
-    handlers: createContentHandlers(document),
+    handlers: createContentHandlers(document, (asset) =>
+      chrome.runtime.getURL(asset),
+    ),
     undo,
   });
 }

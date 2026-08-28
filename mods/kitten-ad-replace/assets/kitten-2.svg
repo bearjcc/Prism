@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Curious grey kitten</title>
+  <desc id="description">A simple illustration of a grey kitten looking forward.</desc>
+  <rect width="640" height="360" rx="24" fill="#e5eceb"/>
+  <ellipse cx="320" cy="305" rx="150" ry="20" fill="#c3cfcd"/>
+  <ellipse cx="320" cy="235" rx="105" ry="85" fill="#82908f"/>
+  <circle cx="320" cy="145" r="95" fill="#95a3a2"/>
+  <path d="m242 92 20-77 62 52Z" fill="#778685"/>
+  <path d="m338 67 55-52 14 83Z" fill="#778685"/>
+  <ellipse cx="284" cy="139" rx="13" ry="18" fill="#30413f"/>
+  <ellipse cx="356" cy="139" rx="13" ry="18" fill="#30413f"/>
+  <path d="m320 166 13 10-13 10-13-10Z" fill="#bd7d7b"/>
+  <path d="M320 186c-12 15-27 16-40 7m40-7c12 15 27 16 40 7" fill="none" stroke="#40504e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M255 170h-70m72 18-66 16m194-34h70m-72 18 66 16" fill="none" stroke="#61716f" stroke-width="5" stroke-linecap="round"/>
+</svg>
