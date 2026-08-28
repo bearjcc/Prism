@@ -14,9 +14,14 @@ export interface BundledMod {
 export interface NativeMod {
   readonly manifest: PrismManifest;
   readonly activate?: (prism: PrismApi) => void | Promise<void>;
+  readonly load?: () => Promise<Pick<NativeMod, "activate">>;
 }
 
-export type ModLoadStatus = "active" | "disabled" | "out-of-scope";
+export type ModLoadStatus =
+  | "active"
+  | "disabled"
+  | "missing-required-capability"
+  | "out-of-scope";
 
 export interface ModLoadState {
   readonly id: string;
@@ -48,14 +53,28 @@ export async function loadNativeMods(
       continue;
     }
 
+    const grants = options.grantsByMod[mod.manifest.id] ?? [];
+    if (
+      mod.manifest.capabilities.required.some(
+        (capability) => !grants.includes(capability),
+      )
+    ) {
+      states.push({
+        id: mod.manifest.id,
+        status: "missing-required-capability",
+      });
+      continue;
+    }
+
     const prism = createPrismApi({
       manifest: mod.manifest,
-      grants: options.grantsByMod[mod.manifest.id] ?? [],
+      grants,
       tabId: options.tabId,
       handlers: options.handlers,
       ...(options.undo === undefined ? {} : { undo: options.undo }),
     });
-    await mod.activate?.(prism);
+    const loaded = mod.load === undefined ? mod : await mod.load();
+    await loaded.activate?.(prism);
     states.push({ id: mod.manifest.id, status: "active" });
   }
 

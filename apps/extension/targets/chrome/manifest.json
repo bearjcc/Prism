@@ -5,6 +5,12 @@
   "description": "Run capability-scoped Prism mods.",
   "permissions": ["activeTab", "storage"],
   "optional_host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": ["bundled-mods/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "background": {
     "service_worker": "dist/service-worker.js",
     "type": "module"

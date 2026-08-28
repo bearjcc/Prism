@@ -6,9 +6,15 @@ import {
   matchesAnyScope,
   parseBundledMods,
 } from "./loader.js";
+import {
+  activateContentMods,
+  handleContentMessage,
+} from "./content-script.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 import {
+  forwardUndoToTab,
   loadBundledModIndex,
+  selectActiveMods,
   updateOptionalGrant,
 } from "./service-worker.js";
 
@@ -61,6 +67,72 @@ describe("Phase C extension runtime", () => {
 
     expect(states).toEqual([{ id: "fixture.hide", status: "out-of-scope" }]);
     expect(activate).not.toHaveBeenCalled();
+  });
+
+  test("does not activate a mod missing a required capability grant", async () => {
+    const activate = vi.fn();
+
+    const states = await loadNativeMods(
+      [{ manifest: hideManifest, activate }],
+      {
+        url: "https://example.com/page",
+        tabId: 1,
+        grantsByMod: { "fixture.hide": [] },
+        handlers: {},
+      },
+    );
+
+    expect(states).toEqual([
+      { id: "fixture.hide", status: "missing-required-capability" },
+    ]);
+    expect(activate).not.toHaveBeenCalled();
+  });
+
+  test("content message path loads, activates, and undoes a bundled mod", async () => {
+    const undo = new TabUndoStack();
+    const reverted = vi.fn();
+    const activate = vi.fn((prism) => {
+      prism.styles.apply(".advert { display: none; }");
+    });
+    const loadEntry = vi.fn().mockResolvedValue({ activate });
+    const requestActiveMods = vi.fn().mockResolvedValue({
+      mods: [
+        {
+          manifest: hideManifest,
+          entry: "bundled-mods/fixture.hide/src/index.js",
+          grants: ["visual.hide"],
+        },
+      ],
+    });
+
+    await expect(
+      activateContentMods({
+        url: "https://example.com/page",
+        requestActiveMods,
+        loadEntry,
+        handlers: { applyCss: () => reverted },
+        undo,
+      }),
+    ).resolves.toEqual([{ id: "fixture.hide", status: "active" }]);
+
+    expect(requestActiveMods).toHaveBeenCalledWith("https://example.com/page");
+    expect(loadEntry).toHaveBeenCalledWith(
+      "bundled-mods/fixture.hide/src/index.js",
+    );
+    expect(activate).toHaveBeenCalledOnce();
+    expect(handleContentMessage({ type: "undo-last" }, undo)).toEqual({
+      undone: true,
+    });
+    expect(reverted).toHaveBeenCalledOnce();
+  });
+
+  test("service worker forwards undo to the requested tab", async () => {
+    const sendToTab = vi.fn().mockResolvedValue({ undone: true });
+
+    await expect(forwardUndoToTab(sendToTab, 7)).resolves.toEqual({
+      undone: true,
+    });
+    expect(sendToTab).toHaveBeenCalledWith(7, { type: "undo-last" });
   });
 
   test("matches package scopes independently of all_urls injection", () => {
@@ -176,6 +248,21 @@ describe("Phase C extension runtime", () => {
 
     await expect(loadBundledModIndex(fetchIndex)).resolves.toEqual([]);
     expect(fetchIndex).toHaveBeenCalledOnce();
+  });
+
+  test("service worker sends active mods with their grants", () => {
+    const mod = { manifest: hideManifest, entry: "entry.js" };
+
+    expect(
+      selectActiveMods(
+        [mod],
+        "https://example.com/page",
+        {},
+        { "fixture.hide": ["visual.hide"] },
+      ),
+    ).toEqual({
+      mods: [{ ...mod, grants: ["visual.hide"] }],
+    });
   });
 
   test("optional grant changes preserve required capabilities", () => {

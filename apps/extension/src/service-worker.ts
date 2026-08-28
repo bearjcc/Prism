@@ -2,7 +2,6 @@ import type { CapabilityId, PrismManifest } from "@prism/schema";
 import { isCapabilityId } from "@prism/schema/capabilities";
 import type { BundledMod } from "./loader.js";
 import { matchesAnyScope, parseBundledMods } from "./loader.js";
-import { TabUndoStack } from "./prism-api.js";
 
 interface RuntimeMessage {
   readonly type: string;
@@ -38,16 +37,50 @@ interface ChromeApi {
       set(state: StoredState): Promise<void>;
     };
   };
+  readonly tabs: {
+    sendMessage(tabId: number, message: unknown): Promise<unknown>;
+  };
 }
 
 declare const chrome: ChromeApi;
-
-const undo = new TabUndoStack();
 
 export async function loadBundledModIndex(
   fetchIndex: () => Promise<string>,
 ): Promise<BundledMod[]> {
   return parseBundledMods(await fetchIndex());
+}
+
+export function forwardUndoToTab(
+  sendToTab: (tabId: number, message: unknown) => Promise<unknown>,
+  tabId: number,
+): Promise<unknown> {
+  return sendToTab(tabId, { type: "undo-last" });
+}
+
+export function selectActiveMods(
+  mods: readonly BundledMod[],
+  url: string,
+  enabled: Readonly<Record<string, boolean>>,
+  grants: Readonly<Record<string, readonly string[]>>,
+): {
+  readonly mods: ReadonlyArray<
+    BundledMod & { readonly grants: readonly CapabilityId[] }
+  >;
+} {
+  return {
+    mods: mods
+      .filter(
+        ({ manifest }) =>
+          (enabled[manifest.id] ?? true) &&
+          matchesAnyScope(manifest.scopes, url),
+      )
+      .map((mod) => ({
+        ...mod,
+        grants: (
+          grants[mod.manifest.id] ?? mod.manifest.capabilities.required
+        ).filter(isCapabilityId),
+      })),
+  };
 }
 
 export function updateOptionalGrant(
@@ -111,11 +144,7 @@ async function handleMessage(
     }));
   }
   if (message.type === "active-mods" && message.url !== undefined) {
-    return mods.filter(
-      ({ manifest }) =>
-        (enabled[manifest.id] ?? true) &&
-        matchesAnyScope(manifest.scopes, message.url ?? ""),
-    );
+    return selectActiveMods(mods, message.url, enabled, grants);
   }
   if (
     message.type === "set-enabled" &&
@@ -149,7 +178,11 @@ async function handleMessage(
   }
   const requestedTabId = message.tabId ?? tabId;
   if (message.type === "undo-last" && requestedTabId !== undefined) {
-    return { undone: undo.undoLast(requestedTabId) };
+    return forwardUndoToTab(
+      (targetTabId, targetMessage) =>
+        chrome.tabs.sendMessage(targetTabId, targetMessage),
+      requestedTabId,
+    );
   }
   return { ok: false };
 }

@@ -39,6 +39,10 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
     action: { default_popup: string };
     host_permissions?: string[];
     optional_host_permissions?: string[];
+    web_accessible_resources?: Array<{
+      resources: string[];
+      matches: string[];
+    }>;
   };
 
   expect(manifest.manifest_version).toBe(3);
@@ -54,6 +58,10 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
   expect(manifest.action.default_popup).toBe("popup.html");
   expect(manifest.host_permissions).toBeUndefined();
   expect(manifest.optional_host_permissions).toEqual(["<all_urls>"]);
+  expect(manifest.web_accessible_resources).toContainEqual({
+    resources: ["bundled-mods/*"],
+    matches: ["<all_urls>"],
+  });
 });
 
 test("popup ships controls for mods, optional grants, and undo", () => {
