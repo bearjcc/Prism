@@ -3,6 +3,9 @@ import type {
   BrokeredResponse,
   CapabilityId,
   PrismManifest,
+  RedditComment,
+  TrustedCommentsReplacement,
+  TrustedMessageReplacement,
   TrustedReplacement,
 } from "@prism/schema";
 import type { BundledMod, NativeMod } from "./loader.js";
@@ -12,17 +15,20 @@ import {
   extractYoutubeHome,
   findYoutubeHomeFeed,
 } from "./extractors/youtube-home.js";
-import { parseRedditComments } from "./extractors/reddit-comments.js";
+import { normaliseRedditPermalink } from "./extractors/reddit-comments.js";
 import { extractYoutubeWatch } from "./extractors/youtube-watch.js";
 import {
   type PrismApiHandlers,
   TabUndoStack,
 } from "./prism-api.js";
 
+export interface ContentRuntimeClient {
+  getURL(path: string): string;
+  sendMessage<T>(message: unknown): Promise<T>;
+}
+
 interface ContentRuntime {
-  readonly runtime: {
-    getURL(path: string): string;
-    sendMessage<T>(message: unknown): Promise<T>;
+  readonly runtime: ContentRuntimeClient & {
     readonly onMessage: {
       addListener(
         listener: (
@@ -157,11 +163,11 @@ export function createContentHandlers(
     status: 503,
     fields: { error: "Network broker unavailable" },
   }),
-  requestRedditHtml: (message: {
-    readonly type: "reddit-comments-html";
+  requestRedditComments: (message: {
+    readonly type: "reddit-comments-search";
     readonly modId: string;
     readonly query: string;
-  }) => Promise<{ readonly html: string }> = async () => {
+  }) => Promise<unknown> = async () => {
     throw new Error("Reddit comments extractor unavailable");
   },
 ): PrismApiHandlers {
@@ -185,18 +191,12 @@ export function createContentHandlers(
         ) {
           throw new Error("Reddit comment search query is required");
         }
-        const response = await requestRedditHtml({
-          type: "reddit-comments-html",
+        const response = await requestRedditComments({
+          type: "reddit-comments-search",
           modId: manifest.id,
           query: query.trim(),
         });
-        const view = contentDocument.defaultView;
-        if (view === null) {
-          throw new Error("HTML parser is not available");
-        }
-        return parseRedditComments(response.html, (html) =>
-          new view.DOMParser().parseFromString(html, "text/html"),
-        );
+        return readRedditCommentsExtraction(response);
       }
       throw new Error(`No extractor registered for ${capability}`);
     },
@@ -205,8 +205,19 @@ export function createContentHandlers(
       content: TrustedReplacement,
       manifest: PrismManifest,
     ): () => void {
-      if ("kind" in content) {
-        return replaceCommentsSlot(contentDocument, slot, content);
+      if (isRecord(content) && "kind" in content) {
+        return replaceCommentsSlot(
+          contentDocument,
+          slot,
+          readCommentsReplacement(slot, content, manifest),
+        );
+      }
+      if (
+        !isRecord(content) ||
+        typeof content.asset !== "string" ||
+        typeof content.alt !== "string"
+      ) {
+        throw new Error("Image replacement payload is invalid");
       }
       if (!manifest.assets?.includes(content.asset)) {
         throw new Error(
@@ -369,7 +380,7 @@ function findAdSlot(
 function replaceCommentsSlot(
   contentDocument: Document,
   slot: AdSlotHandle,
-  content: Extract<TrustedReplacement, { readonly kind: string }>,
+  content: TrustedCommentsReplacement | TrustedMessageReplacement,
 ): () => void {
   const fixtureElement = Array.from(
     contentDocument.querySelectorAll("[data-prism-comments-slot]"),
@@ -421,6 +432,97 @@ function replaceCommentsSlot(
   };
 }
 
+function readRedditCommentsExtraction(
+  value: unknown,
+): { readonly comments: readonly RedditComment[] } {
+  if (!isRecord(value) || !Array.isArray(value.comments)) {
+    if (isRecord(value) && value.status === 403) {
+      throw new Error("Reddit comments denied");
+    }
+    throw new Error("Invalid Reddit comments response");
+  }
+  return {
+    comments: value.comments.map((comment) => readRedditComment(comment)),
+  };
+}
+
+function readCommentsReplacement(
+  slot: AdSlotHandle,
+  content: Readonly<Record<string, unknown>>,
+  manifest: PrismManifest,
+): TrustedCommentsReplacement | TrustedMessageReplacement {
+  if (slot.id !== "youtube-comments") {
+    throw new Error("Comments replacement requires slot youtube-comments");
+  }
+  if (
+    !manifest.capabilities.optional?.includes("reddit.comments.search") ||
+    !manifest.capabilities.required.includes("youtube.watch.videoId")
+  ) {
+    throw new Error(
+      "Comments replacement requires reddit.comments.search and youtube.watch.videoId",
+    );
+  }
+  if (content.kind === "message") {
+    if (typeof content.message !== "string") {
+      throw new Error("Comments replacement message is invalid");
+    }
+    return { kind: "message", message: content.message };
+  }
+  if (content.kind === "comments") {
+    if (
+      typeof content.heading !== "string" ||
+      !Array.isArray(content.comments)
+    ) {
+      throw new Error("Comments replacement payload is invalid");
+    }
+    return {
+      kind: "comments",
+      heading: content.heading,
+      comments: content.comments.map((comment) => readRedditComment(comment)),
+    };
+  }
+  throw new Error("Unsupported comments replacement kind");
+}
+
+function readRedditComment(value: unknown): RedditComment {
+  if (
+    !isRecord(value) ||
+    typeof value.author !== "string" ||
+    typeof value.body !== "string" ||
+    typeof value.permalink !== "string"
+  ) {
+    throw new Error("Reddit comment is invalid");
+  }
+  const permalink = normaliseRedditPermalink(value.permalink);
+  if (permalink === undefined) {
+    throw new Error("Reddit permalink must use HTTPS on reddit.com");
+  }
+  return {
+    author: value.author,
+    body: value.body,
+    permalink,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function createChromeContentHandlers(
+  contentDocument: Document,
+  runtime: ContentRuntimeClient,
+): PrismApiHandlers {
+  return createContentHandlers(
+    contentDocument,
+    (modId, asset) =>
+      runtime.getURL(
+        `bundled-mods/${encodeURIComponent(modId)}/${asset}`,
+      ),
+    (message) => runtime.sendMessage<BrokeredResponse>(message),
+    (message) => runtime.sendMessage<unknown>(message),
+  );
+}
+
 if (typeof chrome !== "undefined") {
   const undo = new TabUndoStack();
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -435,14 +537,7 @@ if (typeof chrome !== "undefined") {
       }),
     loadEntry: async (entry) =>
       import(chrome.runtime.getURL(entry)) as Promise<ContentModModule>,
-    handlers: createContentHandlers(
-      document,
-      (modId, asset) =>
-        chrome.runtime.getURL(
-          `bundled-mods/${encodeURIComponent(modId)}/${asset}`,
-        ),
-      (message) => chrome.runtime.sendMessage<BrokeredResponse>(message),
-    ),
+    handlers: createChromeContentHandlers(document, chrome.runtime),
     undo,
     contentDocument: document,
   });

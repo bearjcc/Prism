@@ -90,7 +90,18 @@ function readPermalink(element: Element): string | undefined {
     return undefined;
   }
 
-  const url = new URL(href, "https://www.reddit.com/");
+  return normaliseRedditPermalink(href);
+}
+
+export function normaliseRedditPermalink(
+  href: string,
+): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(href, "https://www.reddit.com/");
+  } catch {
+    return undefined;
+  }
   if (
     url.protocol !== "https:" ||
     (url.hostname !== "reddit.com" && !url.hostname.endsWith(".reddit.com"))

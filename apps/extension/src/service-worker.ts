@@ -4,13 +4,17 @@ import type {
   PrismManifest,
 } from "@prism/schema";
 import { isCapabilityId } from "@prism/schema/capabilities";
+import { DOMParser } from "linkedom/worker";
 import {
   type DynamicRulesApi,
   syncBrowserBlockRules,
 } from "./dnr.js";
 import type { BundledMod } from "./loader.js";
 import { matchesAnyScope, parseBundledMods } from "./loader.js";
-import { createRedditCommentSearchUrl } from "./extractors/reddit-comments.js";
+import {
+  createRedditCommentSearchUrl,
+  parseRedditComments,
+} from "./extractors/reddit-comments.js";
 
 interface RuntimeMessage {
   readonly type: string;
@@ -220,7 +224,7 @@ export async function handleRuntimeMessage(
     return { ok: true };
   }
   if (
-    message.type === "reddit-comments-html" &&
+    message.type === "reddit-comments-search" &&
     message.modId !== undefined &&
     message.query !== undefined
   ) {
@@ -236,9 +240,10 @@ export async function handleRuntimeMessage(
     ) {
       return { status: 403, error: "Reddit comments denied" };
     }
-    return {
-      html: await dependencies.fetchRedditHtml(message.query),
-    };
+    return parseRedditComments(
+      await dependencies.fetchRedditHtml(message.query),
+      parseRedditDocument,
+    );
   }
   if (
     message.type === "network-request" &&
@@ -318,6 +323,13 @@ async function fetchRedditCommentsHtml(query: string): Promise<string> {
     throw new Error(`Reddit comment search failed: ${response.status}`);
   }
   return response.text();
+}
+
+function parseRedditDocument(html: string): Document {
+  return new DOMParser().parseFromString(
+    html,
+    "text/html",
+  ) as unknown as Document;
 }
 
 async function readBundledBrowserFilter(

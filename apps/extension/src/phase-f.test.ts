@@ -10,7 +10,10 @@ import {
 } from "@prism/schema";
 import { describe, expect, test, vi } from "vitest";
 import { activate as activateYoutubeRedditMod } from "../../../mods/youtube-reddit-comments/src/index.js";
-import { createContentHandlers } from "./content-script.js";
+import {
+  createChromeContentHandlers,
+  createContentHandlers,
+} from "./content-script.js";
 import { applyOptionalCapabilityChange } from "./popup.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 import {
@@ -86,12 +89,28 @@ describe("Phase F Reddit comments on YouTube", () => {
       url: "https://www.youtube.com/watch?v=fixture-video-id",
     });
     const manifest = loadUnpackedMod(modRoot).manifest;
-    const requestRedditHtml = vi.fn().mockResolvedValue({ html: redditFixture });
+    const comments = {
+      comments: [
+        {
+          author: "alice",
+          body: "The first fixture comment.",
+          permalink:
+            "https://www.reddit.com/r/videos/comments/abc/post/one/",
+        },
+        {
+          author: "bob",
+          body: "A second comment with useful detail.",
+          permalink:
+            "https://www.reddit.com/r/videos/comments/abc/post/two/",
+        },
+      ],
+    };
+    const requestRedditComments = vi.fn().mockResolvedValue(comments);
     const handlers = createContentHandlers(
       dom.window.document,
       undefined,
       undefined,
-      requestRedditHtml,
+      requestRedditComments,
     );
     const extract = vi.fn(handlers.extract);
     const prism = createPrismApi({
@@ -106,8 +125,8 @@ describe("Phase F Reddit comments on YouTube", () => {
 
     await activateYoutubeRedditMod(prism);
 
-    expect(requestRedditHtml).toHaveBeenCalledWith({
-      type: "reddit-comments-html",
+    expect(requestRedditComments).toHaveBeenCalledWith({
+      type: "reddit-comments-search",
       modId: manifest.id,
       query: "fixture-video-id",
     });
@@ -125,9 +144,42 @@ describe("Phase F Reddit comments on YouTube", () => {
         ),
       ).map((element) => element.textContent),
     ).toEqual(["alice", "bob"]);
-    expect(dom.window.document.body.innerHTML).not.toContain(
-      "data-testid=\"comment\"",
-    );
+    expect(dom.window.document.body.innerHTML).not.toContain("data-testid");
+  });
+
+  test("production content wiring requests comment JSON from the service worker", async () => {
+    const dom = new JSDOM(watchFixture, {
+      url: "https://www.youtube.com/watch?v=fixture-video-id",
+    });
+    const manifest = loadUnpackedMod(modRoot).manifest;
+    const extraction = {
+      comments: [
+        {
+          author: "alice",
+          body: "Worker parsed comment.",
+          permalink:
+            "https://www.reddit.com/r/videos/comments/abc/post/one/",
+        },
+      ],
+    };
+    const sendMessage = vi.fn().mockResolvedValue(extraction);
+    const handlers = createChromeContentHandlers(dom.window.document, {
+      getURL: vi.fn((path: string) => `chrome-extension://fixture/${path}`),
+      sendMessage,
+    });
+
+    await expect(
+      handlers.extract?.(
+        "reddit.comments.search",
+        { query: " fixture-video-id " },
+        manifest,
+      ),
+    ).resolves.toEqual(extraction);
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: "reddit-comments-search",
+      modId: manifest.id,
+      query: "fixture-video-id",
+    });
   });
 
   test("mod source has no page, fetch, or raw HTML primitive", () => {
@@ -214,7 +266,7 @@ describe("Phase F Reddit comments on YouTube", () => {
     await expect(
       handleRuntimeMessage(
         {
-          type: "reddit-comments-html",
+          type: "reddit-comments-search",
           modId: manifest.id,
           query: "fixture-video-id",
         },
@@ -222,7 +274,11 @@ describe("Phase F Reddit comments on YouTube", () => {
         mods,
         dependencies,
       ),
-    ).resolves.toEqual({ html: redditFixture });
+    ).resolves.toEqual({
+      comments: expect.arrayContaining([
+        expect.objectContaining({ author: "alice" }),
+      ]),
+    });
     expect(fetchRedditHtml).toHaveBeenCalledWith("fixture-video-id");
 
     const deniedDependencies: ServiceWorkerDependencies = {
@@ -236,7 +292,7 @@ describe("Phase F Reddit comments on YouTube", () => {
     await expect(
       handleRuntimeMessage(
         {
-          type: "reddit-comments-html",
+          type: "reddit-comments-search",
           modId: manifest.id,
           query: "fixture-video-id",
         },
@@ -246,6 +302,73 @@ describe("Phase F Reddit comments on YouTube", () => {
       ),
     ).resolves.toEqual({ status: 403, error: "Reddit comments denied" });
     expect(fetchRedditHtml).not.toHaveBeenCalled();
+  });
+
+  test("comment replacement rejects unknown kinds and unsafe permalinks", () => {
+    const dom = new JSDOM(watchFixture, {
+      url: "https://www.youtube.com/watch?v=fixture-video-id",
+    });
+    const manifest = loadUnpackedMod(modRoot).manifest;
+    const replaceSlot = createContentHandlers(dom.window.document).replaceSlot;
+    const slot = { id: "youtube-comments" };
+
+    expect(() =>
+      replaceSlot?.(
+        slot,
+        {
+          kind: "comments",
+          heading: "Reddit comments",
+          comments: [
+            {
+              author: "mallory",
+              body: "Unsafe link",
+              permalink: "javascript:alert(1)",
+            },
+          ],
+        },
+        manifest,
+      ),
+    ).toThrow("Reddit permalink");
+    expect(() =>
+      replaceSlot?.(
+        slot,
+        { kind: "advert", href: "https://example.com/" } as unknown as TrustedReplacement,
+        manifest,
+      ),
+    ).toThrow("replacement kind");
+    expect(
+      dom.window.document.querySelector("[data-prism-comments-slot]")
+        ?.textContent,
+    ).toContain("Original YouTube comments");
+    expect(dom.window.document.querySelector("a")).toBeNull();
+  });
+
+  test("comment payloads are limited to the YouTube comments surface", () => {
+    const dom = new JSDOM(watchFixture, {
+      url: "https://www.youtube.com/watch?v=fixture-video-id",
+    });
+    const manifest = loadUnpackedMod(modRoot).manifest;
+    const replaceSlot = createContentHandlers(dom.window.document).replaceSlot;
+
+    expect(() =>
+      replaceSlot?.(
+        { id: "other-slot" },
+        { kind: "message", message: "Unexpected replacement" },
+        manifest,
+      ),
+    ).toThrow("youtube-comments");
+    expect(() =>
+      replaceSlot?.(
+        { id: "youtube-comments" },
+        { kind: "message", message: "Unexpected replacement" },
+        {
+          ...manifest,
+          capabilities: {
+            required: ["visual.ad-slot.replace"],
+          },
+        },
+      ),
+    ).toThrow("reddit.comments.search");
   });
 
   test("comment replacement accepts JSON data, not markup", async () => {

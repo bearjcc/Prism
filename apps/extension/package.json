@@ -14,6 +14,7 @@
   },
   "files": ["dist"],
   "dependencies": {
-    "@prism/schema": "*"
+    "@prism/schema": "*",
+    "linkedom": "^0.18.13"
   }
 }
