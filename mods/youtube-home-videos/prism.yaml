@@ -1,0 +1,10 @@
+id: prism.youtube-home-videos
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - youtube.home.allowlist
+scopes:
+  - https://www.youtube.com/
+fixtures:
+  - fixtures/home.html

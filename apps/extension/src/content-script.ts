@@ -9,6 +9,10 @@ import type { BundledMod, NativeMod } from "./loader.js";
 import { loadNativeMods, type ModLoadState } from "./loader.js";
 import { extractAdSlots } from "./extractors/ad-slot.js";
 import {
+  extractYoutubeHome,
+  findYoutubeHomeFeed,
+} from "./extractors/youtube-home.js";
+import {
   type PrismApiHandlers,
   TabUndoStack,
 } from "./prism-api.js";
@@ -55,9 +59,11 @@ export interface ActivateContentModsOptions {
   readonly undo: TabUndoStack;
   readonly contentDocument?: Document;
   readonly adSlotWaitMs?: number;
+  readonly youtubeHomeWaitMs?: number;
 }
 
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
+export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
 
 const CONTENT_TAB_STACK = 0;
 
@@ -75,14 +81,29 @@ export async function activateContentMods(
     return {
       manifest,
       load: async () => {
-        if (
-          options.contentDocument !== undefined &&
-          manifest.capabilities.required.includes("visual.ad-slot.replace")
-        ) {
-          await waitForAdSlot(
-            options.contentDocument,
-            options.adSlotWaitMs ?? DEFAULT_AD_SLOT_WAIT_MS,
-          );
+        if (options.contentDocument !== undefined) {
+          const waits: Promise<void>[] = [];
+          if (
+            manifest.capabilities.required.includes("visual.ad-slot.replace")
+          ) {
+            waits.push(
+              waitForAdSlot(
+                options.contentDocument,
+                options.adSlotWaitMs ?? DEFAULT_AD_SLOT_WAIT_MS,
+              ),
+            );
+          }
+          if (
+            manifest.capabilities.required.includes("youtube.home.allowlist")
+          ) {
+            waits.push(
+              waitForYoutubeHomeFeed(
+                options.contentDocument,
+                options.youtubeHomeWaitMs ?? DEFAULT_YOUTUBE_HOME_WAIT_MS,
+              ),
+            );
+          }
+          await Promise.all(waits);
         }
         return options.loadEntry(entry);
       },
@@ -166,6 +187,38 @@ export function createContentHandlers(
       root.append(style);
       return () => style.remove();
     },
+    allowlist(surface, itemType): () => void {
+      if (surface !== "youtube.home" || itemType !== "video") {
+        throw new Error(`Unsupported allowlist ${surface}.${itemType}`);
+      }
+      const feed = findYoutubeHomeFeed(contentDocument);
+      if (feed === undefined) {
+        return () => {};
+      }
+
+      const previousChildren = Array.from(feed.childNodes);
+      const tiles = extractYoutubeHome(contentDocument).videos.map((video) => {
+        const tile = contentDocument.createElement("article");
+        tile.dataset.prismOwned = "youtube-home-video";
+        tile.dataset.videoId = video.id;
+        const link = contentDocument.createElement("a");
+        link.href = video.href;
+        link.textContent = video.title;
+        tile.append(link);
+        return tile;
+      });
+      feed.replaceChildren(...tiles);
+
+      return () => {
+        const currentChildren = Array.from(feed.childNodes);
+        if (
+          currentChildren.length === tiles.length &&
+          currentChildren.every((child, index) => child === tiles[index])
+        ) {
+          feed.replaceChildren(...previousChildren);
+        }
+      };
+    },
     request(contractId, manifest): Promise<BrokeredResponse> {
       return requestBroker({
         type: "network-request",
@@ -180,18 +233,38 @@ export function waitForAdSlot(
   contentDocument: Document,
   timeoutMs: number = DEFAULT_AD_SLOT_WAIT_MS,
 ): Promise<void> {
-  if (
-    timeoutMs <= 0 ||
-    contentDocument.querySelector("[data-prism-ad-slot]") !== null
-  ) {
+  return waitForSelector(contentDocument, "[data-prism-ad-slot]", timeoutMs);
+}
+
+export function waitForYoutubeHomeFeed(
+  contentDocument: Document,
+  timeoutMs: number = DEFAULT_YOUTUBE_HOME_WAIT_MS,
+): Promise<void> {
+  return waitForSelector(
+    contentDocument,
+    "ytd-rich-grid-renderer #contents",
+    timeoutMs,
+  );
+}
+
+function waitForSelector(
+  contentDocument: Document,
+  selector: string,
+  timeoutMs: number,
+): Promise<void> {
+  if (timeoutMs <= 0 || contentDocument.querySelector(selector) !== null) {
     return Promise.resolve();
   }
 
   return new Promise((resolve) => {
     const view = contentDocument.defaultView;
+    if (view === null) {
+      resolve();
+      return;
+    }
+
     let settled = false;
     let observer: MutationObserver | undefined;
-    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const finish = (): void => {
       if (settled) {
@@ -199,27 +272,21 @@ export function waitForAdSlot(
       }
       settled = true;
       observer?.disconnect();
-      if (timer !== undefined) {
-        view?.clearTimeout(timer);
-      }
+      view.clearTimeout(timer);
       resolve();
     };
 
-    const MutationObserverCtor = view?.MutationObserver;
+    const MutationObserverCtor = view.MutationObserver;
     if (MutationObserverCtor !== undefined) {
       observer = new MutationObserverCtor(() => {
-        if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
+        if (contentDocument.querySelector(selector) !== null) {
           finish();
         }
       });
       observer.observe(contentDocument, { childList: true, subtree: true });
     }
 
-    if (view === undefined) {
-      finish();
-      return;
-    }
-    timer = view.setTimeout(finish, timeoutMs);
+    const timer = view.setTimeout(finish, timeoutMs);
   });
 }
 

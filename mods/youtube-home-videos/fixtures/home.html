@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>YouTube Home videos-only fixture</title>
+  </head>
+  <body>
+    <ytd-rich-grid-renderer>
+      <div id="contents">
+        <ytd-rich-item-renderer data-fixture-kind="video">
+          <ytd-rich-grid-media>
+            <a id="thumbnail" href="/watch?v=video-alpha"></a>
+            <a id="video-title-link" href="/watch?v=video-alpha">
+              <span id="video-title">Alpha video</span>
+            </a>
+          </ytd-rich-grid-media>
+        </ytd-rich-item-renderer>
+        <ytd-rich-section-renderer data-fixture-kind="shorts">
+          <ytd-rich-shelf-renderer is-shorts>
+            <a href="/shorts/short-one">Short one</a>
+          </ytd-rich-shelf-renderer>
+        </ytd-rich-section-renderer>
+        <ytd-ad-slot-renderer data-fixture-kind="ad">
+          <a href="https://ads.example.test/promotion">Sponsored promotion</a>
+        </ytd-ad-slot-renderer>
+        <ytd-rich-item-renderer data-fixture-kind="post">
+          <ytd-backstage-post-thread-renderer>
+            <p>Creator community post</p>
+          </ytd-backstage-post-thread-renderer>
+        </ytd-rich-item-renderer>
+        <ytd-rich-item-renderer data-fixture-kind="poll">
+          <ytd-backstage-post-thread-renderer>
+            <ytd-poll-renderer>Which video next?</ytd-poll-renderer>
+          </ytd-backstage-post-thread-renderer>
+        </ytd-rich-item-renderer>
+        <ytd-rich-section-renderer data-fixture-kind="non-video-shelf">
+          <ytd-rich-shelf-renderer>
+            <h2>Latest posts</h2>
+          </ytd-rich-shelf-renderer>
+        </ytd-rich-section-renderer>
+        <ytd-rich-item-renderer data-fixture-kind="video">
+          <ytd-rich-grid-media>
+            <a id="thumbnail" href="/watch?v=video-beta"></a>
+            <a id="video-title-link" href="/watch?v=video-beta">
+              <span id="video-title">Beta video</span>
+            </a>
+          </ytd-rich-grid-media>
+        </ytd-rich-item-renderer>
+      </div>
+    </ytd-rich-grid-renderer>
+  </body>
+</html>
