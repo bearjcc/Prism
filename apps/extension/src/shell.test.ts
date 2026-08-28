@@ -59,7 +59,9 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
   expect(manifest.action.default_popup).toBe("popup.html");
   expect(manifest.permissions).toContain("declarativeNetRequest");
   expect(manifest.host_permissions).toBeUndefined();
-  expect(manifest.optional_host_permissions).toEqual(["<all_urls>"]);
+  expect(manifest.optional_host_permissions).toEqual([
+    "https://www.reddit.com/*",
+  ]);
   expect(manifest.web_accessible_resources).toContainEqual({
     resources: ["bundled-mods/*"],
     matches: ["<all_urls>"],

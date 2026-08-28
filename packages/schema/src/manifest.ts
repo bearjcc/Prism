@@ -35,10 +35,32 @@ export interface AdSlotHandle {
   readonly id: string;
 }
 
-export interface TrustedReplacement {
+export interface TrustedImageReplacement {
   readonly asset: string;
   readonly alt: string;
 }
+
+export interface RedditComment {
+  readonly author: string;
+  readonly body: string;
+  readonly permalink: string;
+}
+
+export interface TrustedCommentsReplacement {
+  readonly kind: "comments";
+  readonly heading: string;
+  readonly comments: readonly RedditComment[];
+}
+
+export interface TrustedMessageReplacement {
+  readonly kind: "message";
+  readonly message: string;
+}
+
+export type TrustedReplacement =
+  | TrustedImageReplacement
+  | TrustedCommentsReplacement
+  | TrustedMessageReplacement;
 
 export type SurfaceId = string;
 export type ItemType = string;

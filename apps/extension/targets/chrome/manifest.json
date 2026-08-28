@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Run capability-scoped Prism mods.",
   "permissions": ["activeTab", "declarativeNetRequest", "storage"],
-  "optional_host_permissions": ["<all_urls>"],
+  "optional_host_permissions": ["https://www.reddit.com/*"],
   "web_accessible_resources": [
     {
       "resources": ["bundled-mods/*"],

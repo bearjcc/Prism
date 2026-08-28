@@ -10,6 +10,7 @@ import {
 } from "./dnr.js";
 import type { BundledMod } from "./loader.js";
 import { matchesAnyScope, parseBundledMods } from "./loader.js";
+import { createRedditCommentSearchUrl } from "./extractors/reddit-comments.js";
 
 interface RuntimeMessage {
   readonly type: string;
@@ -20,6 +21,7 @@ interface RuntimeMessage {
   readonly url?: string;
   readonly tabId?: number;
   readonly contractId?: string;
+  readonly query?: string;
 }
 
 export interface StoredState {
@@ -68,6 +70,7 @@ export interface ServiceWorkerDependencies {
     enabled: Readonly<Record<string, boolean>>,
     grants: Readonly<Record<string, readonly string[]>>,
   ) => Promise<void>;
+  readonly fetchRedditHtml?: (query: string) => Promise<string>;
 }
 
 export async function loadBundledModIndex(
@@ -217,6 +220,27 @@ export async function handleRuntimeMessage(
     return { ok: true };
   }
   if (
+    message.type === "reddit-comments-html" &&
+    message.modId !== undefined &&
+    message.query !== undefined
+  ) {
+    const manifest = mods.find(
+      (mod) => mod.manifest.id === message.modId,
+    )?.manifest;
+    if (
+      manifest === undefined ||
+      enabled[message.modId] === false ||
+      !manifest.capabilities.optional?.includes("reddit.comments.search") ||
+      !grants[message.modId]?.includes("reddit.comments.search") ||
+      dependencies.fetchRedditHtml === undefined
+    ) {
+      return { status: 403, error: "Reddit comments denied" };
+    }
+    return {
+      html: await dependencies.fetchRedditHtml(message.query),
+    };
+  }
+  if (
     message.type === "network-request" &&
     message.modId !== undefined &&
     message.contractId !== undefined
@@ -282,7 +306,18 @@ function createChromeDependencies(): ServiceWorkerDependencies {
         readBundledBrowserFilter,
         chrome.declarativeNetRequest,
       ),
+    fetchRedditHtml: fetchRedditCommentsHtml,
   };
+}
+
+async function fetchRedditCommentsHtml(query: string): Promise<string> {
+  const response = await fetch(createRedditCommentSearchUrl(query), {
+    credentials: "omit",
+  });
+  if (!response.ok) {
+    throw new Error(`Reddit comment search failed: ${response.status}`);
+  }
+  return response.text();
 }
 
 async function readBundledBrowserFilter(

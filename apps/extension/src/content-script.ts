@@ -12,6 +12,8 @@ import {
   extractYoutubeHome,
   findYoutubeHomeFeed,
 } from "./extractors/youtube-home.js";
+import { parseRedditComments } from "./extractors/reddit-comments.js";
+import { extractYoutubeWatch } from "./extractors/youtube-watch.js";
 import {
   type PrismApiHandlers,
   TabUndoStack,
@@ -60,10 +62,14 @@ export interface ActivateContentModsOptions {
   readonly contentDocument?: Document;
   readonly adSlotWaitMs?: number;
   readonly youtubeHomeWaitMs?: number;
+  readonly youtubeWatchWaitMs?: number;
 }
 
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
+export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 2_000;
+const YOUTUBE_COMMENTS_SELECTOR =
+  "[data-prism-comments-slot], ytd-comments#comments";
 
 const CONTENT_TAB_STACK = 0;
 
@@ -100,6 +106,16 @@ export async function activateContentMods(
               waitForYoutubeHomeFeed(
                 options.contentDocument,
                 options.youtubeHomeWaitMs ?? DEFAULT_YOUTUBE_HOME_WAIT_MS,
+              ),
+            );
+          }
+          if (
+            manifest.capabilities.required.includes("youtube.watch.videoId")
+          ) {
+            waits.push(
+              waitForYoutubeCommentsSlot(
+                options.contentDocument,
+                options.youtubeWatchWaitMs ?? DEFAULT_YOUTUBE_WATCH_WAIT_MS,
               ),
             );
           }
@@ -141,19 +157,57 @@ export function createContentHandlers(
     status: 503,
     fields: { error: "Network broker unavailable" },
   }),
+  requestRedditHtml: (message: {
+    readonly type: "reddit-comments-html";
+    readonly modId: string;
+    readonly query: string;
+  }) => Promise<{ readonly html: string }> = async () => {
+    throw new Error("Reddit comments extractor unavailable");
+  },
 ): PrismApiHandlers {
   return {
-    async extract(capability): Promise<unknown> {
-      if (capability !== "visual.ad-slot.replace") {
-        throw new Error(`No extractor registered for ${capability}`);
+    async extract(capability, input, manifest): Promise<unknown> {
+      if (capability === "visual.ad-slot.replace") {
+        return extractAdSlots(contentDocument);
       }
-      return extractAdSlots(contentDocument);
+      if (capability === "youtube.watch.videoId") {
+        return extractYoutubeWatch(
+          contentDocument.location.href,
+          contentDocument,
+        );
+      }
+      if (capability === "reddit.comments.search") {
+        const query = input?.query;
+        if (
+          typeof query !== "string" ||
+          query.trim() === "" ||
+          manifest === undefined
+        ) {
+          throw new Error("Reddit comment search query is required");
+        }
+        const response = await requestRedditHtml({
+          type: "reddit-comments-html",
+          modId: manifest.id,
+          query: query.trim(),
+        });
+        const view = contentDocument.defaultView;
+        if (view === null) {
+          throw new Error("HTML parser is not available");
+        }
+        return parseRedditComments(response.html, (html) =>
+          new view.DOMParser().parseFromString(html, "text/html"),
+        );
+      }
+      throw new Error(`No extractor registered for ${capability}`);
     },
     replaceSlot(
       slot: AdSlotHandle,
       content: TrustedReplacement,
       manifest: PrismManifest,
     ): () => void {
+      if ("kind" in content) {
+        return replaceCommentsSlot(contentDocument, slot, content);
+      }
       if (!manifest.assets?.includes(content.asset)) {
         throw new Error(
           `Asset ${content.asset} is not declared by ${manifest.id}`,
@@ -247,6 +301,17 @@ export function waitForYoutubeHomeFeed(
   );
 }
 
+export function waitForYoutubeCommentsSlot(
+  contentDocument: Document,
+  timeoutMs: number = DEFAULT_YOUTUBE_WATCH_WAIT_MS,
+): Promise<void> {
+  return waitForSelector(
+    contentDocument,
+    YOUTUBE_COMMENTS_SELECTOR,
+    timeoutMs,
+  );
+}
+
 function waitForSelector(
   contentDocument: Document,
   selector: string,
@@ -299,6 +364,61 @@ function findAdSlot(
   ).find(
     (element) => element.getAttribute("data-prism-ad-slot")?.trim() === slot.id,
   );
+}
+
+function replaceCommentsSlot(
+  contentDocument: Document,
+  slot: AdSlotHandle,
+  content: Extract<TrustedReplacement, { readonly kind: string }>,
+): () => void {
+  const fixtureElement = Array.from(
+    contentDocument.querySelectorAll("[data-prism-comments-slot]"),
+  ).find(
+    (candidate) =>
+      candidate.getAttribute("data-prism-comments-slot")?.trim() === slot.id,
+  );
+  const element =
+    fixtureElement ??
+    (slot.id === "youtube-comments"
+      ? (contentDocument.querySelector("ytd-comments#comments") ?? undefined)
+      : undefined);
+  if (element === undefined) {
+    throw new Error(`Comments slot ${slot.id} is not available`);
+  }
+
+  const previousChildren = Array.from(element.childNodes);
+  const replacement = contentDocument.createElement("section");
+  replacement.dataset.prismOwned = "youtube-reddit-comments";
+  if (content.kind === "message") {
+    const message = contentDocument.createElement("p");
+    message.dataset.prismCommentsFallback = "true";
+    message.textContent = content.message;
+    replacement.append(message);
+  } else {
+    const heading = contentDocument.createElement("h2");
+    heading.textContent = content.heading;
+    replacement.append(heading);
+    for (const comment of content.comments) {
+      const article = contentDocument.createElement("article");
+      article.dataset.prismRedditComment = "true";
+      const author = contentDocument.createElement("strong");
+      author.textContent = comment.author;
+      const body = contentDocument.createElement("p");
+      body.textContent = comment.body;
+      const link = contentDocument.createElement("a");
+      link.href = comment.permalink;
+      link.textContent = "Open on Reddit";
+      article.append(author, body, link);
+      replacement.append(article);
+    }
+  }
+  element.replaceChildren(replacement);
+
+  return () => {
+    if (replacement.parentNode === element) {
+      element.replaceChildren(...previousChildren);
+    }
+  };
 }
 
 if (typeof chrome !== "undefined") {

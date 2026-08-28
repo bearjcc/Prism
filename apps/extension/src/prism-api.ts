@@ -28,6 +28,7 @@ export interface PrismApiHandlers {
   readonly extract?: (
     capability: CapabilityId,
     input?: Readonly<Record<string, unknown>>,
+    manifest?: PrismManifest,
   ) => Promise<unknown>;
   readonly request?: (
     contractId: string,
@@ -100,7 +101,7 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
       if (options.handlers.extract === undefined) {
         throw new Error(`No extractor registered for ${capability}`);
       }
-      return options.handlers.extract(capability, input);
+      return options.handlers.extract(capability, input, options.manifest);
     },
     net: {
       async request(contractId): Promise<BrokeredResponse> {

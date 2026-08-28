@@ -10,6 +10,9 @@ interface PopupChromeApi {
   readonly runtime: {
     sendMessage<T>(message: unknown): Promise<T>;
   };
+  readonly permissions: {
+    request(permissions: { origins: string[] }): Promise<boolean>;
+  };
   readonly tabs: {
     query(query: { active: true; currentWindow: true }): Promise<
       Array<{ id?: number }>
@@ -19,23 +22,58 @@ interface PopupChromeApi {
 
 declare const chrome: PopupChromeApi;
 
-const modsRoot = requiredElement("mods");
-const undoButton = requiredElement("undo");
+const REDDIT_ORIGINS = ["https://www.reddit.com/*"];
 
-undoButton.addEventListener("click", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id !== undefined) {
-    await chrome.runtime.sendMessage({
-      type: "undo-last",
-      tabId: tab.id,
-    });
+if (typeof document !== "undefined" && typeof chrome !== "undefined") {
+  initialisePopup(chrome, document);
+}
+
+export async function applyOptionalCapabilityChange(
+  api: Pick<PopupChromeApi, "permissions" | "runtime">,
+  modId: string,
+  capability: CapabilityId,
+  granted: boolean,
+): Promise<boolean> {
+  if (
+    granted &&
+    capability === "reddit.comments.search" &&
+    !(await api.permissions.request({ origins: REDDIT_ORIGINS }))
+  ) {
+    return false;
   }
-});
+  await api.runtime.sendMessage({
+    type: "set-capability",
+    modId,
+    capability,
+    granted,
+  });
+  return true;
+}
 
-void renderMods();
+function initialisePopup(api: PopupChromeApi, popupDocument: Document): void {
+  const modsRoot = requiredElement(popupDocument, "mods");
+  const undoButton = requiredElement(popupDocument, "undo");
 
-async function renderMods(): Promise<void> {
-  const mods = await chrome.runtime.sendMessage<PopupMod[]>({
+  undoButton.addEventListener("click", async () => {
+    const [tab] = await api.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab?.id !== undefined) {
+      await api.runtime.sendMessage({
+        type: "undo-last",
+        tabId: tab.id,
+      });
+    }
+  });
+  void renderMods(api, modsRoot);
+}
+
+async function renderMods(
+  api: PopupChromeApi,
+  modsRoot: HTMLElement,
+): Promise<void> {
+  const mods = await api.runtime.sendMessage<PopupMod[]>({
     type: "list-mods",
   });
   modsRoot.replaceChildren();
@@ -44,11 +82,11 @@ async function renderMods(): Promise<void> {
     return;
   }
   for (const mod of mods) {
-    modsRoot.append(renderMod(mod));
+    modsRoot.append(renderMod(api, mod));
   }
 }
 
-function renderMod(mod: PopupMod): HTMLElement {
+function renderMod(api: PopupChromeApi, mod: PopupMod): HTMLElement {
   const section = document.createElement("section");
   section.className = "mod";
 
@@ -57,11 +95,11 @@ function renderMod(mod: PopupMod): HTMLElement {
   const name = document.createElement("h2");
   name.textContent = mod.manifest.id;
   const enabled = checkbox("Enabled", mod.enabled, async (checked) => {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await api.tabs.query({
       active: true,
       currentWindow: true,
     });
-    await chrome.runtime.sendMessage({
+    await api.runtime.sendMessage({
       type: "set-enabled",
       modId: mod.manifest.id,
       enabled: checked,
@@ -85,12 +123,12 @@ function renderMod(mod: PopupMod): HTMLElement {
         capability,
         mod.grants.includes(capability),
         async (granted) => {
-          await chrome.runtime.sendMessage({
-            type: "set-capability",
-            modId: mod.manifest.id,
+          return applyOptionalCapabilityChange(
+            api,
+            mod.manifest.id,
             capability,
             granted,
-          });
+          );
         },
       ),
     );
@@ -102,7 +140,7 @@ function renderMod(mod: PopupMod): HTMLElement {
 function checkbox(
   labelText: string,
   checked: boolean,
-  onChange: (checked: boolean) => Promise<void>,
+  onChange: (checked: boolean) => Promise<boolean | void>,
 ): HTMLLabelElement {
   const label = document.createElement("label");
   const text = document.createElement("span");
@@ -111,14 +149,19 @@ function checkbox(
   input.type = "checkbox";
   input.checked = checked;
   input.addEventListener("change", () => {
-    void onChange(input.checked);
+    const requested = input.checked;
+    void onChange(requested).then((accepted) => {
+      if (accepted === false) {
+        input.checked = !requested;
+      }
+    });
   });
   label.append(text, input);
   return label;
 }
 
-function requiredElement(id: string): HTMLElement {
-  const element = document.getElementById(id);
+function requiredElement(popupDocument: Document, id: string): HTMLElement {
+  const element = popupDocument.getElementById(id);
   if (element === null) {
     throw new Error(`Missing popup element ${id}`);
   }
