@@ -11,3 +11,11 @@ Start here:
 Do not implement `apps/native`, gateway, `apps/web`, or a TLS proxy.
 
 ASCII in tracked files. NZ/GB spelling in prose. AGPL-3.0-only.
+
+Before claiming work finished or a bug fixed, run from the repo root:
+
+1. `npm run build`
+2. `npm test`
+3. `npm run test:e2e` (Playwright; install once with `npx playwright install chromium`)
+
+`test:e2e` is not part of `build`. The user may waive e2e if Chrome cannot run.

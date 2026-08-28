@@ -11,3 +11,7 @@ dist/
 apps/extension/targets/chrome/bundled-mods.json
 apps/extension/targets/chrome/bundled-mods/
 
+playwright-report/
+test-results/
+blob-report/
+

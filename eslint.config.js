@@ -8,6 +8,8 @@ export default tseslint.config(
       "**/node_modules/**",
       "References/**",
       "vitest.config.ts",
+      "playwright-report/**",
+      "test-results/**",
     ],
   },
   eslint.configs.recommended,

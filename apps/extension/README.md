@@ -24,6 +24,12 @@ That writes the service worker, content script, popup, and bundled tracers into 
 
 Rebuild after mod or extension source changes, then click Reload on the extension card.
 
+## Automated Chromium tests
+
+Unit tests (`npm test`) do not launch a browser.
+
+After `npm run build`, run `npm run test:e2e`. That starts Playwright, loads `targets/chrome` unpacked, and drives fixture pages (kitten slots, YouTube Home tiles, watch-page Reddit fallback). It does not hit live YouTube or Reddit. Install Chrome for Testing once with `npx playwright install chromium`. A later Puppeteer runner can reuse the same fixtures.
+
 ## Optional capabilities
 
 Optional grants stay off until you enable them in the popup.
@@ -57,10 +63,10 @@ Product story: `Documentation/amy-kitten-mod-journey.canvas.tsx` (ignore desktop
 
 Three bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
 
-| Mod id | Directory | Spec section |
-| --- | --- | --- |
-| `prism.kitten-ad-replace` | `mods/kitten-ad-replace` | Three tracer mods / 1. Kitten ad replacement |
-| `prism.youtube-home-videos` | `mods/youtube-home-videos` | Three tracer mods / 2. YouTube Home videos only |
+| Mod id                          | Directory                      | Spec section                                      |
+| ------------------------------- | ------------------------------ | ------------------------------------------------- |
+| `prism.kitten-ad-replace`       | `mods/kitten-ad-replace`       | Three tracer mods / 1. Kitten ad replacement      |
+| `prism.youtube-home-videos`     | `mods/youtube-home-videos`     | Three tracer mods / 2. YouTube Home videos only   |
 | `prism.youtube-reddit-comments` | `mods/youtube-reddit-comments` | Three tracer mods / 3. Reddit comments on YouTube |
 
 Architecture invariants in that spec still hold for these tracers:

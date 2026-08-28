@@ -189,6 +189,7 @@ describe("Phase G docs", () => {
     expect(readme).toContain("targets/chrome");
     expect(readme).toMatch(/Load unpacked/iu);
     expect(readme).toContain("npm run build");
+    expect(readme).toContain("npm run test:e2e");
     expect(readme).toContain("reddit.comments.search");
     expect(readme).toContain("network.egress");
     expect(readme).toContain("network.browser.block");
