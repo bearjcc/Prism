@@ -45,3 +45,11 @@ p {
 .required {
   opacity: 0.7;
 }
+
+.disclosure {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 36em;
+  opacity: 0.85;
+}
