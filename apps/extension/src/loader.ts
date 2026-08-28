@@ -130,7 +130,7 @@ function matchesScope(scope: string, target: URL): boolean {
   ) {
     return false;
   }
-  return wildcardExpression(path).test(`${target.pathname}${target.search}`);
+  return wildcardExpression(path).test(target.pathname);
 }
 
 function matchesScheme(pattern: string, protocol: string): boolean {

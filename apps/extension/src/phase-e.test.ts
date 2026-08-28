@@ -40,6 +40,81 @@ describe("Phase E YouTube Home tracer", () => {
     expect(prism.net.request).not.toHaveBeenCalled();
   });
 
+  test("Home with a query string still activates the videos-only allowlist", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, {
+      url: "https://www.youtube.com/?app=desktop",
+    });
+    const youtubeManifest = loadUnpackedMod(youtubeModRoot).manifest;
+
+    await expect(
+      activateContentMods({
+        url: "https://www.youtube.com/?app=desktop",
+        requestActiveMods: vi.fn().mockResolvedValue({
+          mods: [
+            {
+              manifest: youtubeManifest,
+              entry: "bundled-mods/prism.youtube-home-videos/src/index.js",
+              grants: ["youtube.home.allowlist"],
+            },
+          ],
+        }),
+        loadEntry: vi.fn().mockResolvedValue({
+          activate: activateYoutubeHomeMod,
+        }),
+        handlers: createContentHandlers(dom.window.document),
+        undo: new TabUndoStack(),
+        contentDocument: dom.window.document,
+      }),
+    ).resolves.toEqual([{ id: "prism.youtube-home-videos", status: "active" }]);
+    expect(
+      dom.window.document.querySelectorAll(
+        '[data-prism-owned="youtube-home-video"]',
+      ),
+    ).toHaveLength(2);
+  });
+
+  test("allowlist extracts videos from the Home feed, not the rest of the document", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const stray = dom.window.document.createElement("ytd-rich-item-renderer");
+    stray.innerHTML = `
+      <ytd-rich-grid-media>
+        <a id="video-title-link" href="/watch?v=stray-outside">Stray outside</a>
+      </ytd-rich-grid-media>
+    `;
+    stray.dataset.fixtureKind = "stray";
+    dom.window.document.body.append(stray);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = dom.window.document.querySelector(
+      "ytd-rich-grid-renderer #contents",
+    );
+    expect(
+      Array.from(feed?.querySelectorAll("a") ?? []).map((link) =>
+        link.getAttribute("href"),
+      ),
+    ).toEqual(["/watch?v=video-alpha", "/watch?v=video-beta"]);
+    expect(
+      dom.window.document.querySelector("[data-fixture-kind='stray']"),
+    ).toBe(stray);
+  });
+
   test("mounts only extracted videos and restores the fixture on undo", async () => {
     const fixture = readFileSync(
       join(youtubeModRoot, "fixtures", "home.html"),

@@ -197,7 +197,7 @@ export function createContentHandlers(
       }
 
       const previousChildren = Array.from(feed.childNodes);
-      const tiles = extractYoutubeHome(contentDocument).videos.map((video) => {
+      const tiles = extractYoutubeHome(feed).videos.map((video) => {
         const tile = contentDocument.createElement("article");
         tile.dataset.prismOwned = "youtube-home-video";
         tile.dataset.videoId = video.id;

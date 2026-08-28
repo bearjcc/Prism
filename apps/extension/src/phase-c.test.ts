@@ -144,6 +144,17 @@ describe("Phase C extension runtime", () => {
     ).toBe(false);
   });
 
+  test("Home scope matches query strings but not /watch", () => {
+    const home = ["https://www.youtube.com/"];
+    expect(matchesAnyScope(home, "https://www.youtube.com/")).toBe(true);
+    expect(matchesAnyScope(home, "https://www.youtube.com/?app=desktop")).toBe(
+      true,
+    );
+    expect(matchesAnyScope(home, "https://www.youtube.com/watch?v=abc")).toBe(
+      false,
+    );
+  });
+
   test("a hide-only mod cannot extract Reddit comments", async () => {
     const prism = createPrismApi({
       manifest: hideManifest,
