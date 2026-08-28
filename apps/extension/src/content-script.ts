@@ -70,6 +70,7 @@ export interface ActivateContentModsOptions {
   readonly adSlotWaitMs?: number;
   readonly youtubeHomeWaitMs?: number;
   readonly youtubeWatchWaitMs?: number;
+  readonly onStateChange?: (state: ModLoadState) => void;
 }
 
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
@@ -139,6 +140,7 @@ export async function activateContentMods(
     grantsByMod,
     handlers: options.handlers,
     undo: options.undo,
+    onStateChange: options.onStateChange,
   });
 }
 
