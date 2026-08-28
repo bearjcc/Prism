@@ -117,10 +117,10 @@ Exit: fixture page shows kittens in slots; disable mod restores (undo or reload)
 
 Entry: Phase C.
 
-- [ ] `youtube-home.ts` extractor: fixture DOM or sanitised captured structure -> `{ videos: { id, title, href }[] }`. Drop shorts, ads, posts, polls, shelves that are not videos.
-- [ ] `prism.ui.allowlist('youtube.home', 'video')` mounts only those items (replace feed container contents with extension-owned tiles, or hide non-video nodes **from extractor classification**, not from mod CSS selectors of the whole page).
-- [ ] `mods/youtube-home-videos`.
-- [ ] Fixture test: non-video units absent; video units present.
+- [~] agent 2026-08-28 `youtube-home.ts` extractor: fixture DOM or sanitised captured structure -> `{ videos: { id, title, href }[] }`. Drop shorts, ads, posts, polls, shelves that are not videos.
+- [~] agent 2026-08-28 `prism.ui.allowlist('youtube.home', 'video')` mounts only those items (replace feed container contents with extension-owned tiles, or hide non-video nodes **from extractor classification**, not from mod CSS selectors of the whole page).
+- [~] agent 2026-08-28 `mods/youtube-home-videos`.
+- [~] agent 2026-08-28 Fixture test: non-video units absent; video units present.
 
 Exit: fixture Home is videos only. Record YouTube drift as adapter bugs, not mod bugs.
 
