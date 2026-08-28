@@ -11,6 +11,7 @@ import { activate as activateKittenMod } from "../../../mods/kitten-ad-replace/s
 import {
   activateContentMods,
   createContentHandlers,
+  handleContentMessage,
 } from "./content-script.js";
 import { compileBrowserFilters } from "./dnr.js";
 import { extractAdSlots } from "./extractors/ad-slot.js";
@@ -307,6 +308,89 @@ describe("Phase D kitten tracer", () => {
       modId: manifest.id,
       contractId: "remote-kitten-images",
     });
+  });
+
+  test("disable during slot wait still reloads a pending mod", async () => {
+    const dom = new JSDOM("", { url: "https://example.test/page" });
+    const document = dom.window.document;
+    const manifest = loadUnpackedMod(kittenModRoot).manifest;
+    const undo = new TabUndoStack();
+    const pendingModIds = new Set<string>();
+    const activation = activateContentMods({
+      url: dom.window.location.href,
+      requestActiveMods: vi.fn().mockResolvedValue({
+        mods: [
+          {
+            manifest,
+            entry: "bundled-mods/prism.kitten-ad-replace/src/index.js",
+            grants: ["visual.ad-slot.replace"],
+          },
+        ],
+      }),
+      loadEntry: vi.fn().mockResolvedValue({ activate: vi.fn() }),
+      handlers: createContentHandlers(document),
+      undo,
+      contentDocument: document,
+      onPendingModIds: (ids) => {
+        for (const id of ids) {
+          pendingModIds.add(id);
+        }
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      handleContentMessage(
+        { type: "is-mod-active", modId: manifest.id },
+        undo,
+        pendingModIds,
+      ),
+    ).toEqual({ active: true });
+
+    const reloadTab = vi.fn().mockResolvedValue(undefined);
+    const dependencies: ServiceWorkerDependencies = {
+      getState: vi.fn().mockResolvedValue({
+        enabled: { [manifest.id]: true },
+        grants: {},
+      }),
+      setState: vi.fn().mockResolvedValue(undefined),
+      sendToTab: vi.fn(async () =>
+        handleContentMessage(
+          { type: "is-mod-active", modId: manifest.id },
+          undo,
+          pendingModIds,
+        ),
+      ),
+      reloadTab,
+      queryTabs: vi.fn().mockResolvedValue([{ id: 7 }]),
+      syncBrowserRules: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await expect(
+      handleRuntimeMessage(
+        {
+          type: "set-enabled",
+          modId: manifest.id,
+          enabled: false,
+        },
+        {
+          id: "fixture-extension",
+          url: "chrome-extension://fixture-extension/popup.html",
+        },
+        Promise.resolve([{ manifest, entry: null }]),
+        dependencies,
+        {
+          extensionId: "fixture-extension",
+          popupUrl: "chrome-extension://fixture-extension/popup.html",
+        },
+      ),
+    ).resolves.toEqual({ ok: true });
+    expect(reloadTab).toHaveBeenCalledWith(7);
+
+    const slot = document.createElement("aside");
+    slot.dataset.prismAdSlot = "late-sidebar";
+    document.body.append(slot);
+    await activation;
   });
 
   test("reloads every matching tab when a mod is disabled", async () => {

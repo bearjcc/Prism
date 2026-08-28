@@ -320,7 +320,7 @@ describe("Phase C extension runtime", () => {
     expect(() => sanitiseCss('@import "https://x.test/a.css";')).toThrow(
       "@import",
     );
-    expect(() => sanitiseCss("/* @updateURL https://x.test/a */")).toThrow(
+    expect(() => sanitiseCss("@updateURL https://x.test/a")).toThrow(
       "update URL",
     );
     expect(() =>
@@ -332,6 +332,9 @@ describe("Phase C extension runtime", () => {
     expect(() =>
       sanitiseCss('@\\69mport "https://x.test/a.css";'),
     ).toThrow("@import");
+    expect(() =>
+      sanitiseCss("a { background: u/*x*/rl(https://x.test/a); }"),
+    ).toThrow("url(");
     expect(sanitiseCss(".advert { display: none; }")).toBe(
       ".advert { display: none; }",
     );

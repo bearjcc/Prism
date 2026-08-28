@@ -109,7 +109,10 @@ describe("Phase E YouTube Home tracer", () => {
       Array.from(feed?.querySelectorAll("a") ?? []).map((link) =>
         link.getAttribute("href"),
       ),
-    ).toEqual(["/watch?v=video-alpha", "/watch?v=video-beta"]);
+    ).toEqual([
+      "https://www.youtube.com/watch?v=video-alpha",
+      "https://www.youtube.com/watch?v=video-beta",
+    ]);
     expect(
       dom.window.document.querySelector("[data-fixture-kind='stray']"),
     ).toBe(stray);
@@ -145,8 +148,8 @@ describe("Phase E YouTube Home tracer", () => {
         link.getAttribute("href"),
       ]),
     ).toEqual([
-      ["Alpha video", "/watch?v=video-alpha"],
-      ["Beta video", "/watch?v=video-beta"],
+      ["Alpha video", "https://www.youtube.com/watch?v=video-alpha"],
+      ["Beta video", "https://www.youtube.com/watch?v=video-beta"],
     ]);
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
 

@@ -27,12 +27,12 @@ describe("extractYoutubeHome", () => {
         {
           id: "video-alpha",
           title: "Alpha video",
-          href: "/watch?v=video-alpha",
+          href: "https://www.youtube.com/watch?v=video-alpha",
         },
         {
           id: "video-beta",
           title: "Beta video",
-          href: "/watch?v=video-beta",
+          href: "https://www.youtube.com/watch?v=video-beta",
         },
       ],
     });
@@ -67,6 +67,18 @@ describe("extractYoutubeHome", () => {
              href="https://evil.example/watch?v=stolen">External watch link</a>
           <a id="video-title"
              href="https://m.youtube.com/watch?v=mobile">Mobile host</a>
+        </ytd-rich-grid-media>
+      </ytd-rich-item-renderer>
+    `);
+
+    expect(extractYoutubeHome(dom.window.document)).toEqual({ videos: [] });
+  });
+
+  test("skips watch links that are not valid URLs", () => {
+    const dom = new JSDOM(`
+      <ytd-rich-item-renderer>
+        <ytd-rich-grid-media>
+          <a id="video-title-link" href="https://[">Broken watch link</a>
         </ytd-rich-grid-media>
       </ytd-rich-item-renderer>
     `);

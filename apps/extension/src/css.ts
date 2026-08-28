@@ -5,13 +5,17 @@ const UNSAFE_CSS = [
 ] as const;
 
 export function sanitiseCss(cssText: string): string {
-  const inspectionText = decodeCssEscapes(cssText);
+  const inspectionText = stripCssComments(decodeCssEscapes(cssText));
   for (const unsafe of UNSAFE_CSS) {
     if (unsafe.pattern.test(inspectionText)) {
       throw new Error(`CSS contains forbidden ${unsafe.label}`);
     }
   }
   return cssText;
+}
+
+function stripCssComments(cssText: string): string {
+  return cssText.replace(/\/\*[\s\S]*?(?:\*\/|$)/gu, "");
 }
 
 function decodeCssEscapes(cssText: string): string {

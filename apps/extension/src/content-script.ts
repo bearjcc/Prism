@@ -70,6 +70,7 @@ export interface ActivateContentModsOptions {
   readonly adSlotWaitMs?: number;
   readonly youtubeHomeWaitMs?: number;
   readonly youtubeWatchWaitMs?: number;
+  readonly onPendingModIds?: (modIds: readonly string[]) => void;
   readonly onStateChange?: (state: ModLoadState) => void;
 }
 
@@ -85,6 +86,7 @@ export async function activateContentMods(
   options: ActivateContentModsOptions,
 ): Promise<ModLoadState[]> {
   const { mods } = await options.requestActiveMods(options.url);
+  options.onPendingModIds?.(mods.map((mod) => mod.manifest.id));
   const grantsByMod = Object.fromEntries(
     mods.map((mod) => [mod.manifest.id, mod.grants]),
   );
@@ -548,6 +550,11 @@ if (typeof chrome !== "undefined") {
     handlers: createChromeContentHandlers(document, chrome.runtime),
     undo,
     contentDocument: document,
+    onPendingModIds: (modIds) => {
+      for (const id of modIds) {
+        activeModIds.add(id);
+      }
+    },
     onStateChange: (state) => {
       if (state.status === "active" || state.status === "failed") {
         activeModIds.add(state.id);

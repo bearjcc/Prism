@@ -77,7 +77,12 @@ function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {
     return undefined;
   }
 
-  const url = new URL(href, "https://www.youtube.com");
+  let url: URL;
+  try {
+    url = new URL(href, "https://www.youtube.com");
+  } catch {
+    return undefined;
+  }
   if (url.hostname !== "youtube.com" && url.hostname !== "www.youtube.com") {
     return undefined;
   }
@@ -94,5 +99,5 @@ function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {
     return undefined;
   }
 
-  return { id, title, href };
+  return { id, title, href: url.href };
 }
