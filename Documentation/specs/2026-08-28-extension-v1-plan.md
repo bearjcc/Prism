@@ -103,11 +103,11 @@ Exit: empty native mod with no caps loads and does nothing; a test mod with `vis
 
 Entry: Phase C, ad-slot extractor.
 
-- [ ] Ad-slot extractor: from fixture HTML with `data-prism-ad-slot` (and a documented live heuristic if attempted). Returns handles, not HTML of the page.
-- [ ] `mods/kitten-ad-replace`: `prism.yaml`, bundled kitten images, `src` calls `prism.slots.replace`.
-- [ ] Optional egress contract stub: disabled; enabling without grant does not fetch; with grant still goes through broker (may be a mocked broker in tests).
-- [ ] Optional DNR list of example third-party ad hosts; live YouTube ads that are first-party must still be handled by slots, not DNS fantasies.
-- [ ] Fixture test: ads replaced by images; no `fetch` in the mod JS.
+- [~] agent 2026-08-28 Ad-slot extractor: from fixture HTML with `data-prism-ad-slot` (and a documented live heuristic if attempted). Returns handles, not HTML of the page.
+- [~] agent 2026-08-28 `mods/kitten-ad-replace`: `prism.yaml`, bundled kitten images, `src` calls `prism.slots.replace`.
+- [~] agent 2026-08-28 Optional egress contract stub: disabled; enabling without grant does not fetch; with grant still goes through broker (may be a mocked broker in tests).
+- [~] agent 2026-08-28 Optional DNR list of example third-party ad hosts; live YouTube ads that are first-party must still be handled by slots, not DNS fantasies.
+- [~] agent 2026-08-28 Fixture test: ads replaced by images; no `fetch` in the mod JS.
 
 Exit: fixture page shows kittens in slots; disable mod restores (undo or reload). Amy journey stages Search through Bob installs, **without** desktop.
 
