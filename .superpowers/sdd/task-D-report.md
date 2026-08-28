@@ -81,3 +81,24 @@ GREEN:
   - Exit 0: ESLint and `check-text` passed.
 - IDE diagnostics on edited TypeScript files
   - No linter errors.
+
+## Important: unbounded waitForAdSlot
+
+`waitForAdSlot` never resolved on pages without `[data-prism-ad-slot]`. Kitten
+is `<all_urls>`, so `loadNativeMods` could stall later mods forever.
+
+Fix: bounded wait (default 2000ms) plus MutationObserver for late slots; timeout
+proceeds with zero slots. `loadNativeMods` loads mods concurrently so a slot wait
+does not serialise sibling `load()`.
+
+RED:
+
+- `npx vitest run apps/extension/src/phase-d.test.ts -t "activates a later native mod when the page has no ad slots"`
+  - Exit 1: test timed out in 800ms (observer never resolved).
+
+GREEN:
+
+- `npx vitest run apps/extension/src/phase-d.test.ts`
+  - Exit 0: 9 tests passed (414ms).
+- `npm test`
+  - Exit 0: 12 files and 64 tests passed.
