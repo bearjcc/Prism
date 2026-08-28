@@ -144,10 +144,10 @@ Exit: fixture watch page + fixture Reddit HTML -> comments listed. Live Reddit m
 
 Entry: D, E, F all `[x]`.
 
-- [ ] `apps/extension/README.md`: load unpacked, grant optional caps, known YouTube/Reddit breakage.
-- [ ] Capability disclosure strings in the popup (why Reddit, why all-sites kittens).
-- [ ] No path from mod JS to `eval`, page `fetch`, or `innerHTML` of extractor output.
-- [ ] Traceability: three mods map to spec sections; architecture invariants listed in the spec still hold.
+- [~] agent 2026-08-28 `apps/extension/README.md`: load unpacked, grant optional caps, known YouTube/Reddit breakage.
+- [~] agent 2026-08-28 Capability disclosure strings in the popup (why Reddit, why all-sites kittens).
+- [~] agent 2026-08-28 No path from mod JS to `eval`, page `fetch`, or `innerHTML` of extractor output.
+- [~] agent 2026-08-28 Traceability: three mods map to spec sections; architecture invariants listed in the spec still hold.
 
 ---
 
