@@ -546,14 +546,10 @@ if (typeof chrome !== "undefined") {
     handlers: createChromeContentHandlers(document, chrome.runtime),
     undo,
     contentDocument: document,
-  }).then(
-    (states) => {
-      for (const state of states) {
-        if (state.status === "active") {
-          activeModIds.add(state.id);
-        }
+    onStateChange: (state) => {
+      if (state.status === "active" || state.status === "failed") {
+        activeModIds.add(state.id);
       }
     },
-    () => undefined,
-  );
+  }).catch(() => undefined);
 }

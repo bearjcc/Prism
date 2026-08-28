@@ -121,6 +121,41 @@ describe("Phase C extension runtime", () => {
     expect(siblingActivate).toHaveBeenCalledOnce();
   });
 
+  test("reports each active mod without waiting for slower siblings", async () => {
+    let releaseSlowMod: (() => void) | undefined;
+    const slowMod = new Promise<void>((resolve) => {
+      releaseSlowMod = resolve;
+    });
+    const onStateChange = vi.fn();
+    const loading = loadNativeMods(
+      [
+        { manifest: emptyManifest, activate: () => slowMod },
+        { manifest: { ...emptyManifest, id: "fixture.sibling" } },
+      ],
+      {
+        url: "https://example.com/page",
+        tabId: 1,
+        grantsByMod: {},
+        handlers: {},
+        onStateChange,
+      },
+    );
+
+    await vi.waitFor(() => {
+      expect(onStateChange).toHaveBeenCalledWith({
+        id: "fixture.sibling",
+        status: "active",
+      });
+    });
+    expect(onStateChange).not.toHaveBeenCalledWith({
+      id: "fixture.empty",
+      status: "active",
+    });
+
+    releaseSlowMod?.();
+    await loading;
+  });
+
   test("content message path loads, activates, and undoes a bundled mod", async () => {
     const undo = new TabUndoStack();
     const reverted = vi.fn();

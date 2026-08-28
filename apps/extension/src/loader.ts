@@ -36,6 +36,7 @@ export interface LoadNativeModsOptions {
   readonly grantsByMod: Readonly<Record<string, readonly CapabilityId[]>>;
   readonly handlers: PrismApiHandlers;
   readonly undo?: TabUndoStack;
+  readonly onStateChange?: (state: ModLoadState) => void;
 }
 
 export async function loadNativeMods(
@@ -44,12 +45,17 @@ export async function loadNativeMods(
 ): Promise<ModLoadState[]> {
   return Promise.all(
     mods.map(async (mod): Promise<ModLoadState> => {
+      const report = (status: ModLoadStatus): ModLoadState => {
+        const state = { id: mod.manifest.id, status };
+        options.onStateChange?.(state);
+        return state;
+      };
       try {
         if (options.enabledByMod?.[mod.manifest.id] === false) {
-          return { id: mod.manifest.id, status: "disabled" };
+          return report("disabled");
         }
         if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
-          return { id: mod.manifest.id, status: "out-of-scope" };
+          return report("out-of-scope");
         }
 
         const grants = options.grantsByMod[mod.manifest.id] ?? [];
@@ -58,10 +64,7 @@ export async function loadNativeMods(
             (capability) => !grants.includes(capability),
           )
         ) {
-          return {
-            id: mod.manifest.id,
-            status: "missing-required-capability",
-          };
+          return report("missing-required-capability");
         }
 
         const prism = createPrismApi({
@@ -73,9 +76,9 @@ export async function loadNativeMods(
         });
         const loaded = mod.load === undefined ? mod : await mod.load();
         await loaded.activate?.(prism);
-        return { id: mod.manifest.id, status: "active" };
+        return report("active");
       } catch {
-        return { id: mod.manifest.id, status: "failed" };
+        return report("failed");
       }
     }),
   );
