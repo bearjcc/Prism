@@ -1,6 +1,8 @@
 import type {
   AdSlotHandle,
+  BrokeredResponse,
   CapabilityId,
+  PrismManifest,
   TrustedReplacement,
 } from "@prism/schema";
 import type { BundledMod, NativeMod } from "./loader.js";
@@ -51,6 +53,7 @@ export interface ActivateContentModsOptions {
   readonly loadEntry: (entry: string) => Promise<ContentModModule>;
   readonly handlers: PrismApiHandlers;
   readonly undo: TabUndoStack;
+  readonly contentDocument?: Document;
 }
 
 const CONTENT_TAB_STACK = 0;
@@ -62,12 +65,23 @@ export async function activateContentMods(
   const grantsByMod = Object.fromEntries(
     mods.map((mod) => [mod.manifest.id, mod.grants]),
   );
-  const nativeMods: NativeMod[] = mods.map(({ entry, manifest }) => ({
-    manifest,
-    ...(entry === null
-      ? {}
-      : { load: async () => options.loadEntry(entry) }),
-  }));
+  const nativeMods: NativeMod[] = mods.map(({ entry, manifest }) => {
+    if (entry === null) {
+      return { manifest };
+    }
+    return {
+      manifest,
+      load: async () => {
+        if (
+          options.contentDocument !== undefined &&
+          manifest.capabilities.required.includes("visual.ad-slot.replace")
+        ) {
+          await waitForAdSlot(options.contentDocument);
+        }
+        return options.loadEntry(entry);
+      },
+    };
+  });
 
   return loadNativeMods(nativeMods, {
     url: options.url,
@@ -90,7 +104,16 @@ export function handleContentMessage(
 
 export function createContentHandlers(
   contentDocument: Document,
-  resolveAsset: (asset: string) => string = (asset) => asset,
+  resolveAsset: (modId: string, asset: string) => string = (modId, asset) =>
+    `bundled-mods/${encodeURIComponent(modId)}/${asset}`,
+  requestBroker: (message: {
+    readonly type: "network-request";
+    readonly modId: string;
+    readonly contractId: string;
+  }) => Promise<BrokeredResponse> = async () => ({
+    status: 503,
+    fields: { error: "Network broker unavailable" },
+  }),
 ): PrismApiHandlers {
   return {
     async extract(capability): Promise<unknown> {
@@ -102,7 +125,13 @@ export function createContentHandlers(
     replaceSlot(
       slot: AdSlotHandle,
       content: TrustedReplacement,
+      manifest: PrismManifest,
     ): () => void {
+      if (!manifest.assets?.includes(content.asset)) {
+        throw new Error(
+          `Asset ${content.asset} is not declared by ${manifest.id}`,
+        );
+      }
       const element = findAdSlot(contentDocument, slot);
       if (element === undefined) {
         throw new Error(`Ad slot ${slot.id} is not available`);
@@ -110,7 +139,7 @@ export function createContentHandlers(
       const previousChildren = Array.from(element.childNodes);
       const image = contentDocument.createElement("img");
       image.dataset.prismOwned = "true";
-      image.src = resolveAsset(content.asset);
+      image.src = resolveAsset(manifest.id, content.asset);
       image.alt = content.alt;
       element.replaceChildren(image);
 
@@ -131,7 +160,35 @@ export function createContentHandlers(
       root.append(style);
       return () => style.remove();
     },
+    request(contractId, manifest): Promise<BrokeredResponse> {
+      return requestBroker({
+        type: "network-request",
+        modId: manifest.id,
+        contractId,
+      });
+    },
   };
+}
+
+export function waitForAdSlot(contentDocument: Document): Promise<void> {
+  if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
+    return Promise.resolve();
+  }
+
+  const MutationObserver = contentDocument.defaultView?.MutationObserver;
+  if (MutationObserver === undefined) {
+    return Promise.reject(new Error("MutationObserver is not available"));
+  }
+
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (contentDocument.querySelector("[data-prism-ad-slot]") !== null) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+    observer.observe(contentDocument, { childList: true, subtree: true });
+  });
 }
 
 function findAdSlot(
@@ -159,9 +216,15 @@ if (typeof chrome !== "undefined") {
       }),
     loadEntry: async (entry) =>
       import(chrome.runtime.getURL(entry)) as Promise<ContentModModule>,
-    handlers: createContentHandlers(document, (asset) =>
-      chrome.runtime.getURL(asset),
+    handlers: createContentHandlers(
+      document,
+      (modId, asset) =>
+        chrome.runtime.getURL(
+          `bundled-mods/${encodeURIComponent(modId)}/${asset}`,
+        ),
+      (message) => chrome.runtime.sendMessage<BrokeredResponse>(message),
     ),
     undo,
+    contentDocument: document,
   });
 }

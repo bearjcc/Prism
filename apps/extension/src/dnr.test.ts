@@ -1,5 +1,24 @@
-import { describe, expect, test } from "vitest";
-import { compileBrowserFilters } from "./dnr.js";
+import type { PrismManifest } from "@prism/schema";
+import { describe, expect, test, vi } from "vitest";
+import {
+  compileBrowserFilters,
+  PRISM_DYNAMIC_RULE_START,
+  syncBrowserBlockRules,
+} from "./dnr.js";
+
+const blockManifest: PrismManifest = {
+  id: "fixture.block",
+  version: "1.0.0",
+  runtime: "native",
+  capabilities: {
+    required: [],
+    optional: ["network.browser.block"],
+  },
+  scopes: ["<all_urls>"],
+  filters: {
+    browser: ["filters/browser/ads.txt"],
+  },
+};
 
 describe("compileBrowserFilters", () => {
   test("compiles third-party host block rules with stable ids", () => {
@@ -73,5 +92,53 @@ describe("compileBrowserFilters", () => {
         `,
       ]),
     ).toHaveLength(1);
+  });
+
+  test("applies granted browser rules and removes them after revoke", async () => {
+    const readFilter = vi.fn().mockResolvedValue("||ads.example.test^");
+    const getDynamicRules = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: PRISM_DYNAMIC_RULE_START }, { id: 9 }])
+      .mockResolvedValueOnce([{ id: PRISM_DYNAMIC_RULE_START }, { id: 9 }]);
+    const updateDynamicRules = vi.fn().mockResolvedValue(undefined);
+    const dynamicRules = { getDynamicRules, updateDynamicRules };
+    const mods = [{ manifest: blockManifest, entry: null }];
+
+    await syncBrowserBlockRules(
+      mods,
+      {},
+      { [blockManifest.id]: ["network.browser.block"] },
+      readFilter,
+      dynamicRules,
+    );
+
+    expect(readFilter).toHaveBeenCalledWith(
+      blockManifest.id,
+      "filters/browser/ads.txt",
+    );
+    expect(updateDynamicRules).toHaveBeenNthCalledWith(1, {
+      removeRuleIds: [PRISM_DYNAMIC_RULE_START],
+      addRules: [
+        expect.objectContaining({
+          id: PRISM_DYNAMIC_RULE_START,
+          condition: expect.objectContaining({
+            urlFilter: "||ads.example.test^",
+          }),
+        }),
+      ],
+    });
+
+    await syncBrowserBlockRules(
+      mods,
+      {},
+      { [blockManifest.id]: [] },
+      readFilter,
+      dynamicRules,
+    );
+
+    expect(updateDynamicRules).toHaveBeenNthCalledWith(2, {
+      removeRuleIds: [PRISM_DYNAMIC_RULE_START],
+      addRules: [],
+    });
   });
 });

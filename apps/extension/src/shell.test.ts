@@ -37,6 +37,7 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
       run_at: string;
     }>;
     action: { default_popup: string };
+    permissions: string[];
     host_permissions?: string[];
     optional_host_permissions?: string[];
     web_accessible_resources?: Array<{
@@ -56,6 +57,7 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
     run_at: "document_start",
   });
   expect(manifest.action.default_popup).toBe("popup.html");
+  expect(manifest.permissions).toContain("declarativeNetRequest");
   expect(manifest.host_permissions).toBeUndefined();
   expect(manifest.optional_host_permissions).toEqual(["<all_urls>"]);
   expect(manifest.web_accessible_resources).toContainEqual({

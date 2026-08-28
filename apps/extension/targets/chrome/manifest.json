@@ -3,7 +3,7 @@
   "name": "Prism",
   "version": "0.1.0",
   "description": "Run capability-scoped Prism mods.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "declarativeNetRequest", "storage"],
   "optional_host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {

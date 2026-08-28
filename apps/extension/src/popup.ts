@@ -57,10 +57,15 @@ function renderMod(mod: PopupMod): HTMLElement {
   const name = document.createElement("h2");
   name.textContent = mod.manifest.id;
   const enabled = checkbox("Enabled", mod.enabled, async (checked) => {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     await chrome.runtime.sendMessage({
       type: "set-enabled",
       modId: mod.manifest.id,
       enabled: checked,
+      ...(tab?.id === undefined ? {} : { tabId: tab.id }),
     });
   });
   heading.append(name, enabled);

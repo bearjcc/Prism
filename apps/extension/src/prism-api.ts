@@ -18,6 +18,7 @@ export interface PrismApiHandlers {
   readonly replaceSlot?: (
     slot: AdSlotHandle,
     content: TrustedReplacement,
+    manifest: PrismManifest,
   ) => void | Undo;
   readonly applyCss?: (cssText: string) => void | Undo;
   readonly allowlist?: (
@@ -28,7 +29,10 @@ export interface PrismApiHandlers {
     capability: CapabilityId,
     input?: Readonly<Record<string, unknown>>,
   ) => Promise<unknown>;
-  readonly request?: (contractId: string) => Promise<BrokeredResponse>;
+  readonly request?: (
+    contractId: string,
+    manifest: PrismManifest,
+  ) => Promise<BrokeredResponse>;
 }
 
 export interface CreatePrismApiOptions {
@@ -76,7 +80,7 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
     slots: {
       replace(slot, content): void {
         gate.assert("visual.ad-slot.replace");
-        record(options.handlers.replaceSlot?.(slot, content));
+        record(options.handlers.replaceSlot?.(slot, content, options.manifest));
       },
     },
     styles: {
@@ -104,7 +108,7 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
         if (options.handlers.request === undefined) {
           throw new Error(`No network broker registered for ${contractId}`);
         }
-        return options.handlers.request(contractId);
+        return options.handlers.request(contractId, options.manifest);
       },
     },
   };

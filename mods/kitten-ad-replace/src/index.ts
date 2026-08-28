@@ -1,8 +1,8 @@
 import type { AdSlotHandle, PrismApi } from "@prism/schema";
 
 const ASSETS = [
-  "bundled-mods/prism.kitten-ad-replace/assets/kitten-1.svg",
-  "bundled-mods/prism.kitten-ad-replace/assets/kitten-2.svg",
+  "assets/kitten-1.svg",
+  "assets/kitten-2.svg",
 ] as const;
 
 export async function activate(prism: PrismApi): Promise<void> {
