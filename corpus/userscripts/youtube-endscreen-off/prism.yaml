@@ -1,0 +1,12 @@
+# Behaviour: hide YouTube end-screen and in-player card overlays without Greasy Fork JS.
+# Study: YouTube end-card / suggested-video userscripts. Origin licence not copied.
+
+id: prism.corpus.youtube-endscreen-off
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - youtube.watch.constrainEndScreens
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*

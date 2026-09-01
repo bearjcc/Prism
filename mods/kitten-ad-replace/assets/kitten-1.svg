@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Sleeping ginger kitten</title>
+  <desc id="description">A simple illustration of a curled sleeping kitten.</desc>
+  <rect width="640" height="360" rx="24" fill="#f4eadf"/>
+  <ellipse cx="320" cy="275" rx="190" ry="24" fill="#d8c6b3"/>
+  <ellipse cx="325" cy="205" rx="145" ry="92" fill="#d78b50"/>
+  <circle cx="205" cy="190" r="70" fill="#e49a58"/>
+  <path d="M155 145 170 75 210 133Z" fill="#d17c45"/>
+  <path d="m220 132 48-55 8 78Z" fill="#d17c45"/>
+  <path d="M174 196c14 12 28 12 42 0" fill="none" stroke="#5d4334" stroke-width="7" stroke-linecap="round"/>
+  <path d="M218 196c14 12 28 12 42 0" fill="none" stroke="#5d4334" stroke-width="7" stroke-linecap="round"/>
+  <path d="m213 211 11 8-11 8-11-8Z" fill="#7f5447"/>
+  <path d="M420 184c92 10 100 83 25 108" fill="none" stroke="#c9753e" stroke-width="35" stroke-linecap="round"/>
+</svg>

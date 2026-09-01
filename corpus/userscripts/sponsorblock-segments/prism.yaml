@@ -1,0 +1,12 @@
+# Transcode target for SponsorBlock. Study tree is GPL-3.0; this file is original.
+
+id: prism.corpus.sponsorblock-segments
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - youtube.watch.videoId
+    - youtube.watch.sponsorSegments
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*

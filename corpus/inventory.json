@@ -1,0 +1,67 @@
+{
+  "usercss": [
+    {
+      "id": "prism.corpus.wide-github",
+      "directory": "usercss/wide-github",
+      "sanitise": "accept"
+    },
+    {
+      "id": "prism.corpus.github-wide",
+      "directory": "usercss/github-wide",
+      "sanitise": "accept"
+    },
+    {
+      "id": "prism.corpus.catppuccin-hacker-news",
+      "directory": "usercss/catppuccin-hacker-news",
+      "sanitise": "reject"
+    }
+  ],
+  "filters": [
+    {
+      "id": "prism.corpus.easylist-slice",
+      "directory": "filters/easylist-slice"
+    }
+  ],
+  "userscripts": [
+    {
+      "id": "prism.corpus.youtube-adb",
+      "directory": "userscripts/youtube-adb",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.reddit-plus-plus",
+      "directory": "userscripts/reddit-plus-plus",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.youtube-nonstop",
+      "directory": "userscripts/youtube-nonstop",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.sponsorblock-segments",
+      "directory": "userscripts/sponsorblock-segments",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.search-direct-links",
+      "directory": "userscripts/search-direct-links",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.youtube-autoplay-off",
+      "directory": "userscripts/youtube-autoplay-off",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.youtube-endscreen-off",
+      "directory": "userscripts/youtube-endscreen-off",
+      "pack": "accept"
+    },
+    {
+      "id": "prism.corpus.youtube-miniplayer-off",
+      "directory": "userscripts/youtube-miniplayer-off",
+      "pack": "accept"
+    }
+  ]
+}

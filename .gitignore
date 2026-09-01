@@ -1,0 +1,42 @@
+# Cloned third-party trees. Restore with scripts/restore-references.ps1
+# (or scripts/restore-references.sh). Default skips enabled:false.
+# Archived: -IncludeArchived / --include-archived. See references.lock.json.
+References/
+
+# Hidden paths except those required to build, test, or run CI.
+# Allowlist: scripts/check-publishable-tree.mjs
+.*
+!.gitignore
+!.gitattributes
+!.editorconfig
+!.github/
+!.github/**
+!.aislopignore
+!.aislop/
+!.aislop/config.yml
+
+# Published root markdown is README.md and CONTRIBUTING.md (plus usual OSS extras).
+/*.md
+!/README.md
+!/CONTRIBUTING.md
+!/CHANGELOG.md
+!/SECURITY.md
+!/CODE_OF_CONDUCT.md
+
+*.canvas.tsx
+
+node_modules/
+dist/
+apps/web/.next/
+apps/web/.next-dev/
+*.tsbuildinfo
+apps/extension/targets/chrome/bundled-mods.json
+apps/extension/targets/chrome/bundled-mods/
+apps/extension/targets/firefox/bundled-mods.json
+apps/extension/targets/firefox/bundled-mods/
+apps/extension/targets/firefox/popup.html
+apps/extension/targets/firefox/popup.css
+
+playwright-report/
+test-results/
+blob-report/

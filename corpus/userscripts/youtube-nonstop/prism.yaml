@@ -1,0 +1,11 @@
+# Transcode of YouTube NonStop (MIT study tree). Needs a dismiss extractor.
+
+id: prism.corpus.youtube-nonstop
+version: 0.9.1
+runtime: native
+capabilities:
+  required:
+    - youtube.watch.dismissIdle
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*

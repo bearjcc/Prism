@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Modal and chatbot overlay fixture</title>
+  </head>
+  <body>
+    <p id="page">Page content that must stay visible.</p>
+    <div id="unlabelled-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.2)">
+      Unlabelled overlay. Overlay suppression must not hide this as a whole-page dump.
+    </div>
+    <div
+      id="modal"
+      data-prism-modal
+      style="position: fixed; inset: 0; background: rgba(0,0,0,0.6)"
+    >
+      Cookie / marketing modal (labelled).
+    </div>
+    <aside
+      id="chatbot"
+      data-prism-chatbot
+      style="position: fixed; right: 0; bottom: 0"
+    >
+      Chatbot popup (labelled).
+    </aside>
+  </body>
+</html>

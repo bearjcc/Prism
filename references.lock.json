@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "notes": "Study trees only. Do not import as a runtime dependency. Copy into apps/ or packages/ only after a Documentation licence check. Prism is AGPL-3.0-only (Documentation/adr/0001-project-licence.md): GPL-3/AGPL inbound allowed into the combined work; MIT/Apache-2.0 inbound keep their notices; GPL-2-only cannot combine. Wholesale import is still a product decision, not automatic. Letters: a=Chrome+Firefox extension, b=userscript runner, c=custom DNS, d=local proxy, e=mod marketplace, f=native compiled desktop core (Win/Linux/Mac, not Electron/Java). Default restore is extension-first (a/b). enabled:false entries are archived (native DNS/proxy/desktop and hosted marketplace); restore with -IncludeArchived / --include-archived.",
+  "references": [
+    {
+      "id": "violentmonkey",
+      "url": "https://github.com/violentmonkey/violentmonkey.git",
+      "ref": "refs/tags/v2.48.0",
+      "sha": "db8c4c01603fd24fd9e11a80e1a81b933dd1e4aa",
+      "dest": "violentmonkey",
+      "license": "MIT",
+      "covers": [
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "id": "stylus",
+      "url": "https://github.com/openstyles/stylus.git",
+      "ref": "refs/tags/v2.4.11",
+      "sha": "76805e7555cc2d80133a7fb07f55812d5811b6b0",
+      "dest": "stylus",
+      "license": "GPL-3.0",
+      "covers": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "id": "ublock-origin",
+      "url": "https://github.com/gorhill/uBlock.git",
+      "ref": "refs/tags/1.74.0",
+      "sha": "6dd2d95e50d134a477a4e183343c0b26e9147123",
+      "dest": "uBlock",
+      "license": "GPL-3.0",
+      "covers": [
+        "a"
+      ],
+      "why": "Full uBO (Firefox still ships the complete engine). Filter lists, cosmetic hiding, per-site overrides."
+    },
+    {
+      "id": "ublock-origin-lite",
+      "url": "https://github.com/uBlockOrigin/uBOL-home.git",
+      "ref": "refs/tags/2026.825.1619",
+      "sha": "080d4a2c9d8264e076daa512cf7bbd97f8a2ca6b",
+      "dest": "uBOL-home",
+      "license": "GPL-3.0",
+      "covers": [
+        "a"
+      ],
+      "why": "Chromium MV3 declarativeNetRequest build. Closest public analogue to Prism's DNR compiler."
+    },
+    {
+      "id": "adguard-browser-extension",
+      "url": "https://github.com/AdguardTeam/AdguardBrowserExtension.git",
+      "ref": "refs/tags/v5.5.2.3",
+      "sha": "233f9dd8bb97e714174fa4b430d35545be321edf",
+      "dest": "AdguardBrowserExtension",
+      "license": "GPL-3.0",
+      "covers": [
+        "a"
+      ],
+      "why": "Chrome+Firefox MV3 blocker: DNR, cosmetic CSS, scriptlets, per-site exceptions."
+    },
+    {
+      "id": "dark-reader",
+      "url": "https://github.com/darkreader/darkreader.git",
+      "ref": "refs/tags/v4.9.129",
+      "sha": "c2a707302a39b8047543712e9c582bac07835d34",
+      "dest": "darkreader",
+      "license": "MIT",
+      "covers": [
+        "a"
+      ],
+      "why": "Per-site CSS rewrite, inverted theming, Chrome+Firefox. Study Stylus-adjacent injection without a style marketplace."
+    },
+    {
+      "id": "sponsorblock",
+      "url": "https://github.com/ajayyy/SponsorBlock.git",
+      "ref": "refs/tags/6.1.7",
+      "sha": "0a51a4981045b66007f88ab5e8909777c725ba43",
+      "dest": "SponsorBlock",
+      "license": "GPL-3.0",
+      "covers": [
+        "a"
+      ],
+      "why": "YouTube DOM + community segment lists, Chrome+Firefox. Nearest public analogue to typed site extractors plus skip/replace."
+    },
+    {
+      "id": "catppuccin-userstyles",
+      "url": "https://github.com/catppuccin/userstyles.git",
+      "ref": "refs/heads/main",
+      "sha": "d6a80b96745b1c1722d170bbf7b2068c8acbe1f7",
+      "dest": "catppuccin-userstyles",
+      "license": "MIT",
+      "covers": [
+        "a"
+      ],
+      "why": "UserCSS feedstock for corpus sanitise tests (Wikipedia, GitHub, Hacker News). Not bundled."
+    },
+    {
+      "id": "wide-github",
+      "url": "https://github.com/xthexder/wide-github.git",
+      "ref": "refs/tags/1.7.4",
+      "sha": "5540c3fcab9322fa8e593316cd426349ab168bec",
+      "dest": "wide-github",
+      "license": "MIT",
+      "covers": [
+        "a",
+        "b"
+      ],
+      "why": "MIT UserCSS (and equivalent userscript that is CSS-only). Clean styles/ import fixture."
+    },
+    {
+      "id": "github-wide",
+      "url": "https://github.com/mdo/github-wide.git",
+      "ref": "refs/tags/v2.1.0",
+      "sha": "17c1ba0d2cb37cf85e4f1ad477e4ae1a73e58b13",
+      "dest": "github-wide",
+      "license": "MIT",
+      "covers": [
+        "a"
+      ],
+      "why": "Simple GitHub layout UserCSS without a userscript wrapper."
+    },
+    {
+      "id": "easylist",
+      "url": "https://github.com/easylist/easylist.git",
+      "ref": "refs/heads/master",
+      "sha": "827602abf78e4f2e9797198e0afcecca5a6cc356",
+      "dest": "easylist",
+      "license": "GPL-3.0 OR CC-BY-SA-3.0",
+      "covers": [
+        "a"
+      ],
+      "why": "ABP filter feedstock. Corpus takes a host-block slice plus cosmetic lines that DNR cannot express yet."
+    },
+    {
+      "id": "youtube-nonstop",
+      "url": "https://github.com/lawfx/YoutubeNonStop.git",
+      "ref": "refs/tags/v0.9.1",
+      "sha": "c98168811de3f1be092d1fe0cc00179e178168da",
+      "dest": "youtube-nonstop",
+      "license": "MIT",
+      "covers": [
+        "a",
+        "b"
+      ],
+      "why": "Study for a future youtube.watch.dismissIdle extractor. Do not run the extension JS as a mod."
+    },
+    {
+      "id": "adguard-home",
+      "url": "https://github.com/AdguardTeam/AdGuardHome.git",
+      "ref": "refs/tags/v0.107.79",
+      "sha": "05ba17b282da1c4393d6a4ba4db0cf519194a362",
+      "dest": "AdGuardHome",
+      "license": "GPL-3.0",
+      "covers": [
+        "c"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "rethink-app",
+      "url": "https://github.com/celzero/rethink-app.git",
+      "ref": "refs/tags/v0.5.6",
+      "sha": "21b8206b778f46ea2a5193f80b0414188ac78608",
+      "dest": "rethink-app",
+      "license": "Apache-2.0",
+      "covers": [
+        "c",
+        "d"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "mitmproxy",
+      "url": "https://github.com/mitmproxy/mitmproxy.git",
+      "ref": "refs/tags/v12.2.3",
+      "sha": "6c09d56e4c29a92f5ad01b03199977584b8ea14f",
+      "dest": "mitmproxy",
+      "license": "MIT",
+      "covers": [
+        "d"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "userstyles-world",
+      "url": "https://github.com/userstyles-world/userstyles.world.git",
+      "ref": "refs/heads/main",
+      "sha": "2f6a31cc73168796ce7962fee56c122e9001e30b",
+      "dest": "userstyles.world",
+      "license": "AGPL-3.0",
+      "covers": [
+        "e"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "keepassxc",
+      "url": "https://github.com/keepassxreboot/keepassxc.git",
+      "ref": "refs/tags/2.7.12",
+      "sha": "860e51d8e9a5a67e73de79b173ae9bd5bdb5ebda",
+      "dest": "keepassxc",
+      "license": "GPL-2.0-or-later",
+      "covers": [
+        "f"
+      ],
+      "enabled": false
+    }
+  ]
+}

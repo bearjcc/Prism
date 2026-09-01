@@ -1,0 +1,8 @@
+id: prism.corpus.github-wide
+version: 2.1.0
+runtime: native
+capabilities:
+  required:
+    - visual.hide
+scopes:
+  - https://github.com/*

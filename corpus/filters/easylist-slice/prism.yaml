@@ -1,0 +1,12 @@
+id: prism.corpus.easylist-slice
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - network.browser.block
+scopes:
+  - <all_urls>
+filters:
+  browser:
+    - filters/browser/easylist-hosts.txt
+    - filters/browser/easylist-cosmetics.txt

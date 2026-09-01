@@ -1,0 +1,31 @@
+{
+  "name": "prism",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "packages/schema",
+    "apps/extension",
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "tsc -b && node scripts/generate-bundled-mods.mjs && node scripts/ensure-next.mjs && npm run build --workspace=@prism/web",
+    "test": "vitest run",
+    "test:e2e": "node scripts/require-extension-build.mjs && playwright test",
+    "lint": "eslint . && node scripts/check-text.mjs && node scripts/verify-references-lock.mjs && node scripts/check-publishable-tree.mjs",
+    "scan": "node scripts/scan-untrusted.mjs",
+    "verify": "npm run lint && npm run scan && npm test",
+    "corpus:sync": "node scripts/sync-corpus-from-references.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.34.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,13 @@
+# Behaviour: hide promoted units on Reddit. Not a copy of Reddit++.
+
+id: prism.corpus.reddit-plus-plus
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - visual.hide
+    - reddit.feed.posts
+scopes:
+  - https://www.reddit.com/*
+  - https://old.reddit.com/*
+  - https://sh.reddit.com/*

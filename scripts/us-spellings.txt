@@ -1,0 +1,16 @@
+# US English forms that must not appear in tracked prose.
+# Keep this list small. Do not add CSS identifiers (color).
+# Do not add "license" (SPDX, npm field names, GNU LICENSE text).
+behavior
+behaviors
+behavioral
+organize
+organizes
+organized
+organizing
+organization
+organizations
+favorite
+favorites
+defense
+defenses

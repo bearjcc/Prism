@@ -1,0 +1,12 @@
+# Behaviour: close and hide the YouTube miniplayer without Greasy Fork JS.
+# Study: YouTube miniplayer-disable userscripts. Origin licence not copied.
+
+id: prism.corpus.youtube-miniplayer-off
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - youtube.watch.constrainMiniplayer
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*

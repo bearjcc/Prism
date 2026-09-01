@@ -1,0 +1,31 @@
+[
+  {
+    "category": "sponsor",
+    "actionType": "skip",
+    "segment": [
+      1.5,
+      12
+    ],
+    "UUID": "fixture-sponsor-uuid",
+    "videoDuration": 240
+  },
+  {
+    "category": "intro",
+    "actionType": "skip",
+    "segment": [
+      12,
+      18.25
+    ],
+    "UUID": "fixture-intro-uuid",
+    "videoDuration": 240
+  },
+  {
+    "category": "poi_highlight",
+    "actionType": "poi",
+    "segment": [
+      90
+    ],
+    "UUID": "fixture-poi-uuid",
+    "videoDuration": 240
+  }
+]

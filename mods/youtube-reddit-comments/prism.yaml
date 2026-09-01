@@ -1,0 +1,14 @@
+id: prism.youtube-reddit-comments
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - visual.ad-slot.replace
+    - youtube.watch.videoId
+  optional:
+    - reddit.comments.search
+scopes:
+  - https://www.youtube.com/watch*
+fixtures:
+  - fixtures/watch.html
+  - fixtures/reddit-search.html

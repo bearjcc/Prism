@@ -1,0 +1,8 @@
+id: prism.corpus.catppuccin-hacker-news
+version: 2026.8.16
+runtime: native
+capabilities:
+  required:
+    - visual.hide
+scopes:
+  - https://news.ycombinator.com/*

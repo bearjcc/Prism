@@ -1,0 +1,11 @@
+# Unwrap Google /goto and /url redirects via search.results.directLinks.
+
+id: prism.corpus.search-direct-links
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - search.results.directLinks
+scopes:
+  - https://www.google.com/*
+  - https://google.com/*

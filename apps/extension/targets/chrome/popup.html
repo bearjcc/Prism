@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prism</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <header>
+      <h1>Prism</h1>
+      <button id="undo" type="button">Undo last change</button>
+    </header>
+    <p id="page-origin">This site: loading...</p>
+    <div id="pin-hint"></div>
+    <div id="origin-pause"></div>
+    <section class="site-mods">
+      <h2>Mods for this site</h2>
+      <p id="find-mods"></p>
+      <main id="mods" aria-live="polite">Loading mods...</main>
+    </section>
+    <section id="other-mods" class="other-mods"></section>
+    <section class="page-activity">
+      <h2>This page</h2>
+      <ol id="page-activity"></ol>
+    </section>
+    <section class="policies" id="global-policies">
+      <h2>Global policies</h2>
+    </section>
+    <section class="activity">
+      <h2>Activity</h2>
+      <ol id="activity"></ol>
+    </section>
+    <label class="import">
+      <span>Import .prism package</span>
+      <input id="import-mod" type="file" accept=".prism,.zip,application/zip">
+    </label>
+    <p id="import-feedback" role="status" aria-live="polite"></p>
+    <script type="module" src="dist/popup.js"></script>
+  </body>
+</html>

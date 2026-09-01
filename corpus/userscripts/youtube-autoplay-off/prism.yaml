@@ -1,0 +1,12 @@
+# Behaviour: turn off YouTube autonav / player autoplay without Greasy Fork JS.
+# Study: YouTube autoplay-stopper userscripts. Origin licence not copied.
+
+id: prism.corpus.youtube-autoplay-off
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - youtube.watch.constrainAutoplay
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*

@@ -1,0 +1,46 @@
+{
+  "name": "@prism/schema",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./capabilities": {
+      "types": "./dist/capabilities.d.ts",
+      "import": "./dist/capabilities.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
+    },
+    "./archive": {
+      "types": "./dist/archive.d.ts",
+      "import": "./dist/archive.js"
+    },
+    "./css": {
+      "types": "./dist/css.d.ts",
+      "import": "./dist/css.js"
+    },
+    "./inspect-package": {
+      "types": "./dist/inspect-package.d.ts",
+      "import": "./dist/inspect-package.js"
+    },
+    "./usercss-map": {
+      "types": "./dist/usercss-map.d.ts",
+      "import": "./dist/usercss-map.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "yaml": "^2.9.0"
+  }
+}

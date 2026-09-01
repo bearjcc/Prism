@@ -1,0 +1,25 @@
+id: prism.kitten-ad-replace
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - visual.ad-slot.replace
+  optional:
+    - network.browser.block
+    - network.egress
+scopes:
+  - <all_urls>
+egress:
+  contracts:
+    - id: remote-kitten-images
+      url: https://images.example.test/*
+      methods:
+        - GET
+filters:
+  browser:
+    - filters/browser/ads.txt
+assets:
+  - assets/kitten-1.svg
+  - assets/kitten-2.svg
+fixtures:
+  - fixtures/ads.html

@@ -1,0 +1,12 @@
+# Paths `npm run scan` skips. The scanner is invoked with npx and is not vendored.
+References
+corpus
+apps/web/.next
+apps/web/.next-dev
+apps/extension/dist
+apps/extension/targets/chrome/dist
+apps/extension/targets/firefox/dist
+playwright-report
+test-results
+blob-report
+node_modules

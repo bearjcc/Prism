@@ -1,0 +1,18 @@
+# Behaviour: hide/replace YouTube ad units without running Greasy Fork JS.
+# Study: youtube-adb on Greasy Fork. Origin licence not copied.
+
+id: prism.corpus.youtube-adb
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - visual.ad-slot.replace
+    - visual.hide
+  optional:
+    - network.browser.block
+scopes:
+  - https://www.youtube.com/*
+  - https://youtube.com/*
+filters:
+  browser:
+    - filters/browser/ads.txt

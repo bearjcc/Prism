@@ -1,0 +1,4 @@
+! Example third-party hosts for DNR compilation.
+! First-party page adverts remain slot replacements.
+||ads.example.test^
+||tracking.example.test^

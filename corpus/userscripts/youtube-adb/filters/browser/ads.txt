@@ -1,0 +1,3 @@
+! Optional third-party hosts. Live YouTube ads are first-party slots.
+||doubleclick.net^
+||googlesyndication.com^
