@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { firefox } from "@playwright/test";
-import { connect, findFreeTcpPort } from "web-ext/lib/firefox/remote.js";
+import { connect, findFreeTcpPort } from "./vendor/web-ext-firefox-remote.js";
 import type { ExtensionSession } from "./extension-session.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
