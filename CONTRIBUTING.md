@@ -31,7 +31,7 @@ This is a small community around an inspectable runtime and an open package form
 
 New behaviour and bug fixes need automated tests. Prefer extracting a pure function over a manual-only plan. If a test truly cannot exist, the pull request must list how a reviewer reproduces the fix and checks nearby behaviour (empty, one, many, failure).
 
-From the repo root, the verbs are `npm run build`, `npm test`, `npm run lint`, `npm run scan`, and `npm run test:e2e` (Playwright Chromium; not part of `build`). `npm run verify` is lint, scan, and test. `test:e2e` may be waived if Chrome cannot run. Do not waive `scan`. A green suite is not a review.
+From the repo root, the verbs are `npm run build`, `npm test`, `npm run lint`, `npm run scan`, and `npm run test:e2e` (Playwright Chromium and Firefox desktop; not part of `build`). `npm run verify` is lint, scan, and test. `test:e2e` may be waived if browsers cannot run. Do not waive `scan`. A green suite is not a review.
 
 Do not commit live credentials, other people's data, or fixtures that hit production.
 

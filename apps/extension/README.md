@@ -35,11 +35,15 @@ After install, pin Prism from the extensions menu. The toolbar badge is the coun
 
 Mods with `runtime: native` (CSS, JSON/YAML, filter lists, and first-party `prism.*` JS shipped in this package) do **not** use `chrome.userScripts` and do **not** need Chromium's userscript toggle. Mods with `runtime: userscript` register only in the isolated `USER_SCRIPT` world, with `matches` equal to the package `scopes`. Remote `@require` / `http(s)` script URLs in the source are refused (fail closed; Prism does not fetch those bodies). If **Allow User Scripts** is off (Chrome 138+ extension details; older Chrome: Developer mode), that JavaScript is a no-op. CSS and DNR from the same package still apply when those capabilities are granted. The YAML flag is the Prism lock; omitting JS from the zip is optional packer convenience, not the security boundary. Unrestricted Tampermonkey-like MAIN-world execution is not shipped (historical Phase 9 review gate).
 
-## Automated Chromium tests
+## Automated browser tests
 
 Unit tests (`npm test`) do not launch a browser.
 
-After `npm run build`, run `npm run test:e2e`. That starts Playwright, loads `targets/chrome` unpacked, and drives fixture pages (kitten slots, YouTube Home tiles, watch-page Reddit fallback). It does not hit live YouTube or Reddit. Install Chrome for Testing once with `npx playwright install chromium`. A later Puppeteer runner can reuse the same fixtures.
+After `npm run build`, run `npm run test:e2e`. That starts Playwright, loads the unpacked Chrome and Firefox targets, and drives fixture pages for the three bundled tracers (kitten slots, YouTube Home tiles, watch-page Reddit fallback). Shared assertions in `e2e/tracer-assertions.ts` keep Chromium and Firefox from drifting. It does not hit live YouTube or Reddit.
+
+Install browsers once with `npx playwright install chromium firefox`. Chromium uses `--load-extension`. Firefox loads the unpack target through the remote debugging `installTemporaryAddon` path (same mechanism as `web-ext run`). A later Puppeteer runner can reuse the same fixtures.
+
+Firefox for Android is not exercised in CI (no emulator). `apps/extension/src/firefox-mobile-contract.ts` and `firefox-mobile-contract.test.ts` fail closed when the generated Firefox manifest drops `browser_specific_settings.gecko_android`, reintroduces `background.service_worker`, or declares `host_permissions`.
 
 ## Optional capabilities
 
