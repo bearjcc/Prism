@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function requiredPaths(targetRoot: string): string[] {
+function requiredPaths(targetRoot) {
   return [
     join(targetRoot, "manifest.json"),
     join(targetRoot, "dist", "service-worker.js"),
