@@ -15,7 +15,7 @@ References/
 !.aislop/
 !.aislop/config.yml
 
-# Published root markdown is README.md and CONTRIBUTING.md (plus usual OSS extras).
+# Published root markdown. Allowlist: scripts/check-publishable-tree.mjs
 /*.md
 !/README.md
 !/CONTRIBUTING.md
@@ -24,6 +24,13 @@ References/
 !/CODE_OF_CONDUCT.md
 
 *.canvas.tsx
+
+# Secrets and local env. Hidden files are already ignored via .*
+*.pem
+*.key
+*.pfx
+*.p12
+coverage/
 
 node_modules/
 dist/

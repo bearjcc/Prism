@@ -438,6 +438,11 @@ Exit criteria:
 
 ## Phase 10 -- Registry, signing and publication
 
+> Historical queue. The active store and sync queue is
+> `Documentation/specs/2026-09-01-community-store-accounts-sync.md`, with
+> decisions in ADRs 0007-0009. Keep this section for historical traceability;
+> do not execute its checkboxes independently.
+
 Goal: immutable, reviewed, signed public releases with revocation that disables rather than replaces.
 
 Entry: Phase 0 signing ADR, Phase 1 capability diff.
@@ -452,7 +457,7 @@ Entry: Phase 0 signing ADR, Phase 1 capability diff.
 - [ ] Implement visual regression tests where a package declares them.
 - [ ] Implement moderation workflows for deceptive UI, affiliate insertion and abuse.
 - [ ] Implement revocation metadata that pauses affected releases without mutating the published artefact.
-- [ ] Implement the client publication flow: select one immutable revision, show exact files, assets and capabilities, require public metadata and a licence. No account or subscription required.
+- [ ] Implement the client publication flow: an authenticated publisher selects one immutable revision, shows exact files, assets and capabilities, and supplies public metadata and a licence. No subscription is required.
 - [ ] Implement optional paid human verification as a registry label and queue. Unverified public releases remain installable and runnable under the same capability model.
 - [ ] Implement client-side installation: verify hash, signatures and runtime compatibility, separate required from optional capabilities, keep optional network sources disabled. Do not require a verified label.
 - [ ] Implement update handling where a capability increase requires renewed user approval.
@@ -469,6 +474,10 @@ Exit criteria:
 ---
 
 ## Phase 11 -- Website and marketplace
+
+> Historical queue. See
+> `Documentation/specs/2026-09-01-community-store-accounts-sync.md` for the
+> active implementation sequence.
 
 Goal: `apps/web` is the install funnel and public search, with no DNS or host privilege.
 
@@ -493,6 +502,12 @@ Exit criteria:
 ---
 
 ## Phase 12 -- Export, self-hosting and managed sync
+
+> Historical queue. See
+> `Documentation/specs/2026-09-01-community-store-accounts-sync.md` for the
+> active implementation sequence. The first Prism-operated replica is
+> authenticated and encrypted at rest, but is not end-to-end encrypted
+> against the operator.
 
 Goal: cross-device use without making the hosted service a runtime dependency.
 

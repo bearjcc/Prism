@@ -134,7 +134,7 @@ About, plain language (not a copyleft lecture):
 
 - The app is free to run. The source stays public, including if someone hosts a modified copy.
 - Prism first-party code is AGPL-3.0-only. Community mods keep their own licence in the package. The registry requires a licence field; it does not force AGPL on mods.
-- Use it for nothing. Pay only if you want Prism to sync for you. Subscriptions are hosted convenience, not extra safety. Donations buy an optional badge with no product power.
+- Use it for nothing. Pay only if you want Prism to sync for you. A sync fee covers replica cost and a little toward project bills. It is not extra safety. Donations buy an optional badge with no product power.
 
 Do not put AGPL, pay-to-sync, or Violentmonkey compatibility on `/`.
 
@@ -154,7 +154,9 @@ Tests: site works with no account and no telemetry consent.
 ## Explicitly later
 
 - Firefox store listing and AMO install button
-- Hosted sync UI and pricing page (copy may wait in About)
+- Hosted sync UI and pricing page (the service contract is specified in
+  `Documentation/specs/2026-09-01-community-store-accounts-sync.md`; UI
+  remains later than the fixture catalogue)
 - Native app deep links (Phase 11 also names native; v1 is extension)
 - Userscript bulk import as a shipping feature
 

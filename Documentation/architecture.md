@@ -4,7 +4,7 @@
 
 This document records the current product and architecture decisions derived from the Amy and Bob user stories. It describes the intended boundaries and trust model. It does not select an implementation language, UI framework, database or hosting provider.
 
-**v1 delivery (ADR 0002):** the Chromium extension is the product. Native host, desktop UI, gateway, TV/IoT DNS, marketplace website, and Firefox-as-a-store-listing are deferred. Trust-model rules below still apply. Work queue: `Documentation/specs/2026-08-28-extension-v1-plan.md`.
+**v1 delivery (ADR 0002):** the Chromium extension is the product. Native host, desktop UI, gateway, TV/IoT DNS, marketplace website, and Firefox-as-a-store-listing are deferred. Trust-model rules below still apply. Work queue: `Documentation/specs/2026-08-28-extension-v1-plan.md`. Hosted registry, accounts, and an optional replica are specified for later work by ADRs 0007-0009, without reopening the native host.
 
 Prism is one product with several enforcement components. It is not one process and does not force every type of policy through a proxy.
 
@@ -110,8 +110,9 @@ flowchart LR
     Desktop --> Service
     Extension <--> Service
     Gateway <--> Service
-    Service <-. optional encrypted sync .-> Control
+    Service <-. optional sync .-> Control
     Web --> Control
+    Extension -. optional replica .-> Control
     Control --> Registry
     Extension --> Page
     Gateway --> Page
@@ -119,7 +120,7 @@ flowchart LR
     Service -. mediated request .-> Provider
 ```
 
-v1 uses only `User --> Extension --> Page` and extension-mediated provider requests. Desktop, Service, Gateway, Web, Control, and Registry are deferred.
+v1 uses only `User --> Extension --> Page` and extension-mediated provider requests. Desktop, Service, Gateway, Web, Control, and Registry are deferred from the v1 product. Later hosted work may connect Web and Extension directly to Control; the extension remains the local state authority until a host ADR says otherwise.
 
 The solid local path remains useful without the hosted control plane. Dotted paths are optional.
 
@@ -203,12 +204,12 @@ Prism does not enable general TLS interception by default. A future explicit dia
 
 ### Hosted control plane
 
-The hosted control plane is optional for runtime. Using Prism's replica of it is a convenience subscription, not a trust upgrade.
+The hosted control plane is optional for runtime. Using Prism's replica of it is a convenience subscription, not a trust upgrade. ADR 0007 reopens the public registry, accounts, and first hosted replica without reopening the native host or gateway.
 
 Responsibilities:
 
 - Account and device coordination for people who opt into a hosted replica.
-- Encrypted private state replication.
+- Authenticated private state replication with encrypted-at-rest storage.
 - Web-app management.
 - Policy history and cross-device rollback.
 - Managed DNS, optional relays and optional exit nodes.
@@ -217,7 +218,7 @@ Responsibilities:
 - Optional human verification as a registry label and queue, not as an install or run gate.
 - Compatibility monitoring and notifications.
 
-The control plane sends policy data, not arbitrary executable code. Clients validate signatures and capability compatibility before activation.
+The control plane sends policy data, not arbitrary executable code. Clients validate signatures and capability compatibility before activation. The first replica is padlock-level: the service may read explicitly opted-in replica contents, but it must not collect browsing or activity data.
 
 ### Community registry and review service
 
@@ -628,14 +629,18 @@ Public registry content is intentionally public.
 
 Private managed sync must:
 
-- Be end-to-end encrypted.
-- Minimise plaintext metadata.
+- Use authenticated HTTPS and encrypted-at-rest storage, with account and
+  access controls appropriate for an internet service.
+- Minimise stored account and replica metadata.
 - Keep publication separate from private replication.
 - Support device revocation and key rotation.
 - Preserve immutable revision identity.
-- Avoid synchronising browsing and request logs by default.
+- Avoid synchronising browsing, page, and request logs by default.
 
-The exact key-management and conflict-resolution protocol remains to be designed.
+The first hosted replica is not end-to-end encrypted against the Prism
+operator. A stronger client-held-key protocol remains a later option. The
+replica protocol and conflict-resolution rules are specified in
+`Documentation/specs/2026-09-01-community-store-accounts-sync.md`.
 
 ### Extension-only devices
 
@@ -747,7 +752,8 @@ A subscription is for ongoing cost Prism actually incurs: hosted device sync, op
 Hard gates:
 
 - No capability, enforcement layer or local feature behind pay.
-- Community publication and install work with no account and no subscription.
+- Community install works with no account and no subscription. Publication,
+  comments, and ratings require an account but not a subscription.
 - Paid verification is a registry label and queue, not an install or run gate.
 - Hosted sync is optional. Local and self-host remain first-class.
 - No account is required to use Prism.
@@ -773,7 +779,8 @@ Hard gates:
 
 ### Hosted convenience (subscription)
 
-- Encrypted cross-device sync on Prism's replica.
+- Authenticated, encrypted-at-rest cross-device sync on Prism's replica. The
+  first replica is not end-to-end encrypted against the Prism operator.
 - Web management, device coordination and recovery.
 - Managed DNS, relay and optional exit-node services.
 - Optional human verification queue and label on public revisions.
@@ -855,7 +862,9 @@ The current user stories establish these decisions:
 - How semantic site adapters are maintained and versioned.
 - Whether a later runtime (likely with a host) may execute bounded WASM, and under what isolation (out of the first runtime; ADR 0004).
 - Desktop and gateway implementation languages.
-- Private-sync key recovery and metadata protection.
+- Stronger client-held-key sync and recovery remain future options. The first
+  replica's account, access-control, and metadata requirements are defined by
+  ADR 0009.
 - Registry governance and moderation appeals.
 - Per-dependency licence checks when copying filter engines or legacy-manager code (Prism itself is AGPL-3.0-only; see `Documentation/adr/0001-project-licence.md`).
 - Browser support beyond Chromium.

@@ -10,7 +10,7 @@ Not a programming language. Not JSX.
 
 **Authoring:** a directory of ordinary files.
 
-**Release:** the same tree after TypeScript compile, hashed, as a **vanilla ZIP** named `*.prism` (7-Zip opens it).
+**Release:** the same tree after TypeScript compile, hashed, as a **vanilla ZIP** named `*.prism` (7-Zip opens it). The layout and `packages/schema` contracts are public. Other clients, servers, and extensions may implement them. Official safety is the official runtime and signatures, not the suffix (ADR 0006, `Documentation/trademark.md`).
 
 The extension loads **either** an unpacked directory (dev: files copied into the extension package at build) **or** a zip. Layout is identical.
 

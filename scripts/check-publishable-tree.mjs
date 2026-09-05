@@ -42,6 +42,9 @@ function isAllowedHidden(normalised) {
   if (ALLOWED_HIDDEN_FILES.has(normalised)) {
     return true;
   }
+  if (normalised === ".github/CODEOWNERS") {
+    return true;
+  }
   return normalised.startsWith(".github/workflows/");
 }
 

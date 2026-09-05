@@ -2,6 +2,8 @@
 
 One policy system, enforced at the narrowest capable layer.
 
+First-party code is AGPL-3.0-only. `.prism` packages are an open zip format; other runtimes may implement them. The official gate is this extension, not the file suffix. Marks: `Documentation/trademark.md`. Contribute: `CONTRIBUTING.md`. Vulnerabilities: `SECURITY.md`.
+
 ## Layout
 
 - `Documentation/` -- ADRs, specs, architecture, licence notes.

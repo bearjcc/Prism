@@ -16,6 +16,9 @@ describe("isUnpublishablePath", () => {
   test("allows published source and scan/CI config", () => {
     expect(isUnpublishablePath("README.md")).toBe(false);
     expect(isUnpublishablePath("CONTRIBUTING.md")).toBe(false);
+    expect(isUnpublishablePath("SECURITY.md")).toBe(false);
+    expect(isUnpublishablePath("CODE_OF_CONDUCT.md")).toBe(false);
+    expect(isUnpublishablePath(".github/CODEOWNERS")).toBe(false);
     expect(isUnpublishablePath("apps/extension/src/gate.ts")).toBe(false);
     expect(isUnpublishablePath("Documentation/adr/0001-project-licence.md")).toBe(
       false,

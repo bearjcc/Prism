@@ -20,8 +20,11 @@ Plans: v1 = `Documentation/specs/2026-08-28-extension-v1-plan.md` plus `Document
 | Behaviour: popup, title freeze, autoplay, scroll-lock, modals, consent, same-origin actions | Satisfied (extension subset) | later Phases M-N-P; historical Phase 3 catch-up |
 | UserCSS import with sanitise (not "CSS is harmless") | Satisfied (compiler + corpus + map) | `packages/schema` `compileUserCss` / `mapUserCss`; later Phases L and V |
 | Restricted / unrestricted userscript worlds | Restricted satisfied; unrestricted deferred | later Phase O (`USER_SCRIPT` only); unrestricted still historical Phase 9 review gate |
-| Local first; no account required; hosted not a runtime dependency | Satisfied | ADR 0002; v1 unpacked extension; architecture locked decisions |
+| Local first; anonymous install; hosted not a runtime dependency | Satisfied | ADR 0002; ADR 0007; v1 unpacked extension; community store and sync spec |
 | Trust is not for sale; AGPL-3.0-only; no CLA | Satisfied | ADR 0001; architecture "Openness, donations and subscriptions" |
+| `.prism` format public; independent implementations; marks separate | Satisfied | ADR 0001, ADR 0006; `Documentation/trademark.md`; mod-package spec |
+| Hosted replica is cost coverage; secrets and abuse internals off git | Specified, not implemented | ADR 0006; ADR 0009; architecture hosted convenience; community store and sync spec |
+| Private vulnerability intake; conduct rules | Satisfied | `SECURITY.md`; `CODE_OF_CONDUCT.md` |
 | Explainability and reversibility | Satisfied (v1 subset) | v1 activity + undo; full policy conflict UI later |
 | Graceful degradation / offline cache of active packs | Satisfied (v1) | extension storage of bundled and imported packs; later Phase X validates compiled cache on read; hosted fallback N/A in v1 |
 | Local authoring and hot reload | Satisfied (v1 path) | rebuild + reload unpacked; desktop watch deferred (ADR 0002) |
@@ -35,9 +38,9 @@ Plans: v1 = `Documentation/specs/2026-08-28-extension-v1-plan.md` plus `Document
 | Sideload-from-folder / OS-level DNS | Deferred | ADR 0002 risks; historical Phase 4 |
 | Gateway DNS, firewall, IoT/TV, private services | Deferred | ADR 0002; historical Phases 13-14 |
 | General TLS interception / page MITM proxy | Rejected | architecture non-goals; ADR 0002 |
-| Hosted control plane, encrypted sync, web management | Deferred | ADR 0002; historical Phase 12; `apps/web` is a parallel fixture site (`Documentation/specs/2026-08-28-marketplace-website-design.md`), not hosted sync |
-| Community registry, signing, immutable releases, capability-diff on update | Deferred | ADR 0002; historical Phase 10; Phase 0 signature ADR remains open |
-| Publication workflow and secret scanning | Deferred | historical Phases 10-11 |
+| Hosted control plane, replica, and web management | Specified, not implemented | ADR 0007; ADR 0009; community store and sync spec; `apps/web` remains a fixture site until the read API lands |
+| Community registry, signing, immutable releases, capability-diff on update | Specified, not implemented | ADR 0007-0008; community store and sync spec phases 1-3 and 5 |
+| Publication workflow, accounts, and secret scanning | Specified, not implemented | ADR 0008-0009; community store and sync spec phases 4-5 |
 | List-based cryptojacking (gateway DNS + extension DNR lists) | Deferred | architecture cryptojacking flow; historical Phase 13; v1 has DNR for advert hosts only |
 | First-party `page.resource-abuse` | Deferred | architecture behavioural expansion |
 | Android profile / mobile enforcement | Deferred | ADR 0002; historical Phase 15 remainder |

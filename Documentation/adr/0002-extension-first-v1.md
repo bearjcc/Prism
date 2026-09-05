@@ -22,7 +22,7 @@ Three tracer mods define v1:
 
 - **v1 product is the Chromium extension** plus `packages/schema`, first-party mods under `mods/`, and tests. Users install one unpacked or packed extension. No native installer, no Native Messaging, no gateway, no `apps/web` marketplace.
 - **Local state authority for v1 is the extension** (service worker + extension storage).
-- **Desktop, Android, gateway, Firefox-as-product, hosted sync, and registry signing** are out of scope until a later ADR reopens them. Scaffold under `apps/native/` stays in the tree as deferred, not as a work queue.
+- **Desktop, Android, gateway, Firefox-as-product, hosted sync, and registry signing** are out of scope for v1. ADR 0007 later reopens hosted registry, account, and replica work without reopening the native host or gateway. Scaffold under `apps/native/` stays in the tree as deferred, not as a work queue.
 - **Do not** run community JavaScript in a local or remote HTTPS proxy. **Do not** run a hidden second browser on the user's cookie profile as a MITM.
 - Native mods may include TypeScript that compiles to JavaScript **only** as orchestration of `prism.*` primitives. New operations require an extension release. Extractors that parse third-party HTML live **in the extension**, not in the mod. Mods receive JSON fields declared in the capability.
 - Required vs optional capabilities, runtime deny for undeclared use, and pack-time lints as diagnostics only, as already designed.
@@ -33,6 +33,7 @@ Three tracer mods define v1:
 
 - Implementation sequencing lives in `Documentation/specs/2026-08-28-extension-v1-plan.md`. The 2026-08-27 plan remains historical for deferred phases.
 - Package format: `Documentation/specs/2026-08-28-mod-package-and-runtime.md`.
+- Hosted registry, accounts, and replica sequencing: `Documentation/specs/2026-09-01-community-store-accounts-sync.md` (ADRs 0007-0009). The extension remains the local state authority until a later host ADR.
 - Amy's kitten journey still applies; the desktop is not required to complete it in v1. Priya's household gateway journey is deferred.
 
 ### Risks

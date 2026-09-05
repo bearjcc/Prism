@@ -250,8 +250,6 @@ Exit: vitest covers partition, badge, find URL, hide selector, origin pause. Fir
 
 ---
 
-## Later still (not this file)
-
 ## Phase AA -- Three-layer local mod policy
 
 Entry: Phase Z toolbar and existing v1 capability gate.
@@ -260,13 +258,24 @@ Entry: Phase Z toolbar and existing v1 capability gate.
 - [x] 2026-09-01 Native package JS is restricted to the approved AST and runs without page DOM access.
 - [x] 2026-09-01 CSS and browser filters fail closed; v1 DNS and gateway inputs are refused.
 - [x] 2026-09-01 Capability denials no-op with activity events; required grants and browser host permission prompts remain explicit.
-- [x] 2026-09-01 Community scan, fixture run, content verification, validation, runtime security, and publisher keying are documented only. Hosted registry and signing implementation remain deferred to Phase 10.
+- [x] 2026-09-01 Community scan, fixture run, content verification, validation, runtime security, and publisher keying are documented only. Hosted registry, accounts, signatures, and replica implementation are specified in `Documentation/specs/2026-09-01-community-store-accounts-sync.md` and remain unstarted.
 
 Exit: a bypassed author or pack check cannot grant native mod page DOM, undeclared capabilities, or silent host permissions. No `apps/native`, DNS engine, hosted registry, or unrestricted userscript.
 
 ---
 
+## Phase AB -- Repository health files
+
+Entry: none. Does not reopen hosted sync or a company.
+
+- [x] 2026-09-01 `SECURITY.md`, `CODE_OF_CONDUCT.md`, `Documentation/trademark.md`, ADR 0006 (published tree, `.prism` as a public format, cost-recovery replica, no open-core engine). Index ADR 0006. Root README and `CONTRIBUTING.md` point at them.
+- [x] 2026-09-01 `.github/CODEOWNERS`; publishable-tree allowlist includes it. Architecture and marketplace copy describe sync fees as cost coverage, not extra safety.
+
+Exit: clone docs state how to report vulns, how marks work, and that independent `.prism` implementations are expected. Hosted replica remains unimplemented.
+
+---
+
 ## Later still (not this file)
 
-Phase 10 registry and signing. Phase 4 host. Phase 9 unrestricted legacy (security review). Firefox-as-product / AMO. End screens and miniplayer extractors already exist (`youtube.watch.constrainEndScreens`, `youtube.watch.constrainMiniplayer`); further live YouTube drift is adapter bugs, not new host APIs.
+Phase 10 registry and signing, replaced as the active queue by `Documentation/specs/2026-09-01-community-store-accounts-sync.md`. Phase 4 host. Phase 9 unrestricted legacy (security review). Firefox-as-product / AMO. End screens and miniplayer extractors already exist (`youtube.watch.constrainEndScreens`, `youtube.watch.constrainMiniplayer`); further live YouTube drift is adapter bugs, not new host APIs.
 

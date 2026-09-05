@@ -1,8 +1,10 @@
 # Contributing
 
-First-party Prism code is licensed under AGPL-3.0-only (`LICENSE`, `Documentation/adr/0001-project-licence.md`). There is no copyright-assignment CLA. A Developer Certificate of Origin (DCO) Signed-off-by line, or an equivalent statement that you have the right to contribute the change under AGPL-3.0-only, is enough.
+First-party Prism code is licensed under AGPL-3.0-only (`LICENSE`, `Documentation/adr/0001-project-licence.md`). There is no copyright-assignment CLA. A Developer Certificate of Origin (DCO) `Signed-off-by` line, or an equivalent statement that you have the right to contribute the change under AGPL-3.0-only, is enough (`git commit -s`). Without assignment, other people's contributions cannot be relicensed proprietary by a later owner.
 
-v1 is the Chromium extension only (ADR 0002). Do not implement `apps/native`, gateway, or a TLS proxy. `apps/web` visual work is a parallel build under `Documentation/specs/2026-08-28-marketplace-website-design.md`.
+Conduct: `CODE_OF_CONDUCT.md`. Vulnerabilities: `SECURITY.md` (private). Marks: `Documentation/trademark.md`. Published vs private trees: ADR 0006.
+
+v1 is the Chromium extension only (ADR 0002). Do not implement `apps/native`, gateway, a TLS proxy, hosted billing, or a replica. `apps/web` visual work is a parallel build under `Documentation/specs/2026-08-28-marketplace-website-design.md`.
 
 Work queues:
 
@@ -12,7 +14,26 @@ Work queues:
 
 Architecture requirements map to those plans in `Documentation/traceability.md`.
 
-The git index is the published source tree: what is required to build, test, and scan. Editor settings, assistant transcripts, session canvases, and other local tool state are not.
+The git index is the published source tree: what is required to build, test, and scan. Editor settings, assistant transcripts, session canvases, secrets, keys, and other local tool state are not.
+
+This is a small community around an inspectable runtime and an open package format. Independent clients, servers, and extensions may implement `.prism` packages. They must not use Prism marks as official, and must not treat the file suffix as a safety claim.
+
+## Scope of a change
+
+- A problem is identified, discussed if it is more than a small bug, and then a focused pull request addresses it.
+- Pull requests that exist mainly to create a contribution, or that mix unrelated issues, will be closed.
+- Changes of more than about fifty lines of behaviour should be agreed first (issue or discussion), so review time is not wasted.
+- Do not mark reviewer comments resolved; only the reviewer should.
+- User support and design talk stay out of the issue tracker when a discussion thread exists; use issues for defects and accepted work.
+- Automated whole-tree formatting or spelling-only diffs are not accepted unless maintainers asked for that pass.
+
+## Tests
+
+New behaviour and bug fixes need automated tests. Prefer extracting a pure function over a manual-only plan. If a test truly cannot exist, the pull request must list how a reviewer reproduces the fix and checks nearby behaviour (empty, one, many, failure).
+
+From the repo root, the verbs are `npm run build`, `npm test`, `npm run lint`, `npm run scan`, and `npm run test:e2e` (Playwright Chromium; not part of `build`). `npm run verify` is lint, scan, and test. `test:e2e` may be waived if Chrome cannot run. Do not waive `scan`. A green suite is not a review.
+
+Do not commit live credentials, other people's data, or fixtures that hit production.
 
 ## Task checkboxes
 
@@ -36,13 +57,11 @@ Match existing history: one-line, imperative subject; optional longer body. Desc
 
 ASCII only in tracked files. NZ/GB spelling in prose (colour, behaviour, sanitise, licence). `npm run lint` runs ESLint, `scripts/check-text.mjs`, `scripts/verify-references-lock.mjs`, and `scripts/check-publishable-tree.mjs`. `npm test` includes `scripts/check-mods-engine.test.mjs`, which fails closed if `mods/*/prism.yaml` is missing.
 
-From the repo root, the verbs are `npm run build`, `npm test`, `npm run lint`, `npm run scan`, and `npm run test:e2e` (Playwright Chromium; not part of `build`). `npm run verify` is lint, scan, and test. `test:e2e` may be waived if Chrome cannot run. Do not waive `scan`.
-
 ## Do not trust: scan, test, and verify
 
 Edits and user-submitted mods are untrusted until they pass the gates. Tests passing is not a review.
 
-- Tracked tree: `npm run lint` fails if git contains paths outside the publishable allowlist in `scripts/check-publishable-tree.mjs` (hidden paths except CI and scan config; extra root markdown; `*.canvas.tsx`).
+- Tracked tree: `npm run lint` fails if git contains paths outside the publishable allowlist in `scripts/check-publishable-tree.mjs` (hidden paths except CI, CODEOWNERS, and scan config; extra root markdown; `*.canvas.tsx`).
 - Code: `npm run scan` runs the configured scanner with `npx` (`scripts/scan-untrusted.mjs`). Do not vendor that CLI. Gate config is `.aislop/config.yml`. The score floor is 80. Findings still print; they are not waived.
 - Mods: `scripts/check-mods-engine.mjs` (via `npm test`) validates `mods/*/prism.yaml`. Sideload and marketplace packages get the same schema, capability gate, and fixture tests. No package is trusted because of who wrote it.
 - Local packages also pass the shared whitelist inspector at author/import, pack/CI, and runtime boundaries. Pack findings are fail-closed; runtime native code has no page DOM.

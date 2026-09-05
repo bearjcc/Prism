@@ -127,4 +127,5 @@ the restricted `USER_SCRIPT` world, within declared scopes, with remote script
 dependencies refused. Prism does not describe userscripts as DOM-safe.
 
 See `Documentation/specs/2026-09-01-mod-policy-layers.md` and ADR 0005 for
-the local and future community-package workflow.
+the local and future community-package workflow. Report extension
+vulnerabilities via `SECURITY.md`.

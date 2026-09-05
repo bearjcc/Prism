@@ -14,7 +14,12 @@ Deferred (do not implement until an ADR reopens):
 2. Native Prism installer, host, tray UI, gateway
 3. Firefox as a shipped target (folder may exist)
 
-Hosted sync/registry is not a folder until needed.
+Hosted sync and registry are specified, but remain outside the tree until
+implementation begins under the community store and sync queue
+(`Documentation/specs/2026-09-01-community-store-accounts-sync.md`). Community
+health files live at the repo root (`SECURITY.md`, `CODE_OF_CONDUCT.md`). Marks
+and hosted isolation: `Documentation/trademark.md`, ADR 0006. `.prism` is a
+public package format; other implementations are expected.
 
 ## Code layout vs installers
 

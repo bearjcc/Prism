@@ -6,7 +6,7 @@ Accepted. 2026-08-27.
 
 ## Context
 
-Prism is local-first, inspectable, and fully usable without payment. Architecture forbids selling a safer product. Money is for hosted convenience and optional human labour (replica, verification queue, later managed DNS or relay).
+Prism is local-first, inspectable, and fully usable without payment. Architecture forbids selling a safer product. Optional hosted sync, if it exists, recovers replica cost and a modest surplus for project bills. It is not a growth business (ADR 0006).
 
 Two risks sit beside that model:
 
@@ -23,11 +23,11 @@ Inbound `References/`: Stylus, uBlock Origin, uBOL, AdGuard Browser Extension, A
 
 First-party Prism code (host, UI, extension, website, packages, scripts, first-party bundled mods) is licensed under the **GNU Affero General Public License version 3** (SPDX `AGPL-3.0-only`).
 
-The **Prism** name, logos, and other marks are not licensed with the code. Forks may use the source. They may not claim to be Prism, the official installer, the official registry, or "reviewed by Prism". Trademark guidelines will live in `Documentation/` once drafted. Registration is a legal step for the copyright holder, not this ADR.
+The **Prism** name, logos, and other marks are not licensed with the code. Rules: `Documentation/trademark.md`. Forks and independent `.prism` implementations may use the source and format. They may not claim to be Prism, the official installer, the official registry, or "reviewed by Prism". Registration is a legal step for the copyright holder, not this ADR.
 
 Do **not** take a copyright-assignment CLA. A DCO or "you have the right to contribute under AGPL-3.0-only" statement is enough. Without assignment, other people's contributions cannot be relicensed proprietary by a later owner. Until there are contributors, AGPL is a public promise by the current owner, not a lock on code they solely own.
 
-Community packages keep their own licence in the package manifest. The registry requires a licence field; it does not force AGPL on community mods.
+Community packages keep their own licence in the package manifest. The registry requires a licence field; it does not force AGPL on community mods. The `.prism` layout and schema are public contracts. Other clients, servers, and extensions may implement them (ADR 0006).
 
 ## Consequences
 
@@ -38,9 +38,9 @@ Community packages keep their own licence in the package manifest. The registry 
 
 ### What this does not prevent
 
-- A differently named runtime that parses `.prism` files and skips the capability gate. Defence is the signed official extension/host, Native Messaging pinned to the official extension ID, registry signatures, and copy that never equates "a `.prism` file" with "safe unless opened in official Prism".
+- A differently named runtime that parses `.prism` files and skips the capability gate. That is allowed as software. Defence is the signed official extension/host, Native Messaging pinned to the official extension ID, registry signatures, and copy that never equates "a `.prism` file" with "safe unless opened in official Prism".
 - A Vaultwarden-class competitor that reimplements or forks under AGPL and sells hosting. That is allowed. Compete by being the better official replica and the holder of the marks and keys.
-- Someone selling support or binaries of the AGPL code. Paid official hosting remains a service, not a licence monopoly.
+- Someone selling support or binaries of the AGPL code. A Prism-operated replica remains a cost-recovery service, not a licence monopoly (ADR 0006).
 
 ### Reuse of References
 
@@ -50,9 +50,9 @@ Licence permission is not a product decision to import wholesale. Stylus, AdGuar
 
 ### Operations
 
-- The later Phase 0 task adds the `LICENSE` file and per-package headers.
 - Store listings (browser extension, installer) must satisfy AGPL corresponding-source. That is operational, not a reason to pick MIT.
 - Contributor and some-company friction is accepted. It is the cost of the bait-and-switch defence.
+- What stays off git (keys, replica secrets, abuse internals) is ADR 0006, not a second product licence.
 
 ## Alternatives rejected
 
