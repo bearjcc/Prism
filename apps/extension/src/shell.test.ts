@@ -65,6 +65,7 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
   expect(manifest.optional_host_permissions).toEqual([
     "https://www.reddit.com/*",
     "https://sponsor.ajay.app/*",
+    "https://cataas.com/*",
     "<all_urls>",
   ]);
   expect(manifest.web_accessible_resources).toContainEqual({

@@ -58,7 +58,11 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/validate.ts"),
       },
       {
-        find: "@prism/schema",
+        find: "@prism/schema/egress",
+        replacement: path.join(root, "packages/schema/src/egress.ts"),
+      },
+      {
+        find: /^@prism\/schema$/,
         replacement: path.join(root, "packages/schema/src/index.ts"),
       },
     ],

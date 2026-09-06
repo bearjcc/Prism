@@ -1,8 +1,13 @@
 import type {
   BrokeredResponse,
   CapabilityId,
+  EgressContract,
   PrismManifest,
 } from "@prism/schema";
+import {
+  defaultEgressRequestUrl,
+  urlMatchesEgressContract,
+} from "@prism/schema/egress";
 import { isCapabilityId } from "@prism/schema/capabilities";
 import { DOMParser } from "linkedom/worker";
 import {
@@ -209,6 +214,9 @@ export interface ServiceWorkerDependencies {
   readonly readBrowserFilter?: ReadBrowserFilter;
   readonly fetchRedditHtml?: (query: string) => Promise<string>;
   readonly fetchSponsorSegmentsJson?: (videoId: string) => Promise<string>;
+  readonly fetchEgressContract?: (
+    contract: EgressContract,
+  ) => Promise<BrokeredResponse>;
   readonly userScripts?: UserScriptsApi;
 }
 
@@ -852,6 +860,7 @@ export async function handleRuntimeMessage(
       grants,
       message.modId,
       message.contractId,
+      dependencies.fetchEgressContract,
     );
   }
   if (message.type === "import-mod" && message.archive !== undefined) {
@@ -1126,13 +1135,16 @@ async function reloadTabsWithActiveMod(
   );
 }
 
-export function handleBrokerRequest(
+export async function handleBrokerRequest(
   mods: readonly BundledMod[],
   enabled: Readonly<Record<string, boolean>>,
   grants: Readonly<Record<string, readonly string[]>>,
   modId: string,
   contractId: string,
-): BrokeredResponse {
+  fetchContract: (
+    contract: EgressContract,
+  ) => Promise<BrokeredResponse> = fetchBrokeredEgressContract,
+): Promise<BrokeredResponse> {
   const manifest = mods.find((mod) => mod.manifest.id === modId)?.manifest;
   const contract = manifest?.egress?.contracts.find(
     (entry) => entry.id === contractId,
@@ -1148,10 +1160,61 @@ export function handleBrokerRequest(
       fields: { error: "Network request denied" },
     };
   }
-  return {
-    status: 503,
-    fields: { error: "Network broker unavailable" },
-  };
+  return fetchContract(contract);
+}
+
+export async function fetchBrokeredEgressContract(
+  contract: EgressContract,
+): Promise<BrokeredResponse> {
+  const methods = contract.methods ?? ["GET"];
+  if (!methods.includes("GET") || methods.length !== 1) {
+    return {
+      status: 405,
+      fields: { error: "Only single GET egress contracts are supported" },
+    };
+  }
+  const requestUrl = defaultEgressRequestUrl(contract);
+  if (requestUrl === undefined) {
+    return {
+      status: 400,
+      fields: { error: "Egress contract URL is invalid" },
+    };
+  }
+  try {
+    const response = await fetch(requestUrl, {
+      credentials: "omit",
+      redirect: "follow",
+    });
+    if (!response.ok) {
+      return {
+        status: response.status,
+        fields: { error: "Remote image fetch failed" },
+      };
+    }
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return {
+        status: 502,
+        fields: { error: "Remote response is not an image" },
+      };
+    }
+    const finalUrl = response.url;
+    if (!urlMatchesEgressContract(finalUrl, contract)) {
+      return {
+        status: 502,
+        fields: { error: "Remote redirect left the declared contract" },
+      };
+    }
+    return {
+      status: 200,
+      fields: { url: finalUrl },
+    };
+  } catch {
+    return {
+      status: 503,
+      fields: { error: "Network fetch failed" },
+    };
+  }
 }
 
 function createChromeDependencies(): ServiceWorkerDependencies {

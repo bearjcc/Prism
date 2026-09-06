@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Calico kitten</title>
+  <desc id="description">A simple illustration of a calico kitten lying down.</desc>
+  <rect width="640" height="360" rx="24" fill="#f7f0e8"/>
+  <ellipse cx="320" cy="285" rx="180" ry="24" fill="#dccfbf"/>
+  <ellipse cx="330" cy="210" rx="150" ry="70" fill="#f0dcc8"/>
+  <circle cx="220" cy="195" r="62" fill="#d88962"/>
+  <circle cx="390" cy="190" r="58" fill="#8f7358"/>
+  <path d="M175 150 188 95 225 145Z" fill="#c9744f"/>
+  <path d="M350 130 395 85 410 150Z" fill="#7d6550"/>
+  <ellipse cx="205" cy="188" rx="9" ry="12" fill="#4a382f"/>
+  <ellipse cx="375" cy="182" rx="9" ry="12" fill="#4a382f"/>
+</svg>

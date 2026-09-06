@@ -14,6 +14,7 @@
   "optional_host_permissions": [
     "https://www.reddit.com/*",
     "https://sponsor.ajay.app/*",
+    "https://cataas.com/*",
     "<all_urls>"
   ],
   "web_accessible_resources": [

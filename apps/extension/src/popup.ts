@@ -1,4 +1,5 @@
 import type { CapabilityId, PrismManifest } from "@prism/schema";
+import { egressContractHostPatterns } from "@prism/schema/egress";
 import type { BehaviourPolicyId } from "./behaviour-policies.js";
 import type { StoredActivityEvent } from "./gate.js";
 import type { ModTrustKind } from "./loader.js";
@@ -53,6 +54,7 @@ declare const chrome: PopupChromeApi;
 
 const REDDIT_ORIGINS = ["https://www.reddit.com/*"];
 const SPONSORBLOCK_ORIGINS = ["https://sponsor.ajay.app/*"];
+const KITTEN_EGRESS_ORIGINS = ["https://cataas.com/*"];
 
 const CAPABILITY_HOST_ORIGINS: Partial<
   Record<CapabilityId, readonly string[]>
@@ -71,7 +73,7 @@ const OPTIONAL_CAPABILITY_DISCLOSURE: Partial<
   "reddit.feed.posts":
     "Reddit feed posts returns JSON titles and opaque handles for labelled feed units. The mod never sees post HTML. Keyword hide uses visual.hide against those handles.",
   "network.egress":
-    "Remote kitten images stay off until granted. Requests go through the extension broker, not page fetch.",
+    "Remote kitten images stay off until granted. Requests go through the extension broker to https://cataas.com/cat (GET, image response). Bundled images remain the fallback when the grant is off or the broker fails.",
   "network.browser.block":
     "Browser network block (DNR) applies only to declared third-party advert hosts. First-party YouTube adverts still need slot replacement.",
 };
@@ -82,9 +84,20 @@ export function describeOptionalCapability(capability: CapabilityId): string {
 
 export function hostOriginsForCapabilities(
   capabilities: readonly CapabilityId[],
+  manifest?: PrismManifest,
 ): string[] {
   const origins = new Set<string>();
   for (const capability of capabilities) {
+    if (capability === "network.egress") {
+      const contractOrigins =
+        manifest?.egress?.contracts === undefined
+          ? KITTEN_EGRESS_ORIGINS
+          : egressContractHostPatterns(manifest.egress.contracts);
+      for (const origin of contractOrigins) {
+        origins.add(origin);
+      }
+      continue;
+    }
     for (const origin of CAPABILITY_HOST_ORIGINS[capability] ?? []) {
       origins.add(origin);
     }
@@ -149,8 +162,9 @@ export async function applyOptionalCapabilityChange(
   modId: string,
   capability: CapabilityId,
   granted: boolean,
+  manifest?: PrismManifest,
 ): Promise<boolean> {
-  const origins = hostOriginsForCapabilities([capability]);
+  const origins = hostOriginsForCapabilities([capability], manifest);
   if (
     granted &&
     origins.length > 0 &&
@@ -793,6 +807,7 @@ function renderMod(
             mod.manifest.id,
             capability,
             granted,
+            mod.manifest,
           );
         },
       ),

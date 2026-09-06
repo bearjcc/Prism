@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">White kitten</title>
+  <desc id="description">A simple illustration of a white kitten sitting upright.</desc>
+  <rect width="640" height="360" rx="24" fill="#eef2f7"/>
+  <ellipse cx="320" cy="305" rx="130" ry="18" fill="#cfd8e3"/>
+  <ellipse cx="320" cy="235" rx="95" ry="80" fill="#f5f7fa"/>
+  <circle cx="320" cy="150" r="88" fill="#ffffff" stroke="#d7dee8" stroke-width="4"/>
+  <path d="M245 95 258 35 305 88Z" fill="#edf1f6"/>
+  <path d="M335 82 385 40 395 105Z" fill="#edf1f6"/>
+  <ellipse cx="292" cy="145" rx="12" ry="16" fill="#5a6673"/>
+  <ellipse cx="348" cy="145" rx="12" ry="16" fill="#5a6673"/>
+  <path d="M320 170 332 178 320 186 308 178Z" fill="#d8a3a0"/>
+</svg>

@@ -7,6 +7,7 @@ import {
   packMod,
 } from "@prism/schema";
 import { describe, expect, test, vi } from "vitest";
+import { footprintsMatch, measureAdSlotFootprint } from "./ad-slot-replace.js";
 import { activate as activateKittenMod } from "../../../mods/kitten-ad-replace/src/index.js";
 import {
   activateContentMods,
@@ -18,6 +19,7 @@ import { extractAdSlots } from "./extractors/ad-slot.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 import {
   handleRuntimeMessage,
+  handleBrokerRequest,
   type ServiceWorkerDependencies,
 } from "./service-worker.js";
 
@@ -44,11 +46,16 @@ describe("Phase D kitten tracer", () => {
 
   test("replaces an extracted slot with a trusted image and restores it", () => {
     const dom = new JSDOM(`
-      <aside data-prism-ad-slot="sidebar">
+      <aside
+        data-prism-ad-slot="sidebar"
+        style="display:block;width:300px;height:250px;min-width:300px;min-height:250px;"
+      >
         <a href="https://ads.example.test">Original advert</a>
       </aside>
     `);
     const document = dom.window.document;
+    const slotElement = document.querySelector("[data-prism-ad-slot]")!;
+    const footprint = measureAdSlotFootprint(slotElement);
     const [slot] = extractAdSlots(document);
     const manifest = loadUnpackedMod(kittenModRoot).manifest;
     const handlers = createContentHandlers(
@@ -78,6 +85,14 @@ describe("Phase D kitten tracer", () => {
     );
     expect(replacement?.alt).toBe("A sleeping kitten");
     expect(replacement?.dataset.prismOwned).toBe("true");
+    expect(replacement?.width).toBe(Math.round(footprint.width));
+    expect(replacement?.height).toBe(Math.round(footprint.height));
+    expect(
+      footprintsMatch(footprint, {
+        width: replacement?.width ?? 0,
+        height: replacement?.height ?? 0,
+      }),
+    ).toBe(true);
 
     expect(() =>
       prism.slots.replace(slot!, {
@@ -206,6 +221,28 @@ describe("Phase D kitten tracer", () => {
 
     await activateKittenMod(prism);
 
+    const bannerSlot = dom.window.document.querySelector(
+      '[data-prism-ad-slot="banner"]',
+    )!;
+    const sidebarSlot = dom.window.document.querySelector(
+      '[data-prism-ad-slot="sidebar"]',
+    )!;
+    const bannerImage = bannerSlot.querySelector("img");
+    const sidebarImage = sidebarSlot.querySelector("img");
+    expect(bannerImage).not.toBeNull();
+    expect(sidebarImage).not.toBeNull();
+    expect(
+      footprintsMatch(measureAdSlotFootprint(bannerSlot), {
+        width: bannerImage!.width,
+        height: bannerImage!.height,
+      }),
+    ).toBe(true);
+    expect(
+      footprintsMatch(measureAdSlotFootprint(sidebarSlot), {
+        width: sidebarImage!.width,
+        height: sidebarImage!.height,
+      }),
+    ).toBe(true);
     expect(
       dom.window.document.querySelectorAll("[data-prism-ad-slot] img"),
     ).toHaveLength(2);
@@ -223,7 +260,7 @@ describe("Phase D kitten tracer", () => {
     const manifest = loadUnpackedMod(kittenModRoot).manifest;
     const request = vi.fn().mockResolvedValue({
       status: 200,
-      fields: { asset: "remote-kitten" },
+      fields: { url: "https://cataas.com/cat/fixture-kitten" },
     });
     const denied = createPrismApi({
       manifest,
@@ -247,9 +284,65 @@ describe("Phase D kitten tracer", () => {
       granted.net.request("remote-kitten-images"),
     ).resolves.toEqual({
       status: 200,
-      fields: { asset: "remote-kitten" },
+      fields: { url: "https://cataas.com/cat/fixture-kitten" },
     });
     expect(request).toHaveBeenCalledOnce();
+  });
+
+  test("uses bundled images when remote egress is denied and sizes remote replacements when granted", async () => {
+    const fixture = readFileSync(
+      join(kittenModRoot, "fixtures", "ads.html"),
+      "utf8",
+    );
+    const manifest = loadUnpackedMod(kittenModRoot).manifest;
+    const deniedDom = new JSDOM(fixture);
+    const deniedPrism = createPrismApi({
+      manifest,
+      grants: ["visual.ad-slot.replace"],
+      tabId: 5,
+      handlers: {
+        ...createContentHandlers(deniedDom.window.document),
+        request: vi.fn(),
+      },
+      undo: new TabUndoStack(),
+    });
+    await activateKittenMod(deniedPrism);
+    expect(
+      deniedDom.window.document
+        .querySelector('[data-prism-ad-slot="banner"] img')
+        ?.src,
+    ).toContain("assets/kitten-1.svg");
+
+    const grantedDom = new JSDOM(fixture);
+    const remoteUrl = "https://cataas.com/cat/fixture-remote";
+    const grantedPrism = createPrismApi({
+      manifest,
+      grants: ["visual.ad-slot.replace", "network.egress"],
+      tabId: 6,
+      handlers: {
+        ...createContentHandlers(grantedDom.window.document),
+        request: vi.fn().mockResolvedValue({
+          status: 200,
+          fields: { url: remoteUrl },
+        }),
+      },
+      undo: new TabUndoStack(),
+    });
+    await activateKittenMod(grantedPrism);
+    const bannerSlot = grantedDom.window.document.querySelector(
+      '[data-prism-ad-slot="banner"]',
+    )!;
+    const bannerImage =
+      grantedDom.window.document.querySelector<HTMLImageElement>(
+        '[data-prism-ad-slot="banner"] img',
+      );
+    expect(bannerImage?.src).toBe(remoteUrl);
+    expect(
+      footprintsMatch(measureAdSlotFootprint(bannerSlot), {
+        width: bannerImage?.width ?? 0,
+        height: bannerImage?.height ?? 0,
+      }),
+    ).toBe(true);
   });
 
   test("routes content egress to the fail-closed service-worker broker", async () => {
@@ -269,6 +362,10 @@ describe("Phase D kitten tracer", () => {
       reloadTab: vi.fn(),
       queryTabs: vi.fn().mockResolvedValue([]),
       syncBrowserRules: vi.fn(),
+      fetchEgressContract: vi.fn().mockResolvedValue({
+        status: 200,
+        fields: { url: "https://cataas.com/cat/brokered" },
+      }),
     };
     const sendMessage = vi.fn(
       (message: Parameters<typeof handleRuntimeMessage>[0]) =>
@@ -301,13 +398,29 @@ describe("Phase D kitten tracer", () => {
     await expect(
       prism.net.request("remote-kitten-images"),
     ).resolves.toEqual({
-      status: 503,
-      fields: { error: "Network broker unavailable" },
+      status: 200,
+      fields: { url: "https://cataas.com/cat/brokered" },
     });
     expect(sendMessage).toHaveBeenCalledWith({
       type: "network-request",
       modId: manifest.id,
       contractId: "remote-kitten-images",
+    });
+  });
+
+  test("service worker denies broker requests without an egress grant", async () => {
+    const manifest = loadUnpackedMod(kittenModRoot).manifest;
+    await expect(
+      handleBrokerRequest(
+        [{ manifest, entry: null }],
+        { [manifest.id]: true },
+        { [manifest.id]: ["visual.ad-slot.replace"] },
+        manifest.id,
+        "remote-kitten-images",
+      ),
+    ).resolves.toEqual({
+      status: 403,
+      fields: { error: "Network request denied" },
     });
   });
 

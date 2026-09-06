@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Black kitten</title>
+  <desc id="description">A simple illustration of a black kitten with green eyes.</desc>
+  <rect width="640" height="360" rx="24" fill="#1f2428"/>
+  <ellipse cx="320" cy="300" rx="140" ry="20" fill="#12161a"/>
+  <ellipse cx="320" cy="230" rx="100" ry="78" fill="#2a3036"/>
+  <circle cx="320" cy="150" r="86" fill="#343b42"/>
+  <path d="M248 92 262 35 308 88Z" fill="#2a3036"/>
+  <path d="M332 80 382 38 392 102Z" fill="#2a3036"/>
+  <ellipse cx="292" cy="145" rx="11" ry="15" fill="#8ecf78"/>
+  <ellipse cx="348" cy="145" rx="11" ry="15" fill="#8ecf78"/>
+  <path d="M320 172 332 180 320 188 308 180Z" fill="#6f4a48"/>
+</svg>
