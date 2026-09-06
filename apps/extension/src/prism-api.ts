@@ -62,7 +62,11 @@ export class TabUndoStack {
     if (undo === undefined) {
       return false;
     }
-    undo();
+    try {
+      undo();
+    } catch {
+      // Undo is best-effort on live hosts.
+    }
     if (stack?.length === 0) {
       this.#stacks.delete(tabId);
     }

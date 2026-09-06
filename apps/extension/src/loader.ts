@@ -70,9 +70,11 @@ export interface LoadNativeModsOptions {
   readonly emit?: (event: ActivityEvent) => void | Promise<void>;
   readonly onStateChange?: (state: ModLoadState) => void;
   readonly userscriptsAvailable?: boolean;
+  readonly signal?: AbortSignal;
   readonly runEntry?: (
     source: string,
     prism: PrismApi,
+    signal?: AbortSignal,
   ) => Promise<void>;
 }
 
@@ -161,7 +163,7 @@ export async function loadNativeMods(
           );
         }
         if (mod.entrySource !== undefined && options.runEntry !== undefined) {
-          await options.runEntry(mod.entrySource, prism);
+          await options.runEntry(mod.entrySource, prism, options.signal);
         } else {
           await loaded.activate?.(prism);
         }
@@ -169,8 +171,8 @@ export async function loadNativeMods(
         return report("active");
       } catch (error) {
         await Promise.all(pendingActivity).catch(() => undefined);
-        if (isAbortError(error)) {
-          throw error;
+        if (options.signal?.aborted || isAbortError(error)) {
+          throw isAbortError(error) ? error : createAbortError();
         }
         return report("failed");
       }
@@ -394,6 +396,12 @@ function wildcardExpression(pattern: string): RegExp {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
+}
+
+function createAbortError(): Error {
+  const error = new Error("Aborted");
+  error.name = "AbortError";
+  return error;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

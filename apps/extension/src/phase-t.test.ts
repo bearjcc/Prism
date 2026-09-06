@@ -84,6 +84,30 @@ describe("Phase T mod pause after repeated failures", () => {
     expect(pageFlag.loaded).toBe(true);
   });
 
+  test("mod activate failure while aborted rethrows AbortError", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      loadNativeMods(
+        [
+          {
+            manifest: emptyManifest,
+            activate: async () => {
+              throw new Error("Native mod sandbox stopped");
+            },
+          },
+        ],
+        {
+          url: "https://example.com/page",
+          tabId: 1,
+          grantsByMod: {},
+          handlers: {},
+          signal: controller.signal,
+        },
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+  });
+
   test("one throwing load does not reject load or skip siblings", async () => {
     const siblingActivate = vi.fn();
 

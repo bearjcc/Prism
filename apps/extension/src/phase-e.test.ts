@@ -7,6 +7,7 @@ import { activate as activateYoutubeHomeMod } from "../../../mods/youtube-home-v
 import {
   activateContentMods,
   createContentHandlers,
+  MAX_YOUTUBE_HOME_UNDO_CHILDREN,
 } from "./content-script.js";
 import { findYoutubeHomeFeed } from "./extractors/youtube-home.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
@@ -228,6 +229,73 @@ describe("Phase E YouTube Home tracer", () => {
       feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
     ).toHaveLength(3);
     expect(feed?.querySelector("[data-fixture-kind='hostile']")).not.toBeNull();
+  });
+
+  test("allowlist skips undo snapshot on large live feeds", () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    expect(feed).not.toBeNull();
+    for (let i = 0; i < MAX_YOUTUBE_HOME_UNDO_CHILDREN + 1; i += 1) {
+      const filler = dom.window.document.createElement("ytd-rich-item-renderer");
+      filler.setAttribute("data-fixture-kind", `filler-${i}`);
+      filler.textContent = "Filler";
+      feed?.append(filler);
+    }
+    const handlers = createContentHandlers(dom.window.document);
+    const undo = handlers.allowlist?.("youtube.home", "video");
+    expect(undo).toBeUndefined();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+  });
+
+  test("allowlist skips feed children that are already detached", () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const detached = feed?.querySelector("[data-fixture-kind='post']");
+    detached?.remove();
+    const handlers = createContentHandlers(dom.window.document);
+    expect(() => {
+      handlers.allowlist?.("youtube.home", "video");
+    }).not.toThrow();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+  });
+
+  test("undo survives a stale Home feed after YouTube re-renders", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const undo = new TabUndoStack();
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+      undo,
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = dom.window.document.querySelector(
+      "ytd-rich-grid-renderer #contents",
+    );
+    feed?.replaceChildren(dom.window.document.createElement("div"));
+
+    expect(() => undo.undoLast(5)).not.toThrow();
+    expect(undo.undoLast(5)).toBe(false);
   });
 
   test("mounts only extracted videos and restores the fixture on undo", async () => {

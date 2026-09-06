@@ -138,6 +138,9 @@ export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 2_000;
 export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
+/** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
+export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
+const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
 const YOUTUBE_COMMENTS_SELECTOR =
   "[data-prism-comments-slot], ytd-comments#comments";
 
@@ -240,9 +243,19 @@ export async function activateContentMods(
       undo: options.undo,
       onStateChange: options.onStateChange,
       userscriptsAvailable: userscriptsAvailable === true,
-      runEntry: runNativeModInSandbox,
+      signal: options.signal,
+      runEntry: (source, prism, signal) =>
+        runNativeModInSandbox(
+          source,
+          prism,
+          options.contentDocument,
+          signal,
+        ),
       ...(options.emit === undefined ? {} : { emit: options.emit }),
     });
+    if (options.signal?.aborted) {
+      return [];
+    }
     applyActiveCosmeticHides(mods, options);
     try {
       await (options.reportLoadOutcomes?.(states, options.url) ??
@@ -603,7 +616,7 @@ export function createContentHandlers(
           return undefined;
         }
         const feed = findYoutubeHomeFeed(contentDocument);
-        if (feed === undefined) {
+        if (feed === undefined || !feed.isConnected) {
           return () => {};
         }
 
@@ -612,9 +625,12 @@ export function createContentHandlers(
           const firstConversion =
             feed.querySelector('[data-prism-owned="youtube-home-video"]') ===
             null;
-          previousChildren = firstConversion
-            ? Array.from(feed.childNodes)
-            : undefined;
+          if (firstConversion) {
+            const childCount = feed.childNodes.length;
+            if (childCount <= MAX_YOUTUBE_HOME_UNDO_CHILDREN) {
+              previousChildren = Array.from(feed.childNodes);
+            }
+          }
         } catch {
           previousChildren = undefined;
         }
@@ -627,6 +643,9 @@ export function createContentHandlers(
         const saved = previousChildren;
         return () => {
           try {
+            if (!feed.isConnected) {
+              return;
+            }
             feed.replaceChildren(...saved);
           } catch {
             // Undo is best-effort on live Polymer hosts.
@@ -910,16 +929,25 @@ function applyYoutubeHomeAllowlist(
   feed: Element,
   contentDocument: Document,
 ): void {
-  for (const child of youtubeHomeFeedChildren(feed)) {
+  let passes = 0;
+  while (passes < MAX_YOUTUBE_HOME_ALLOWLIST_PASSES) {
+    passes += 1;
+    const child = nextUnownedYoutubeHomeFeedChild(feed);
+    if (child === undefined) {
+      break;
+    }
+    if (!child.isConnected) {
+      continue;
+    }
     try {
-      if (isYoutubeHomeFeedChildOwned(child)) {
-        continue;
-      }
       let videos: readonly YoutubeHomeVideo[] = [];
       try {
         videos = extractYoutubeHome(child).videos;
       } catch {
         videos = [];
+      }
+      if (!child.isConnected) {
+        continue;
       }
       if (videos.length === 0) {
         safeRemoveFeedChild(child);
@@ -928,6 +956,9 @@ function applyYoutubeHomeAllowlist(
       const tiles = videos
         .map((video) => createYoutubeHomeTile(contentDocument, video))
         .filter((tile): tile is HTMLElement => tile !== null);
+      if (!child.isConnected) {
+        continue;
+      }
       if (tiles.length === 0) {
         safeRemoveFeedChild(child);
         continue;
@@ -935,12 +966,28 @@ function applyYoutubeHomeAllowlist(
       try {
         child.replaceWith(...tiles);
       } catch {
-        safeRemoveFeedChild(child);
+        if (child.isConnected) {
+          safeRemoveFeedChild(child);
+        }
       }
     } catch {
-      safeRemoveFeedChild(child);
+      if (child.isConnected) {
+        safeRemoveFeedChild(child);
+      }
     }
   }
+}
+
+function nextUnownedYoutubeHomeFeedChild(feed: Element): Element | undefined {
+  for (const child of youtubeHomeFeedChildren(feed)) {
+    if (!child.isConnected) {
+      continue;
+    }
+    if (!isYoutubeHomeFeedChildOwned(child)) {
+      return child;
+    }
+  }
+  return undefined;
 }
 
 function isYoutubeHomeFeedChildOwned(child: Element): boolean {
