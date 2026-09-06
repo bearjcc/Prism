@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, test } from "vitest";
 import {
+  defaultYoutubeThumbnailUrl,
   extractYoutubeHome,
   findYoutubeHomeFeed,
 } from "./youtube-home.js";
@@ -21,6 +22,12 @@ const fixturePath = join(modRoot, "fixtures", "home.html");
 const liveFixturePath = join(modRoot, "fixtures", "home-live.html");
 
 describe("extractYoutubeHome", () => {
+  test("defaultYoutubeThumbnailUrl builds an i.ytimg hqdefault URL", () => {
+    expect(defaultYoutubeThumbnailUrl("video-alpha")).toBe(
+      "https://i.ytimg.com/vi/video-alpha/hqdefault.jpg",
+    );
+  });
+
   test("returns only ordinary video items from the Home fixture", () => {
     const dom = new JSDOM(readFileSync(fixturePath, "utf8"), {
       url: "https://www.youtube.com/",

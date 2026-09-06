@@ -4,6 +4,7 @@ export interface YoutubeHomeVideo {
   readonly id: string;
   readonly title: string;
   readonly href: string;
+  readonly thumbnailUrl?: string;
 }
 
 export interface YoutubeHomeExtraction {
@@ -78,6 +79,11 @@ const HOME_FEED_ITEM_SELECTOR = [
   "ytd-continuation-item-renderer",
   "grid-shelf-view-model",
 ].join(", ");
+
+export function defaultYoutubeThumbnailUrl(videoId: string): string {
+  const id = videoId.trim();
+  return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+}
 
 export function extractYoutubeHome(root: ParentNode): YoutubeHomeExtraction {
   try {
@@ -239,7 +245,7 @@ function videoFromCard(card: Element): YoutubeHomeVideo | undefined {
     if (titleLink !== null) {
       const fromTitle = videoFromLink(titleLink);
       if (fromTitle !== undefined) {
-        return fromTitle;
+        return withThumbnail(fromTitle, thumbnailFromCard(card));
       }
     }
     const thumbnailLink = card.querySelector<HTMLAnchorElement>(
@@ -253,14 +259,50 @@ function videoFromCard(card: Element): YoutubeHomeVideo | undefined {
       return undefined;
     }
     if (fromThumbnail.title !== "") {
-      return fromThumbnail;
+      return withThumbnail(fromThumbnail, thumbnailFromCard(card));
     }
     const title =
       titleLink?.getAttribute("title") ??
       titleLink?.getAttribute("aria-label") ??
       titleLink?.textContent ??
       fromThumbnail.id;
-    return { ...fromThumbnail, title: normalizeText(title) };
+    return withThumbnail(
+      { ...fromThumbnail, title: normalizeText(title) },
+      thumbnailFromCard(card),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+function withThumbnail(
+  video: YoutubeHomeVideo,
+  thumbnailUrl?: string,
+): YoutubeHomeVideo {
+  if (thumbnailUrl === undefined || thumbnailUrl === "") {
+    return video;
+  }
+  return { ...video, thumbnailUrl };
+}
+
+function thumbnailFromCard(card: Element): string | undefined {
+  try {
+    for (const img of Array.from(card.querySelectorAll("img[src]"))) {
+      const raw = img.getAttribute("src")?.trim();
+      if (raw === undefined || raw === "") {
+        continue;
+      }
+      if (raw.startsWith("data:")) {
+        continue;
+      }
+      if (raw.startsWith("//")) {
+        return `https:${raw}`;
+      }
+      if (raw.startsWith("http://") || raw.startsWith("https://")) {
+        return raw;
+      }
+    }
+    return undefined;
   } catch {
     return undefined;
   }

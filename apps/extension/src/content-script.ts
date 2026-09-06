@@ -17,6 +17,7 @@ import {
 import {
   extractYoutubeHome,
   findYoutubeHomeFeed,
+  defaultYoutubeThumbnailUrl,
   youtubeHomeFeedChildren,
   type YoutubeHomeVideo,
 } from "./extractors/youtube-home.js";
@@ -141,6 +142,50 @@ export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
 /** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
 export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
 const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
+const YOUTUBE_HOME_TILE_STYLE_ID = "prism-youtube-home-tiles";
+const YOUTUBE_HOME_TILE_CSS = `
+article[data-prism-owned="youtube-home-video"] {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 210px;
+  max-width: 100%;
+  margin: 0 0 24px;
+  padding: 0;
+  font: 14px/1.4 Roboto, Arial, sans-serif;
+  color: #0f0f0f;
+}
+
+article[data-prism-owned="youtube-home-video"] a.prism-yt-home-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+  border-radius: 12px;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-title {
+  display: block;
+  margin-top: 12px;
+  max-height: 4.2em;
+  overflow: hidden;
+}
+`;
 const YOUTUBE_COMMENTS_SELECTOR =
   "[data-prism-comments-slot], ytd-comments#comments";
 
@@ -935,6 +980,7 @@ function applyYoutubeHomeAllowlist(
   feed: Element,
   contentDocument: Document,
 ): void {
+  ensureYoutubeHomeTileStyles(contentDocument);
   let passes = 0;
   while (passes < MAX_YOUTUBE_HOME_ALLOWLIST_PASSES) {
     passes += 1;
@@ -1019,6 +1065,25 @@ function safeRemoveFeedChild(child: Element): void {
   }
 }
 
+function ensureYoutubeHomeTileStyles(contentDocument: Document): void {
+  const root = contentDocument.head ?? contentDocument.documentElement;
+  if (root === null) {
+    return;
+  }
+  if (root.querySelector(`#${YOUTUBE_HOME_TILE_STYLE_ID}`) !== null) {
+    return;
+  }
+  try {
+    const style = contentDocument.createElement("style");
+    style.id = YOUTUBE_HOME_TILE_STYLE_ID;
+    style.dataset.prismOwned = "youtube-home-tiles";
+    style.textContent = YOUTUBE_HOME_TILE_CSS;
+    root.append(style);
+  } catch {
+    // Best-effort only.
+  }
+}
+
 function createYoutubeHomeTile(
   contentDocument: Document,
   video: YoutubeHomeVideo,
@@ -1034,9 +1099,28 @@ function createYoutubeHomeTile(
     const tile = contentDocument.createElement("article");
     tile.dataset.prismOwned = "youtube-home-video";
     tile.dataset.videoId = video.id;
+
     const link = contentDocument.createElement("a");
+    link.className = "prism-yt-home-card";
     link.href = video.href;
-    link.textContent = video.title;
+
+    const thumb = contentDocument.createElement("span");
+    thumb.className = "prism-yt-home-thumb";
+    const image = contentDocument.createElement("img");
+    image.src =
+      video.thumbnailUrl?.trim() === ""
+        ? defaultYoutubeThumbnailUrl(video.id)
+        : (video.thumbnailUrl ?? defaultYoutubeThumbnailUrl(video.id));
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    thumb.append(image);
+
+    const title = contentDocument.createElement("span");
+    title.className = "prism-yt-home-title";
+    title.textContent = video.title;
+
+    link.append(thumb, title);
     tile.append(link);
     return tile;
   } catch {

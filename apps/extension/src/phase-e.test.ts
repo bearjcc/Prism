@@ -147,7 +147,8 @@ describe("Phase E YouTube Home tracer", () => {
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
     expect(
       Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
-        link.textContent,
+        link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
         link.getAttribute("href"),
       ]),
     ).toEqual([
@@ -155,6 +156,13 @@ describe("Phase E YouTube Home tracer", () => {
       ["Lockup beta video", "https://www.youtube.com/watch?v=lockup-beta"],
       ["Lockup gamma video", "https://www.youtube.com/watch?v=lockup-gamma"],
     ]);
+    const firstTile = feed?.querySelector('[data-prism-owned="youtube-home-video"]');
+    expect(firstTile?.querySelector("img")?.getAttribute("src")).toBe(
+      "https://i.ytimg.com/vi/lockup-alpha/hqdefault.jpg",
+    );
+    expect(
+      dom.window.document.getElementById("prism-youtube-home-tiles"),
+    ).not.toBeNull();
   });
 
   test("allowlist never throws through the Prism API on broken feed children", async () => {
@@ -364,7 +372,8 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(2);
     expect(
       Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
-        link.textContent,
+        link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
         link.getAttribute("href"),
       ]),
     ).toEqual([
@@ -413,8 +422,10 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(3);
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map((link) =>
-        link.textContent,
+      Array.from(feed?.querySelectorAll("a") ?? []).map(
+        (link) =>
+          link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
       ),
     ).toEqual(["Alpha video", "Beta video", "Gamma video"]);
   });
