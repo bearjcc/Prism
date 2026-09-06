@@ -27,9 +27,9 @@ describe("filterCatalogue", () => {
   });
 
   it("filters by site chip", () => {
-    const list = filterCatalogue(catalogue(), "", "popular", "reddit.com");
-    expect(list.every((m) => m.siteHost === "reddit.com")).toBe(true);
-    expect(list.length).toBe(1);
+    const list = filterCatalogue(catalogue(), "", "popular", "youtube.com");
+    expect(list.every((m) => m.siteHost === "youtube.com")).toBe(true);
+    expect(list.length).toBe(2);
   });
 
   it("matches name search", () => {

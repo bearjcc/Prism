@@ -36,6 +36,7 @@ node_modules/
 dist/
 apps/web/.next/
 apps/web/.next-dev/
+apps/web/public/packages/*.prism
 *.tsbuildinfo
 apps/extension/targets/chrome/bundled-mods.json
 apps/extension/targets/chrome/bundled-mods/

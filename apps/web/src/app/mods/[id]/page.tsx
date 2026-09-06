@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CommentsPanel } from "../../../components/comments-panel";
-import { InstallControl } from "../../../components/install-control";
+import { ModInstallPanel } from "../../../components/mod-install-panel";
 import { ModShot } from "../../../components/mod-shot";
 import { SiteShell } from "../../../components/site-shell";
 import { catalogue, formatInstalls, formatRating, getMod } from "../../../lib/catalogue";
@@ -44,10 +44,16 @@ export default async function ModPage({ params }: Props) {
             <span aria-hidden="true"> / </span>
             {formatRating(mod)}
           </p>
-          <p className="mod-install">
-            <InstallControl className="btn btn-solid" labelInstall="Install" />
+          <p className="mod-package-id">
+            <code>{mod.packageId}</code>
+            <span>{mod.runtime} runtime</span>
           </p>
         </header>
+        <section className="mod-copy">
+          <p>{mod.summary}</p>
+          <p>{mod.description}</p>
+        </section>
+        <ModInstallPanel mod={mod} />
         <section className="caps" aria-labelledby="caps-heading">
           <h2 id="caps-heading">Capabilities</h2>
           <ul>
@@ -60,13 +66,19 @@ export default async function ModPage({ params }: Props) {
             ))}
           </ul>
         </section>
+        <section className="scopes" aria-labelledby="scopes-heading">
+          <h2 id="scopes-heading">Scopes</h2>
+          <ul>
+            {mod.scopes.map((scope) => (
+              <li key={scope}>
+                <code>{scope}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
         <div className="shot-strip">
           <ModShot hue={mod.screenshotHue} label={mod.screenshotLabel} scene={mod.screenshotScene} />
         </div>
-        <section className="mod-copy">
-          <p>{mod.summary}</p>
-          <p>{mod.description}</p>
-        </section>
         <section className="mod-versions">
           <h2>Versions</h2>
           <ul>

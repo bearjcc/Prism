@@ -618,8 +618,101 @@ button:disabled,
   font-size: var(--text-sm);
 }
 
-.mod-install {
-  margin: var(--space-sm) 0 0;
+.mod-package-id {
+  margin: var(--space-2xs) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+}
+
+.mod-package-id code {
+  font-size: var(--text-xs);
+}
+
+.mod-install-panel {
+  margin: var(--space-lg) 0 0;
+  padding: var(--space-md);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.mod-install-cta {
+  margin: 0 0 var(--space-sm);
+}
+
+.install-steps {
+  margin: 0 0 var(--space-md);
+  padding-left: 1.25rem;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.install-steps li {
+  display: grid;
+  gap: 0.15rem;
+  font-size: var(--text-sm);
+}
+
+.install-steps strong {
+  font-weight: 600;
+}
+
+.install-steps span {
+  color: var(--muted);
+}
+
+.install-meta {
+  margin: 0;
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.install-meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.install-meta dt {
+  font-weight: 600;
+}
+
+.install-meta dd {
+  margin: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.install-meta code {
+  font-size: var(--text-xs);
+  word-break: break-all;
+}
+
+.install-meta dd span {
+  color: var(--muted);
+}
+
+.scopes {
+  margin: var(--space-lg) 0 0;
+}
+
+.scopes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--hairline) solid var(--line);
+}
+
+.scopes li {
+  padding: 0.65rem 0;
+  border-bottom: var(--hairline) solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.scopes code {
+  font-size: var(--text-xs);
+  word-break: break-all;
 }
 
 .caps {

@@ -53,41 +53,10 @@ function YtWatch() {
   );
 }
 
-function GhFiles() {
-  return (
-    <div className="shot-gh">
-      {["a", "b", "c", "d", "e"].map((id) => (
-        <div key={id} className="shot-file">
-          <span className="shot-file-ico" />
-          <span className="shot-thumb-line" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RedditFeed() {
-  return (
-    <div className="shot-reddit">
-      {["a", "b", "c"].map((id) => (
-        <div key={id} className="shot-post">
-          <span className="shot-votes" />
-          <span className="shot-post-body">
-            <span className="shot-thumb-line" />
-            <span className="shot-thumb-line short" />
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 const SCENES: Record<Scene, () => ReactElement> = {
   kittens: Kittens,
   "yt-home": YtHome,
   "yt-watch": YtWatch,
-  "gh-files": GhFiles,
-  "reddit-feed": RedditFeed,
 };
 
 export function ModShot({
