@@ -9,7 +9,8 @@
     "apps/web"
   ],
   "scripts": {
-    "build": "tsc -b && node scripts/generate-bundled-mods.mjs && node scripts/generate-web-packages.mjs && node scripts/ensure-next.mjs && npm run build --workspace=@prism/web",
+    "build": "tsc -b && node scripts/generate-bundled-mods.mjs && node scripts/prepare-web-build.mjs && node scripts/ensure-next.mjs && npm run build --workspace=@prism/web",
+    "build:web": "node scripts/ensure-next.mjs && npm run build --workspace=@prism/web",
     "test": "vitest run",
     "test:e2e": "node scripts/require-extension-build.mjs && playwright test",
     "lint": "eslint . && node scripts/check-text.mjs && node scripts/verify-references-lock.mjs && node scripts/check-publishable-tree.mjs",

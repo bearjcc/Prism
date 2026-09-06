@@ -22,7 +22,11 @@ Open http://localhost:3000/explore
 
 ## Build
 
-Root `npm run build` runs the extension TypeScript build, packs bundled mods, writes marketplace `.prism` downloads (`scripts/generate-web-packages.mjs`), then `next build` for this app.
+Root `npm run build` runs the extension TypeScript build, packs bundled mods, writes marketplace `.prism` downloads (`scripts/prepare-web-build.mjs`), then `next build` for this app.
+
+`npm run build:web` is the Railway entry point: it builds from the monorepo root so `mods/` and `@prism/schema` are available. The web workspace `prebuild` also runs `prepare-web-build.mjs`, so `npm run build --workspace=@prism/web` generates downloads without a full extension build.
+
+Railway should use monorepo root `/` with `railwayConfigFile` `/apps/web/railway.toml` (see that file for `build:web` and watch paths). An isolated `/apps/web` root skips mod sources and leaves `/packages/*.prism` missing in production.
 
 ## Extension detect
 
