@@ -4,13 +4,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   chromium,
-  type BrowserContext,
   type Worker,
 } from "@playwright/test";
+import type { ExtensionSession } from "./extension-session.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-export const extensionPath = join(
+export const chromeExtensionPath = join(
   repoRoot,
   "apps",
   "extension",
@@ -18,15 +18,12 @@ export const extensionPath = join(
   "chrome",
 );
 
-export async function launchExtensionContext(): Promise<{
-  context: BrowserContext;
-  serviceWorker: Worker;
-  extensionId: string;
-  close: () => Promise<void>;
-}> {
-  const userDataDir = await mkdtemp(join(tmpdir(), "prism-e2e-"));
-  const loadRoot = await mkdtemp(join(tmpdir(), "prism-ext-"));
-  await cp(extensionPath, loadRoot, { recursive: true });
+export async function launchChromeExtensionContext(): Promise<
+  ExtensionSession & { serviceWorker: Worker }
+> {
+  const userDataDir = await mkdtemp(join(tmpdir(), "prism-e2e-chrome-"));
+  const loadRoot = await mkdtemp(join(tmpdir(), "prism-ext-chrome-"));
+  await cp(chromeExtensionPath, loadRoot, { recursive: true });
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     args: [
@@ -47,6 +44,10 @@ export async function launchExtensionContext(): Promise<{
     context,
     serviceWorker,
     extensionId,
+    extensionUrl(path: string) {
+      return `chrome-extension://${extensionId}/${path}`;
+    },
+    canNavigateExtensionPages: true,
     async close() {
       await context.close();
       await rm(userDataDir, { recursive: true, force: true });
@@ -54,3 +55,8 @@ export async function launchExtensionContext(): Promise<{
     },
   };
 }
+
+/** @deprecated Use launchChromeExtensionContext */
+export const extensionPath = chromeExtensionPath;
+/** @deprecated Use launchChromeExtensionContext */
+export const launchExtensionContext = launchChromeExtensionContext;

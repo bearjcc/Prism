@@ -2,13 +2,17 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { expect, test } from "vitest";
+import {
+  FIREFOX_ANDROID_MIN_VERSION,
+  firefoxMobileContractViolations,
+  type FirefoxManifest,
+} from "./firefox-mobile-contract.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const chromeRoot = join(repoRoot, "apps", "extension", "targets", "chrome");
 const firefoxRoot = join(repoRoot, "apps", "extension", "targets", "firefox");
 
-type Manifest = {
-  manifest_version: number;
+type Manifest = FirefoxManifest & {
   background: {
     scripts?: string[];
     service_worker?: string;
@@ -20,14 +24,11 @@ type Manifest = {
     run_at: string;
   }>;
   action: { default_popup: string };
-  permissions: string[];
-  host_permissions?: string[];
   optional_host_permissions?: string[];
   web_accessible_resources?: Array<{
     resources: string[];
     matches: string[];
   }>;
-  browser_specific_settings?: unknown;
 };
 
 function readManifest(root: string): Manifest {
@@ -87,9 +88,12 @@ test("Firefox manifest matches Chrome declarations with a Gecko background form"
   const firefox = readManifest(firefoxRoot);
 
   expect(firefox.manifest_version).toBe(3);
-  expect(firefox.browser_specific_settings).toBeUndefined();
+  expect(firefox.browser_specific_settings?.gecko).toBeUndefined();
+  expect(firefox.browser_specific_settings?.gecko_android).toEqual({
+    strict_min_version: FIREFOX_ANDROID_MIN_VERSION,
+  });
   expect(JSON.stringify(firefox)).not.toMatch(/addons\.mozilla\.org/i);
-  expect(JSON.stringify(firefox)).not.toMatch(/"gecko"/i);
+  expect(firefoxMobileContractViolations(firefox)).toEqual([]);
 
   expect(firefox.permissions).toEqual(chrome.permissions);
   expect(firefox.host_permissions).toEqual(chrome.host_permissions);
