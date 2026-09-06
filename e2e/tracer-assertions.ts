@@ -25,12 +25,14 @@ export async function assertKittenTracerOnFixture(
     page.locator("ytd-ad-slot-renderer img[data-prism-owned]"),
   ).toHaveCount(1);
 
-  const popup = await session.context.newPage();
-  await popup.goto(session.extensionUrl("popup.html"));
-  await expect(popup.locator("#activity")).toContainText(
-    "prism.kitten-ad-replace visual.ad-slot.replace allowed",
-  );
-  await popup.close();
+  if (session.canNavigateExtensionPages) {
+    const popup = await session.context.newPage();
+    await popup.goto(session.extensionUrl("popup.html"));
+    await expect(popup.locator("#activity")).toContainText(
+      "prism.kitten-ad-replace visual.ad-slot.replace allowed",
+    );
+    await popup.close();
+  }
 }
 
 export async function assertYoutubeHomeTracer(page: Page): Promise<void> {

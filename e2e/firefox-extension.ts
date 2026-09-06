@@ -48,8 +48,12 @@ export async function launchFirefoxExtensionContext(): Promise<ExtensionSession>
     context,
     extensionId,
     extensionUrl(path: string) {
-      return `moz-extension://${extensionId}/${path}`;
+      const id = extensionId.endsWith("@temporary-addon")
+        ? extensionId.slice(0, -"@temporary-addon".length)
+        : extensionId;
+      return `moz-extension://${id}/${path}`;
     },
+    canNavigateExtensionPages: false,
     async close() {
       remote.disconnect();
       await context.close();

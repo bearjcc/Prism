@@ -47,6 +47,7 @@ export async function launchChromeExtensionContext(): Promise<
     extensionUrl(path: string) {
       return `chrome-extension://${extensionId}/${path}`;
     },
+    canNavigateExtensionPages: true,
     async close() {
       await context.close();
       await rm(userDataDir, { recursive: true, force: true });
