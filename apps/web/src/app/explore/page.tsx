@@ -9,7 +9,7 @@ export default function ExplorePage() {
     <SiteShell current="explore">
       <div className="page-head">
         <h1>Explore</h1>
-        <p>Browse public mods. No account required to install.</p>
+        <p>First-party Prism tracer mods, bundled in the extension. No account required to browse or install.</p>
       </div>
       <ExploreBrowser />
     </SiteShell>
