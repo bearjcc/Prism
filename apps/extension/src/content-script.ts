@@ -22,6 +22,8 @@ import {
 import {
   extractYoutubeHome,
   findYoutubeHomeFeed,
+  defaultYoutubeThumbnailUrl,
+  youtubeHomeFeedChildren,
   type YoutubeHomeVideo,
 } from "./extractors/youtube-home.js";
 import { normaliseRedditPermalink } from "./extractors/reddit-comments.js";
@@ -142,6 +144,70 @@ export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 2_000;
 export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
+/** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
+export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
+const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
+const YOUTUBE_HOME_TILE_STYLE_ID = "prism-youtube-home-tiles";
+const YOUTUBE_HOME_TILE_CSS = `
+[data-prism-youtube-home-grid] {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  column-gap: 16px;
+  row-gap: 24px;
+  width: 100%;
+}
+
+article[data-prism-owned="youtube-home-video"] {
+  box-sizing: border-box;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font: 14px/1.4 Roboto, Arial, sans-serif;
+  color: #0f0f0f;
+}
+
+article[data-prism-owned="youtube-home-video"] a.prism-yt-home-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #f2f2f2;
+  border-radius: 12px;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb.prism-yt-home-thumb-missing {
+  display: none;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-title {
+  display: block;
+  margin-top: 12px;
+  max-height: 4.2em;
+  overflow: hidden;
+}
+`;
+
+export function youtubeHomeTileStylesheet(): string {
+  return YOUTUBE_HOME_TILE_CSS;
+}
 const YOUTUBE_COMMENTS_SELECTOR =
   "[data-prism-comments-slot], ytd-comments#comments";
 
@@ -227,10 +293,16 @@ export async function activateContentMods(
           await Promise.all(waits);
         }
         throwIfAborted(options.signal);
+        if (isBundledExtensionEntry(entry)) {
+          return options.loadEntry(entry);
+        }
         if (mod.entrySource !== undefined) {
           return {};
         }
-        return options.loadEntry(entry);
+        if (entry !== null) {
+          return options.loadEntry(entry);
+        }
+        throw new Error(`Bundled mod ${manifest.id} has no entry`);
       },
     };
   });
@@ -244,9 +316,19 @@ export async function activateContentMods(
       undo: options.undo,
       onStateChange: options.onStateChange,
       userscriptsAvailable: userscriptsAvailable === true,
-      runEntry: runNativeModInSandbox,
+      signal: options.signal,
+      runEntry: (source, prism, signal) =>
+        runNativeModInSandbox(
+          source,
+          prism,
+          options.contentDocument,
+          signal,
+        ),
       ...(options.emit === undefined ? {} : { emit: options.emit }),
     });
+    if (options.signal?.aborted) {
+      return [];
+    }
     applyActiveCosmeticHides(mods, options);
     try {
       await (options.reportLoadOutcomes?.(states, options.url) ??
@@ -600,43 +682,49 @@ export function createContentHandlers(
       return () => style.remove();
     },
     allowlist(surface, itemType): void | (() => void) {
-      if (surface !== "youtube.home" || itemType !== "video") {
-        throw new Error(`Unsupported allowlist ${surface}.${itemType}`);
-      }
-      const feed = findYoutubeHomeFeed(contentDocument);
-      if (feed === undefined) {
-        return () => {};
-      }
-
-      const firstConversion =
-        feed.querySelector('[data-prism-owned="youtube-home-video"]') ===
-        null;
-      const previousChildren = firstConversion
-        ? Array.from(feed.childNodes)
-        : undefined;
-
-      for (const child of Array.from(feed.children)) {
-        if (child.getAttribute("data-prism-owned") === "youtube-home-video") {
-          continue;
+      try {
+        if (surface !== "youtube.home" || itemType !== "video") {
+          return undefined;
         }
-        const videos = extractYoutubeHome(child).videos;
-        if (videos.length === 0) {
-          child.remove();
-          continue;
+        const feed = findYoutubeHomeFeed(contentDocument);
+        if (feed === undefined || !feed.isConnected) {
+          return () => {};
         }
-        child.replaceWith(
-          ...videos.map((video) =>
-            createYoutubeHomeTile(contentDocument, video),
-          ),
-        );
-      }
 
-      if (previousChildren === undefined) {
-        return;
+        let previousChildren: readonly ChildNode[] | undefined;
+        try {
+          const firstConversion =
+            feed.querySelector('[data-prism-owned="youtube-home-video"]') ===
+            null;
+          if (firstConversion) {
+            const childCount = feed.childNodes.length;
+            if (childCount <= MAX_YOUTUBE_HOME_UNDO_CHILDREN) {
+              previousChildren = Array.from(feed.childNodes);
+            }
+          }
+        } catch {
+          previousChildren = undefined;
+        }
+
+        applyYoutubeHomeAllowlist(feed, contentDocument);
+
+        if (previousChildren === undefined) {
+          return undefined;
+        }
+        const saved = previousChildren;
+        return () => {
+          try {
+            if (!feed.isConnected) {
+              return;
+            }
+            feed.replaceChildren(...saved);
+          } catch {
+            // Undo is best-effort on live Polymer hosts.
+          }
+        };
+      } catch {
+        return undefined;
       }
-      return () => {
-        feed.replaceChildren(...previousChildren);
-      };
     },
     request(contractId, manifest): Promise<BrokeredResponse> {
       return requestBroker({
@@ -662,8 +750,8 @@ export function pageNeedsSurfaceRefresh(contentDocument: Document): boolean {
   const feed = findYoutubeHomeFeed(contentDocument);
   if (
     feed !== undefined &&
-    Array.from(feed.children).some(
-      (child) => child.getAttribute("data-prism-owned") !== "youtube-home-video",
+    youtubeHomeFeedChildren(feed).some(
+      (child) => !isYoutubeHomeFeedChildOwned(child),
     )
   ) {
     return true;
@@ -760,12 +848,69 @@ export function waitForYoutubeHomeFeed(
   timeoutMs: number = DEFAULT_YOUTUBE_HOME_WAIT_MS,
   signal?: AbortSignal,
 ): Promise<void> {
-  return waitForSelector(
+  return waitForFeedRoot(
+    () => findYoutubeHomeFeed(contentDocument),
     contentDocument,
-    "ytd-rich-grid-renderer #contents",
     timeoutMs,
     signal,
   );
+}
+
+function waitForFeedRoot(
+  locate: () => Element | undefined,
+  contentDocument: Document,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(createAbortError());
+  }
+  if (timeoutMs <= 0 || locate() !== undefined) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const view = contentDocument.defaultView;
+    if (view === null) {
+      resolve();
+      return;
+    }
+
+    let settled = false;
+    let observer: MutationObserver | undefined;
+
+    const finish = (error?: Error): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      observer?.disconnect();
+      view.clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      if (error === undefined) {
+        resolve();
+        return;
+      }
+      reject(error);
+    };
+
+    const onAbort = (): void => {
+      finish(createAbortError());
+    };
+
+    const MutationObserverCtor = view.MutationObserver;
+    if (MutationObserverCtor !== undefined) {
+      observer = new MutationObserverCtor(() => {
+        if (locate() !== undefined) {
+          finish();
+        }
+      });
+      observer.observe(contentDocument, { childList: true, subtree: true });
+    }
+
+    const timer = view.setTimeout(() => finish(), timeoutMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 export function waitForYoutubeCommentsSlot(
@@ -851,18 +996,237 @@ function waitForSelector(
   });
 }
 
+function applyYoutubeHomeAllowlist(
+  feed: Element,
+  contentDocument: Document,
+): void {
+  ensureYoutubeHomeTileStyles(contentDocument);
+  let passes = 0;
+  while (passes < MAX_YOUTUBE_HOME_ALLOWLIST_PASSES) {
+    passes += 1;
+    const child = nextUnownedYoutubeHomeFeedChild(feed);
+    if (child === undefined) {
+      break;
+    }
+    if (!child.isConnected) {
+      continue;
+    }
+    try {
+      let videos: readonly YoutubeHomeVideo[] = [];
+      try {
+        videos = extractYoutubeHome(child).videos;
+      } catch {
+        videos = [];
+      }
+      if (!child.isConnected) {
+        continue;
+      }
+      if (videos.length === 0) {
+        safeRemoveFeedChild(child);
+        continue;
+      }
+      const tiles = videos
+        .map((video) => createYoutubeHomeTile(contentDocument, video))
+        .filter((tile): tile is HTMLElement => tile !== null);
+      if (!child.isConnected) {
+        continue;
+      }
+      if (tiles.length === 0) {
+        safeRemoveFeedChild(child);
+        continue;
+      }
+      try {
+        child.replaceWith(...tiles);
+      } catch {
+        if (child.isConnected) {
+          safeRemoveFeedChild(child);
+        }
+      }
+    } catch {
+      if (child.isConnected) {
+        safeRemoveFeedChild(child);
+      }
+    }
+  }
+  applyYoutubeHomeFeedLayout(feed);
+}
+
+function applyYoutubeHomeFeedLayout(feed: Element): void {
+  try {
+    if (feed.querySelector('[data-prism-owned="youtube-home-video"]') === null) {
+      return;
+    }
+    applyYoutubeHomeGridContainer(feed);
+    for (const row of Array.from(feed.querySelectorAll("ytd-rich-grid-row"))) {
+      if (
+        row.querySelector('[data-prism-owned="youtube-home-video"]') === null
+      ) {
+        continue;
+      }
+      if ("style" in row) {
+        (row as HTMLElement).style.setProperty(
+          "display",
+          "contents",
+          "important",
+        );
+      }
+      const rowContents =
+        row.querySelector(":scope > #contents") ??
+        row.querySelector("#contents");
+      if (rowContents instanceof Element) {
+        applyYoutubeHomeGridContainer(rowContents);
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+}
+
+function applyYoutubeHomeGridContainer(container: Element): void {
+  if (container.getAttribute("data-prism-youtube-home-grid") === "true") {
+    return;
+  }
+  if (!("style" in container)) {
+    return;
+  }
+  const element = container as HTMLElement;
+  element.style.setProperty("display", "grid", "important");
+  element.style.setProperty(
+    "grid-template-columns",
+    "repeat(auto-fill, minmax(280px, 1fr))",
+    "important",
+  );
+  element.style.setProperty("column-gap", "16px", "important");
+  element.style.setProperty("row-gap", "24px", "important");
+  element.style.setProperty("width", "100%", "important");
+  container.setAttribute("data-prism-youtube-home-grid", "true");
+}
+
+function nextUnownedYoutubeHomeFeedChild(feed: Element): Element | undefined {
+  for (const child of youtubeHomeFeedChildren(feed)) {
+    if (!child.isConnected) {
+      continue;
+    }
+    if (!isYoutubeHomeFeedChildOwned(child)) {
+      return child;
+    }
+  }
+  return undefined;
+}
+
+function isYoutubeHomeFeedChildOwned(child: Element): boolean {
+  const owned = child.getAttribute("data-prism-owned");
+  return owned === "youtube-home-video" || owned === "youtube-home-hidden";
+}
+
+function safeRemoveFeedChild(child: Element): void {
+  try {
+    child.remove();
+    return;
+  } catch {
+    // Fall through to hide when Polymer rejects removal.
+  }
+  try {
+    child.setAttribute("hidden", "");
+    if ("style" in child) {
+      (child as HTMLElement).style.display = "none";
+    }
+    child.setAttribute("data-prism-owned", "youtube-home-hidden");
+  } catch {
+    // Best-effort only.
+  }
+}
+
+function ensureYoutubeHomeTileStyles(contentDocument: Document): void {
+  const root = contentDocument.head ?? contentDocument.documentElement;
+  if (root === null) {
+    return;
+  }
+  if (root.querySelector(`#${YOUTUBE_HOME_TILE_STYLE_ID}`) !== null) {
+    return;
+  }
+  try {
+    const style = contentDocument.createElement("style");
+    style.id = YOUTUBE_HOME_TILE_STYLE_ID;
+    style.dataset.prismOwned = "youtube-home-tiles";
+    style.textContent = YOUTUBE_HOME_TILE_CSS;
+    root.append(style);
+  } catch {
+    // Best-effort only.
+  }
+}
+
 function createYoutubeHomeTile(
   contentDocument: Document,
   video: YoutubeHomeVideo,
-): HTMLElement {
-  const tile = contentDocument.createElement("article");
-  tile.dataset.prismOwned = "youtube-home-video";
-  tile.dataset.videoId = video.id;
-  const link = contentDocument.createElement("a");
-  link.href = video.href;
-  link.textContent = video.title;
-  tile.append(link);
-  return tile;
+): HTMLElement | null {
+  if (
+    video.id.trim() === "" ||
+    !isValidYoutubeVideoId(video.id) ||
+    video.title.trim() === "" ||
+    video.href.trim() === ""
+  ) {
+    return null;
+  }
+  try {
+    const tile = contentDocument.createElement("article");
+    tile.dataset.prismOwned = "youtube-home-video";
+    tile.dataset.videoId = video.id;
+
+    const link = contentDocument.createElement("a");
+    link.className = "prism-yt-home-card";
+    link.href = video.href;
+
+    const thumb = contentDocument.createElement("span");
+    thumb.className = "prism-yt-home-thumb";
+    const image = contentDocument.createElement("img");
+    attachYoutubeHomeThumb(image, thumb, video);
+    thumb.append(image);
+
+    const title = contentDocument.createElement("span");
+    title.className = "prism-yt-home-title";
+    title.textContent = video.title;
+
+    link.append(thumb, title);
+    tile.append(link);
+    return tile;
+  } catch {
+    return null;
+  }
+}
+
+function isValidYoutubeVideoId(id: string): boolean {
+  const trimmed = id.trim();
+  return (
+    trimmed.length >= 6 &&
+    trimmed.length <= 32 &&
+    /^[\w-]+$/u.test(trimmed)
+  );
+}
+
+function attachYoutubeHomeThumb(
+  image: HTMLImageElement,
+  thumb: HTMLElement,
+  video: YoutubeHomeVideo,
+): void {
+  const fallback = defaultYoutubeThumbnailUrl(video.id);
+  const primary =
+    video.thumbnailUrl?.trim() === "" || video.thumbnailUrl === undefined
+      ? fallback
+      : video.thumbnailUrl.trim();
+  image.alt = "";
+  image.loading = "eager";
+  image.decoding = "async";
+  image.referrerPolicy = "origin";
+  image.src = primary;
+  image.addEventListener("error", () => {
+    if (image.src !== fallback) {
+      image.src = fallback;
+      return;
+    }
+    thumb.classList.add("prism-yt-home-thumb-missing");
+    image.remove();
+  });
 }
 
 export function applyCosmeticHides(
@@ -922,6 +1286,10 @@ export function rememberImportedAssets(
       registry.set(`${mod.manifest.id}:${asset}`, url);
     }
   }
+}
+
+function isBundledExtensionEntry(entry: string | null): boolean {
+  return entry !== null && entry.startsWith("bundled-mods/");
 }
 
 function throwIfAborted(signal?: AbortSignal): void {
@@ -1269,8 +1637,17 @@ if (typeof chrome !== "undefined") {
         type: "active-mods",
         url,
       }),
-    loadEntry: async (entry) =>
-      import(chrome.runtime.getURL(entry)) as Promise<ContentModModule>,
+    loadEntry: async (entry) => {
+      try {
+        return (await import(
+          chrome.runtime.getURL(entry)
+        )) as ContentModModule;
+      } catch (error) {
+        const detail =
+          error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to load bundled mod ${entry}: ${detail}`);
+      }
+    },
     handlers: createChromeContentHandlers(
       document,
       chrome.runtime,

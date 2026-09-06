@@ -25,6 +25,7 @@ export interface PageActivityMod {
   readonly grants: readonly string[];
   readonly disabledOnOrigin?: boolean;
   readonly pausedOnOrigin?: boolean;
+  readonly lastFailureOnOrigin?: string;
   readonly sessionExceptedOnOrigin?: boolean;
 }
 
@@ -89,6 +90,15 @@ export function pageActivityRows(
   }
 
   for (const event of snapshot.activity ?? []) {
+    if (event.layer === "mod-activate" && event.outcome === "failed") {
+      rows.push({
+        layer: "visual",
+        source: event.modId,
+        rule: `Activate failed: ${event.error}`,
+        attribution: "known",
+      });
+      continue;
+    }
     rows.push(rowForUnattributedActivity(event));
   }
 
@@ -145,7 +155,7 @@ function rowsForModOnOrigin(mod: PageActivityMod): PageActivityRow[] {
     rows.push({
       layer: "visual",
       source: mod.id,
-      rule: "Paused after repeated failures: content mods skip this origin.",
+      rule: formatPausedModRule(mod.lastFailureOnOrigin),
       attribution: "known",
     });
     if (hasBlock) {
@@ -208,6 +218,14 @@ function rowsForModOnOrigin(mod: PageActivityMod): PageActivityRow[] {
   return rows;
 }
 
+export function formatPausedModRule(lastFailure?: string): string {
+  const detail = lastFailure?.trim();
+  if (detail === undefined || detail === "") {
+    return "Paused after repeated failures: content mods skip this origin.";
+  }
+  return `Paused after repeated failures (${detail}).`;
+}
+
 function rowForCapability(
   modId: string,
   capability: string,
@@ -247,9 +265,11 @@ function rowForBehaviourPolicy(
 
 function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow {
   const detail =
-    event.layer === "userscript-runtime"
-      ? `userscript ${event.outcome}`
-      : `${event.capability} ${event.outcome}`;
+    event.layer === "mod-activate"
+      ? `activate failed (${event.error})`
+      : event.layer === "userscript-runtime"
+        ? `userscript ${event.outcome}`
+        : `${event.capability} ${event.outcome}`;
   return {
     layer: PAGE_ACTIVITY_UNCERTAIN,
     source: event.modId,

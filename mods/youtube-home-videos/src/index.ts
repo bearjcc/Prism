@@ -1,5 +1,5 @@
 import type { PrismApi } from "@prism/schema";
 
-export function activate(prism: PrismApi): void {
-  prism.ui.allowlist("youtube.home", "video");
+export async function activate(prism: PrismApi): Promise<void> {
+  await Promise.resolve(prism.ui.allowlist("youtube.home", "video"));
 }

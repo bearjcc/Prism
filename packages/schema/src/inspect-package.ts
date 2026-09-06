@@ -1,5 +1,7 @@
 import * as ts from "typescript";
 import type { PrismManifest } from "./manifest.js";
+import { inspectCssText } from "./inspect-css.js";
+import { inspectBrowserFilterText } from "./inspect-filter.js";
 
 export type PackageFindingKind = "css" | "filter" | "javascript" | "path";
 
@@ -17,28 +19,9 @@ export interface PackageInspection {
 
 export type PackageFiles = Readonly<Record<string, Uint8Array>>;
 
-const ALLOWED_CSS_PROPERTIES = new Set([
-  "background",
-  "clear",
-  "color",
-  "display",
-  "height",
-  "margin-left",
-  "margin-right",
-  "max-width",
-  "padding-left",
-  "padding-right",
-  "position",
-  "right",
-  "top",
-  "width",
-]);
+export { inspectCssText } from "./inspect-css.js";
+export { inspectBrowserFilterText } from "./inspect-filter.js";
 
-const ALLOWED_CSS_AT_RULES = new Set(["media", "-moz-document", "document"]);
-const CSS_DECLARATION =
-  /(?:[;{}])\s*([-a-zA-Z]+)\s*:\s*[^{};]*(?:;|\})/gu;
-const CSS_AT_RULE = /@([a-zA-Z-]+)/gu;
-const HOST_FILTER = /^\|\|([a-z0-9.-]+)\^$/iu;
 const FORBIDDEN_PATH = /^(?:filters\/dns(?:\/|$)|gateway(?:\/|$))/u;
 const TEXT_DECODER = new TextDecoder();
 const FORBIDDEN_JAVASCRIPT_GLOBALS = new Set([
@@ -108,113 +91,6 @@ export function inspectPackage(
     }
   }
   return { ok: findings.length === 0, findings };
-}
-
-export function inspectBrowserFilterText(
-  file: string,
-  source: string,
-): PackageFinding[] {
-  const findings: PackageFinding[] = [];
-  for (const [index, sourceLine] of source.split(/\r?\n/u).entries()) {
-    const line = sourceLine.trim();
-    if (line === "" || line.startsWith("!")) {
-      continue;
-    }
-    const match = HOST_FILTER.exec(line);
-    if (match !== null && isSafeHost(match[1] ?? "")) {
-      continue;
-    }
-    if (isSafeCosmeticFilter(line)) {
-      continue;
-    }
-    if (match === null || !isSafeHost(match[1] ?? "")) {
-      findings.push({
-        kind: "filter",
-        file,
-        line: index + 1,
-        message: "browser filter must be a host block in the form ||host^",
-      });
-    }
-  }
-  return findings;
-}
-
-function isSafeCosmeticFilter(line: string): boolean {
-  const separator = line.indexOf("##");
-  if (separator < 0 || line.includes("#@#")) {
-    return false;
-  }
-  const domains = line.slice(0, separator).trim();
-  const selector = line.slice(separator + 2).trim();
-  return (
-    (domains === "" ||
-      domains
-        .split(",")
-        .every((domain) => isSafeHost(domain.replace(/^\./u, "")))) &&
-    selector !== "" &&
-    !/[{}@]/u.test(selector) &&
-    !/url\s*\(/iu.test(selector)
-  );
-}
-
-function isSafeHost(host: string): boolean {
-  return (
-    host.length > 0 &&
-    host.length <= 253 &&
-    !host.startsWith(".") &&
-    !host.endsWith(".") &&
-    !host.includes("..") &&
-    host.split(".").every((label) => label.length > 0 && label.length <= 63)
-  );
-}
-
-export function inspectCssText(
-  file: string,
-  source: string,
-): PackageFinding[] {
-  const findings: PackageFinding[] = [];
-  const withoutComments = source.replace(/\/\*[\s\S]*?(?:\*\/|$)/gu, "");
-  for (const match of withoutComments.matchAll(CSS_AT_RULE)) {
-    const atRule = match[1]?.toLowerCase();
-    if (atRule !== undefined && !ALLOWED_CSS_AT_RULES.has(atRule)) {
-      findings.push({
-        kind: "css",
-        file,
-        line: lineAt(source, match.index ?? 0),
-        message: `CSS at-rule @${atRule} is not allowlisted`,
-      });
-    }
-  }
-  for (const match of withoutComments.matchAll(CSS_DECLARATION)) {
-    const property = match[1]?.toLowerCase();
-    if (property !== undefined && !ALLOWED_CSS_PROPERTIES.has(property)) {
-      findings.push({
-        kind: "css",
-        file,
-        line: lineAt(source, match.index ?? 0),
-        message: `CSS property ${property} is not allowlisted`,
-      });
-    }
-  }
-  for (const pattern of [
-    /\burl\s*\(/iu,
-    /@import\b/iu,
-    /@(?:updateURL|downloadURL)\b/iu,
-    /\bexpression\s*\(/iu,
-    /-moz-binding\b/iu,
-    /\bbehavior\s*:/iu,
-  ]) {
-    const match = pattern.exec(withoutComments);
-    if (match !== null) {
-      findings.push({
-        kind: "css",
-        file,
-        line: lineAt(source, match.index),
-        message: "CSS contains a disallowed construct",
-      });
-    }
-  }
-  return findings;
 }
 
 function inspectNativeScript(

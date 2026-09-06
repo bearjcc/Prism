@@ -8,7 +8,7 @@ import type {
   SurfaceId,
   TrustedReplacement,
 } from "@prism/schema";
-import { inspectCssText } from "@prism/schema/inspect-package";
+import { inspectCssText } from "@prism/schema/inspect-css";
 import type { ActivityEvent } from "./gate.js";
 import { createCapabilityGate } from "./gate.js";
 import { cssFromMappedUserCss, mapUserCss } from "./css.js";
@@ -62,7 +62,11 @@ export class TabUndoStack {
     if (undo === undefined) {
       return false;
     }
-    undo();
+    try {
+      undo();
+    } catch {
+      // Undo is best-effort on live hosts.
+    }
     if (stack?.length === 0) {
       this.#stacks.delete(tabId);
     }

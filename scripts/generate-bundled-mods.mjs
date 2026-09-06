@@ -84,6 +84,8 @@ const schemaAlias = {
   "@prism/schema/archive": join(schemaSrc, "archive.ts"),
   "@prism/schema/css": join(schemaSrc, "css.ts"),
   "@prism/schema/inspect-package": join(schemaSrc, "inspect-package.ts"),
+  "@prism/schema/inspect-css": join(schemaSrc, "inspect-css.ts"),
+  "@prism/schema/inspect-filter": join(schemaSrc, "inspect-filter.ts"),
   "@prism/schema/usercss-map": join(schemaSrc, "usercss-map.ts"),
   "@prism/schema/egress": join(schemaSrc, "egress.ts"),
 };

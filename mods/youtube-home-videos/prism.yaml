@@ -8,3 +8,4 @@ scopes:
   - https://www.youtube.com/
 fixtures:
   - fixtures/home.html
+  - fixtures/home-live.html

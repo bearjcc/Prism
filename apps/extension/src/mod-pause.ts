@@ -5,9 +5,14 @@ export const MOD_FAILURE_BUDGET = 3;
 
 export const MOD_FAILURE_BUDGET_STORAGE_KEY = "modFailureBudget";
 
+export const MOD_LAST_FAILURE_STORAGE_KEY = "modLastFailure";
+
+export type ModLastFailureState = Record<string, Record<string, string>>;
+
 export interface ModOriginBudget {
   readonly failures: number;
   readonly paused: boolean;
+  readonly lastError?: string;
 }
 
 export type ModFailureBudgetState = Record<
@@ -65,15 +70,24 @@ export function recordModFailure(
   state: ModFailureBudgetState | undefined,
   modId: string,
   origin: string,
+  lastError?: string,
 ): ModFailureBudgetState {
   const current = state?.[modId]?.[origin];
   if (current?.paused === true) {
-    return cloneBudget(state);
+    if (lastError === undefined) {
+      return cloneBudget(state);
+    }
+    return setBudget(state, modId, origin, { ...current, lastError });
   }
   const failures = (current?.failures ?? 0) + 1;
   return setBudget(state, modId, origin, {
     failures,
     paused: failures >= MOD_FAILURE_BUDGET,
+    ...(lastError === undefined
+      ? current?.lastError === undefined
+        ? {}
+        : { lastError: current.lastError }
+      : { lastError }),
   });
 }
 
@@ -105,7 +119,58 @@ export function setModPausedOnOrigin(
     state?.[modId]?.[origin]?.failures ?? 0,
     MOD_FAILURE_BUDGET,
   );
-  return setBudget(state, modId, origin, { failures, paused: true });
+  const lastError = state?.[modId]?.[origin]?.lastError;
+  return setBudget(state, modId, origin, {
+    failures,
+    paused: true,
+    ...(lastError === undefined ? {} : { lastError }),
+  });
+}
+
+export function recordModLastFailure(
+  state: ModLastFailureState | undefined,
+  modId: string,
+  origin: string,
+  reason: string,
+): ModLastFailureState {
+  const trimmed = reason.trim();
+  if (trimmed === "") {
+    return cloneLastFailure(state);
+  }
+  const next = cloneLastFailure(state);
+  next[modId] = { ...next[modId], [origin]: trimmed };
+  return next;
+}
+
+export function clearModLastFailure(
+  state: ModLastFailureState | undefined,
+  modId: string,
+  origin: string,
+): ModLastFailureState {
+  const origins = state?.[modId];
+  if (origins?.[origin] === undefined) {
+    return cloneLastFailure(state);
+  }
+  const next = cloneLastFailure(state);
+  const rest = { ...origins };
+  delete rest[origin];
+  if (Object.keys(rest).length === 0) {
+    delete next[modId];
+  } else {
+    next[modId] = rest;
+  }
+  return next;
+}
+
+export function readModLastFailure(
+  lastFailures: ModLastFailureState | undefined,
+  budget: ModFailureBudgetState | undefined,
+  modId: string,
+  origin: string,
+): string | undefined {
+  return (
+    lastFailures?.[modId]?.[origin] ?? budget?.[modId]?.[origin]?.lastError
+  );
 }
 
 export async function reportModLoadOutcomes(
@@ -115,6 +180,7 @@ export async function reportModLoadOutcomes(
     readonly type: "record-mod-failure" | "record-mod-success";
     readonly modId: string;
     readonly origin: string;
+    readonly reason?: string;
   }) => Promise<unknown>,
 ): Promise<void> {
   const origin = originFromPageUrl(pageUrl);
@@ -129,6 +195,7 @@ export async function reportModLoadOutcomes(
             type: "record-mod-failure",
             modId: state.id,
             origin,
+            ...(state.error === undefined ? {} : { reason: state.error }),
           });
         } else if (state.status === "active") {
           await send({
@@ -159,6 +226,16 @@ function cloneBudget(
   state: ModFailureBudgetState | undefined,
 ): ModFailureBudgetState {
   const next: ModFailureBudgetState = {};
+  for (const [modId, origins] of Object.entries(state ?? {})) {
+    next[modId] = { ...origins };
+  }
+  return next;
+}
+
+function cloneLastFailure(
+  state: ModLastFailureState | undefined,
+): ModLastFailureState {
+  const next: ModLastFailureState = {};
   for (const [modId, origins] of Object.entries(state ?? {})) {
     next[modId] = { ...origins };
   }

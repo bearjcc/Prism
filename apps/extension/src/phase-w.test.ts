@@ -175,6 +175,7 @@ describe("Phase W current-page activity panel", () => {
         mods: [
           visualMod({
             pausedOnOrigin: true,
+            lastFailureOnOrigin: "Native mod sandbox timed out",
             optional: ["network.browser.block"],
             grants: ["visual.hide", "network.browser.block"],
           }),
@@ -187,7 +188,7 @@ describe("Phase W current-page activity panel", () => {
       {
         layer: "visual",
         source: "fixture.hide",
-        rule: "Paused after repeated failures: content mods skip this origin.",
+        rule: "Paused after repeated failures (Native mod sandbox timed out).",
         attribution: "known",
       },
       {

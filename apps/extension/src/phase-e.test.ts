@@ -7,7 +7,10 @@ import { activate as activateYoutubeHomeMod } from "../../../mods/youtube-home-v
 import {
   activateContentMods,
   createContentHandlers,
+  MAX_YOUTUBE_HOME_UNDO_CHILDREN,
+  youtubeHomeTileStylesheet,
 } from "./content-script.js";
+import { findYoutubeHomeFeed } from "./extractors/youtube-home.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 
 const youtubeModRoot = join(
@@ -18,6 +21,10 @@ const youtubeModRoot = join(
   "mods",
   "youtube-home-videos",
 );
+
+function findHomeFeed(document: Document): Element | null {
+  return findYoutubeHomeFeed(document) ?? null;
+}
 
 describe("Phase E YouTube Home tracer", () => {
   test("the mod only requests the videos-only Home allowlist", async () => {
@@ -118,6 +125,233 @@ describe("Phase E YouTube Home tracer", () => {
     ).toBe(stray);
   });
 
+  test("allowlist removes live-shaped Shorts, posts, and ads from the Home feed", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = findHomeFeed(dom.window.document);
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
+    expect(
+      Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
+        link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
+        link.getAttribute("href"),
+      ]),
+    ).toEqual([
+      ["Lockup alpha video", "https://www.youtube.com/watch?v=lockup-alpha"],
+      ["Lockup beta video", "https://www.youtube.com/watch?v=lockup-beta"],
+      ["Lockup gamma video", "https://www.youtube.com/watch?v=lockup-gamma"],
+    ]);
+    const firstTile = feed?.querySelector('[data-prism-owned="youtube-home-video"]');
+    expect(firstTile?.querySelector("img")?.getAttribute("src")).toBe(
+      "https://i.ytimg.com/vi/lockup-alpha/hqdefault.jpg",
+    );
+    expect(
+      dom.window.document.getElementById("prism-youtube-home-tiles"),
+    ).not.toBeNull();
+    expect(youtubeHomeTileStylesheet()).toContain(
+      "repeat(auto-fill, minmax(280px, 1fr))",
+    );
+    expect(feed?.getAttribute("data-prism-youtube-home-grid")).toBe("true");
+    expect(feed?.style.display).toBe("grid");
+  });
+
+  test("allowlist never throws through the Prism API on broken feed children", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const broken = dom.window.document.createElement("ytd-rich-item-renderer");
+    broken.innerHTML = `
+      <ytd-rich-grid-media>
+        <a id="video-title-link" href="/watch?v=broken-child">Broken child</a>
+      </ytd-rich-grid-media>
+    `;
+    broken.replaceWith = () => {
+      throw new DOMException("replace blocked");
+    };
+    broken.remove = () => {
+      throw new DOMException("remove blocked");
+    };
+    feed?.append(broken);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    expect(() => {
+      prism.ui.allowlist("youtube.home", "video");
+    }).not.toThrow();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(
+      broken.getAttribute("data-prism-owned") === "youtube-home-hidden" ||
+        broken.parentNode === null,
+    ).toBe(true);
+  });
+
+  test("allowlist survives hostile feed children that reject DOM mutation", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const hostile = dom.window.document.createElement("ytd-rich-section-renderer");
+    hostile.setAttribute("data-fixture-kind", "hostile");
+    hostile.innerHTML = "<p>Hostile shelf</p>";
+    hostile.replaceWith = () => {
+      throw new DOMException("replace blocked");
+    };
+    hostile.remove = () => {
+      throw new DOMException("remove blocked");
+    };
+    feed?.append(hostile);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await expect(activateYoutubeHomeMod(prism)).resolves.toBeUndefined();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(feed?.querySelector("[data-fixture-kind='hostile']")).not.toBeNull();
+  });
+
+  test("allowlist skips undo snapshot on large live feeds", () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    expect(feed).not.toBeNull();
+    for (let i = 0; i < MAX_YOUTUBE_HOME_UNDO_CHILDREN + 1; i += 1) {
+      const filler = dom.window.document.createElement("ytd-rich-item-renderer");
+      filler.setAttribute("data-fixture-kind", `filler-${i}`);
+      filler.textContent = "Filler";
+      feed?.append(filler);
+    }
+    const handlers = createContentHandlers(dom.window.document);
+    const undo = handlers.allowlist?.("youtube.home", "video");
+    expect(undo).toBeUndefined();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+  });
+
+  test("allowlist skips feed children that are already detached", () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const detached = feed?.querySelector("[data-fixture-kind='post']");
+    detached?.remove();
+    const handlers = createContentHandlers(dom.window.document);
+    expect(() => {
+      handlers.allowlist?.("youtube.home", "video");
+    }).not.toThrow();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+  });
+
+  test("undo survives a stale Home feed after YouTube re-renders", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const undo = new TabUndoStack();
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+      undo,
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = dom.window.document.querySelector(
+      "ytd-rich-grid-renderer #contents",
+    );
+    feed?.replaceChildren(dom.window.document.createElement("div"));
+
+    expect(() => undo.undoLast(5)).not.toThrow();
+    expect(undo.undoLast(5)).toBe(false);
+  });
+
+  test("activateContentMods loads bundled entry files instead of sandbox entrySource", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const loadEntry = vi.fn().mockResolvedValue({
+      activate: activateYoutubeHomeMod,
+    });
+
+    await activateContentMods({
+      url: "https://www.youtube.com/",
+      requestActiveMods: async () => ({
+        mods: [
+          {
+            manifest,
+            entry: "bundled-mods/prism.youtube-home-videos/src/index.js",
+            entrySource:
+              "export async function activate() { throw new Error('sandbox path'); }",
+            grants: ["youtube.home.allowlist"],
+          },
+        ],
+      }),
+      loadEntry,
+      handlers: createContentHandlers(dom.window.document),
+      undo: new TabUndoStack(),
+      contentDocument: dom.window.document,
+    });
+
+    expect(loadEntry).toHaveBeenCalledWith(
+      "bundled-mods/prism.youtube-home-videos/src/index.js",
+    );
+    expect(
+      findHomeFeed(dom.window.document)?.querySelectorAll(
+        '[data-prism-owned="youtube-home-video"]',
+      ),
+    ).toHaveLength(3);
+  });
+
   test("mounts only extracted videos and restores the fixture on undo", async () => {
     const fixture = readFileSync(
       join(youtubeModRoot, "fixtures", "home.html"),
@@ -144,7 +378,8 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(2);
     expect(
       Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
-        link.textContent,
+        link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
         link.getAttribute("href"),
       ]),
     ).toEqual([
@@ -193,8 +428,10 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(3);
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map((link) =>
-        link.textContent,
+      Array.from(feed?.querySelectorAll("a") ?? []).map(
+        (link) =>
+          link.querySelector(".prism-yt-home-title")?.textContent ??
+          link.textContent,
       ),
     ).toEqual(["Alpha video", "Beta video", "Gamma video"]);
   });

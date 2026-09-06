@@ -7,6 +7,7 @@ import { classifyModTrust } from "./loader.js";
 import {
   formatPageActivityRow,
   pageActivityRows,
+  formatPausedModRule,
   type PageActivityMod,
 } from "./page-activity.js";
 import { encodeArchiveForStorage } from "./packed-mod.js";
@@ -28,6 +29,7 @@ interface PopupMod {
   readonly origin?: "bundled" | "imported";
   readonly disabledOnOrigin?: boolean;
   readonly pausedOnOrigin?: boolean;
+  readonly lastFailureOnOrigin?: string;
   readonly sessionExceptedOnOrigin?: boolean;
   readonly trustKind?: ModTrustKind;
   readonly entry?: string | null;
@@ -125,6 +127,9 @@ export function pageOriginFromTabUrl(url: string | undefined): string | undefine
 }
 
 export function describeActivityEvent(event: StoredActivityEvent): string {
+  if (event.layer === "mod-activate") {
+    return `${event.modId} activate failed: ${event.error}`;
+  }
   if (event.layer === "userscript-runtime") {
     return `${event.modId} userscript ${event.outcome}`;
   }
@@ -723,7 +728,7 @@ function renderMod(
   if (mod.pausedOnOrigin === true && pageOrigin !== undefined) {
     const paused = popupDocument.createElement("p");
     paused.className = "mod-paused";
-    paused.textContent = describeModPause();
+    paused.textContent = formatPausedModRule(mod.lastFailureOnOrigin);
     section.append(paused);
     section.append(
       checkbox(
@@ -868,6 +873,7 @@ function pageActivityModFromPopup(mod: PopupMod): PageActivityMod {
     grants: mod.grants,
     disabledOnOrigin: mod.disabledOnOrigin,
     pausedOnOrigin: mod.pausedOnOrigin,
+    lastFailureOnOrigin: mod.lastFailureOnOrigin,
     sessionExceptedOnOrigin: mod.sessionExceptedOnOrigin,
   };
 }

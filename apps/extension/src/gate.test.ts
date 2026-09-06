@@ -133,6 +133,14 @@ describe("capability gate", () => {
         outcome: "denied",
       }),
     ).toBe(false);
+    expect(
+      isActivityEvent({
+        layer: "mod-activate",
+        modId: "example.mod",
+        outcome: "failed",
+        error: "Native mod sandbox timed out",
+      }),
+    ).toBe(true);
   });
 
   test("prepends activity events and drops the oldest past the limit", () => {

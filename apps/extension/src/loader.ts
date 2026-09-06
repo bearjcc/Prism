@@ -1,6 +1,5 @@
 import type { CapabilityId, PrismApi, PrismManifest } from "@prism/schema";
 import { isStyleSourcePath } from "@prism/schema/css";
-import { inspectPackage } from "@prism/schema/inspect-package";
 import { validateManifest } from "@prism/schema/validate";
 import type { ActivityEvent } from "./gate.js";
 import {
@@ -57,6 +56,7 @@ export interface UserScriptsApi {
 export interface ModLoadState {
   readonly id: string;
   readonly status: ModLoadStatus;
+  readonly error?: string;
 }
 
 export interface LoadNativeModsOptions {
@@ -70,9 +70,11 @@ export interface LoadNativeModsOptions {
   readonly emit?: (event: ActivityEvent) => void | Promise<void>;
   readonly onStateChange?: (state: ModLoadState) => void;
   readonly userscriptsAvailable?: boolean;
+  readonly signal?: AbortSignal;
   readonly runEntry?: (
     source: string,
     prism: PrismApi,
+    signal?: AbortSignal,
   ) => Promise<void>;
 }
 
@@ -82,8 +84,12 @@ export async function loadNativeMods(
 ): Promise<ModLoadState[]> {
   return Promise.all(
     mods.map(async (mod): Promise<ModLoadState> => {
-      const report = (status: ModLoadStatus): ModLoadState => {
-        const state = { id: mod.manifest.id, status };
+      const report = (status: ModLoadStatus, error?: string): ModLoadState => {
+        const state = {
+          id: mod.manifest.id,
+          status,
+          ...(error === undefined ? {} : { error }),
+        };
         options.onStateChange?.(state);
         return state;
       };
@@ -98,20 +104,6 @@ export async function loadNativeMods(
         if (!matchesAnyScope(mod.manifest.scopes, options.url)) {
           return report("out-of-scope");
         }
-        const policyFiles = mod.files ?? (
-          mod.entrySource === undefined
-            ? undefined
-            : {
-                "src/index.js": new TextEncoder().encode(mod.entrySource),
-              }
-        );
-        if (
-          policyFiles !== undefined &&
-          !inspectPackage(mod.manifest, policyFiles).ok
-        ) {
-          return report("failed");
-        }
-
         const grants = options.grantsByMod[mod.manifest.id] ?? [];
         if (
           mod.manifest.capabilities.required.some(
@@ -160,19 +152,32 @@ export async function loadNativeMods(
             userscriptBlocked ? "userscript-blocked" : "active",
           );
         }
-        if (mod.entrySource !== undefined && options.runEntry !== undefined) {
-          await options.runEntry(mod.entrySource, prism);
-        } else {
-          await loaded.activate?.(prism);
+        if (loaded.activate !== undefined) {
+          await loaded.activate(prism);
+        } else if (mod.entrySource !== undefined) {
+          if (options.runEntry === undefined) {
+            throw new Error(
+              `Native mod ${mod.manifest.id} has no sandbox runner`,
+            );
+          }
+          await options.runEntry(mod.entrySource, prism, options.signal);
         }
         await Promise.all(pendingActivity);
         return report("active");
       } catch (error) {
         await Promise.all(pendingActivity).catch(() => undefined);
-        if (isAbortError(error)) {
-          throw error;
+        if (options.signal?.aborted || isAbortError(error)) {
+          throw isAbortError(error) ? error : createAbortError();
         }
-        return report("failed");
+        const message =
+          error instanceof Error ? error.message : String(error);
+        options.emit?.({
+          layer: "mod-activate",
+          modId: mod.manifest.id,
+          outcome: "failed",
+          error: message,
+        });
+        return report("failed", message);
       }
     }),
   );
@@ -394,6 +399,12 @@ function wildcardExpression(pattern: string): RegExp {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
+}
+
+function createAbortError(): Error {
+  const error = new Error("Aborted");
+  error.name = "AbortError";
+  return error;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

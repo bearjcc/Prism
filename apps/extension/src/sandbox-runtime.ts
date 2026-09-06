@@ -28,13 +28,15 @@ const SANDBOX_TIMEOUT_MS = 10_000;
 export async function runNativeModInSandbox(
   source: string,
   prism: PrismApi,
-  ownerDocument: Document = document,
+  ownerDocument?: Document,
+  signal?: AbortSignal,
 ): Promise<void> {
-  const iframe = ownerDocument.createElement("iframe");
+  const document = ownerDocument ?? globalThis.document;
+  const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-scripts");
   iframe.hidden = true;
   iframe.srcdoc = sandboxSourceDoc(createNonce());
-  const parent = ownerDocument.body ?? ownerDocument.documentElement;
+  const parent = document.body ?? document.documentElement;
   if (parent === null) {
     throw new Error("Cannot create native mod sandbox");
   }
@@ -54,6 +56,10 @@ export async function runNativeModInSandbox(
     rejectRun = reject;
   });
 
+  const onAbort = (): void => {
+    finish(createAbortError());
+  };
+
   const finish = (error?: Error): void => {
     if (settled) {
       return;
@@ -62,16 +68,19 @@ export async function runNativeModInSandbox(
     if (timeout !== undefined) {
       clearTimeout(timeout);
     }
-    ownerDocument.defaultView?.removeEventListener("message", onMessage);
+    signal?.removeEventListener("abort", onAbort);
+    document.defaultView?.removeEventListener("message", onMessage);
     iframe.remove();
+    const abortError = signal?.aborted === true ? createAbortError() : undefined;
+    const rejection = error ?? abortError ?? new Error("Native mod sandbox stopped");
     for (const request of pending.values()) {
-      request.reject(error ?? new Error("Native mod sandbox stopped"));
+      request.reject(rejection);
     }
     pending.clear();
-    if (error === undefined) {
+    if (error === undefined && abortError === undefined) {
       resolveRun?.();
     } else {
-      rejectRun?.(error);
+      rejectRun?.(rejection);
     }
   };
 
@@ -90,10 +99,14 @@ export async function runNativeModInSandbox(
       } else if (message.operation === "styles") {
         prism.styles.apply(String(message.args[0] ?? ""));
       } else if (message.operation === "allowlist") {
-        prism.ui.allowlist(
-          String(message.args[0] ?? ""),
-          String(message.args[1] ?? ""),
-        );
+        try {
+          prism.ui.allowlist(
+            String(message.args[0] ?? ""),
+            String(message.args[1] ?? ""),
+          );
+        } catch {
+          // Allowlist is fail-soft on live hosts.
+        }
       } else if (message.operation === "extract") {
         result = await prism.extract(
           message.args[0] as Parameters<PrismApi["extract"]>[0],
@@ -151,13 +164,20 @@ export async function runNativeModInSandbox(
     }
   }
 
-  ownerDocument.defaultView?.addEventListener("message", onMessage);
+  document.defaultView?.addEventListener("message", onMessage);
+  signal?.addEventListener("abort", onAbort, { once: true });
   parent.append(iframe);
   timeout = setTimeout(
     () => finish(new Error("Native mod sandbox timed out")),
     SANDBOX_TIMEOUT_MS,
   );
   await run;
+}
+
+function createAbortError(): Error {
+  const error = new Error("Aborted");
+  error.name = "AbortError";
+  return error;
 }
 
 function createNonce(): string {
@@ -179,7 +199,7 @@ function sandboxSourceDoc(nonce: string): string {
   const prism = {
     slots: { replace: (slot, content) => void call("replace", [slot, content]) },
     styles: { apply: (css) => void call("styles", [css]) },
-    ui: { allowlist: (surface, itemType) => void call("allowlist", [surface, itemType]) },
+    ui: { allowlist: (surface, itemType) => call("allowlist", [surface, itemType]) },
     extract: (capability, input) => call("extract", [capability, input]),
     net: { request: (contractId) => call("request", [contractId]) }
   };
