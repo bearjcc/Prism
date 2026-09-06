@@ -1,0 +1,15 @@
+# Railway builds from the monorepo root so mods/ and @prism/schema are available.
+# Service settings should use rootDirectory "/" and railwayConfigFile "/apps/web/railway.toml".
+
+[build]
+buildCommand = "npm run build:web"
+watchPatterns = [
+  "/apps/web/**",
+  "/mods/**",
+  "/packages/schema/**",
+  "/scripts/generate-web-packages.mjs",
+  "/scripts/prepare-web-build.mjs",
+]
+
+[deploy]
+startCommand = "npm run start --workspace=@prism/web"
