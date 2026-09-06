@@ -17,11 +17,12 @@ export const firefoxExtensionPath = join(
 );
 
 export async function launchFirefoxExtensionContext(): Promise<ExtensionSession> {
+  const userDataDir = await mkdtemp(join(tmpdir(), "prism-e2e-firefox-"));
   const loadRoot = await mkdtemp(join(tmpdir(), "prism-ext-firefox-"));
   await cp(firefoxExtensionPath, loadRoot, { recursive: true });
 
   const rdpPort = await findFreeTcpPort();
-  const browser = await firefox.launch({
+  const context = await firefox.launchPersistentContext(userDataDir, {
     headless: false,
     args: [`-start-debugger-server=${rdpPort}`],
     firefoxUserPrefs: {
@@ -37,12 +38,11 @@ export async function launchFirefoxExtensionContext(): Promise<ExtensionSession>
   const extensionId = installResult.addon.id;
   if (extensionId === undefined || extensionId.length === 0) {
     remote.disconnect();
-    await browser.close();
+    await context.close();
+    await rm(userDataDir, { recursive: true, force: true });
     await rm(loadRoot, { recursive: true, force: true });
     throw new Error("Firefox temporary add-on install returned no extension id");
   }
-
-  const context = await browser.newContext();
 
   return {
     context,
@@ -53,7 +53,7 @@ export async function launchFirefoxExtensionContext(): Promise<ExtensionSession>
     async close() {
       remote.disconnect();
       await context.close();
-      await browser.close();
+      await rm(userDataDir, { recursive: true, force: true });
       await rm(loadRoot, { recursive: true, force: true });
     },
   };
