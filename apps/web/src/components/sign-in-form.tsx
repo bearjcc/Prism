@@ -1,41 +1,55 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { setSignedIn } from "./comments-panel";
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
-export function SignInForm() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
+const PROVIDER_LABELS: Record<"github" | "google", string> = {
+  github: "GitHub",
+  google: "Google",
+};
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSignedIn(true);
-    router.push("/explore");
+type Props = {
+  providers: Array<"github" | "google">;
+  enabled: boolean;
+};
+
+export function SignInForm({ providers, enabled }: Props) {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/explore";
+  const authError = searchParams.get("error");
+
+  if (!enabled) {
+    return (
+      <div className="stack">
+        <p className="note">
+          Sign-in is not configured on this deployment. Browse and install still work without an
+          account.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <form className="stack" onSubmit={onSubmit}>
-      <label>
-        Email
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="username"
-        />
-      </label>
-      <label>
-        Password
-        <input type="password" required autoComplete="current-password" />
-      </label>
+    <div className="stack sign-in-providers">
       <p className="note">
-        Fixture sign-in. No account is sent to a server. Browse and install still work signed out.
+        Sign in with GitHub or Google. Needed to comment, rate, or publish. Not needed to browse or
+        install.
       </p>
-      <button type="submit" className="btn-solid">
-        Sign in
-      </button>
-    </form>
+      {authError ? (
+        <p className="err" role="alert">
+          Sign-in failed. Try again or use another provider.
+        </p>
+      ) : null}
+      {providers.map((provider) => (
+        <button
+          key={provider}
+          type="button"
+          className={`btn-solid oauth-btn oauth-${provider}`}
+          onClick={() => signIn(provider, { callbackUrl })}
+        >
+          Sign in with {PROVIDER_LABELS[provider]}
+        </button>
+      ))}
+    </div>
   );
 }

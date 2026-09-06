@@ -218,6 +218,29 @@ button:disabled,
   opacity: 0.92;
 }
 
+.sign-in-providers {
+  max-width: 22rem;
+}
+
+.oauth-btn {
+  width: 100%;
+  text-align: center;
+}
+
+.nav-user {
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-sign-out {
+  border: 0;
+  padding: 0.4rem 0.55rem;
+}
+
 .ghost {
   background: transparent;
 }

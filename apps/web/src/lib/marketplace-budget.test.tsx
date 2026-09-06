@@ -35,6 +35,13 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+  SessionProvider: ({ children }: { children: ReactNode }) => children,
+  signIn: () => undefined,
+  signOut: () => undefined,
+}));
+
 const webSrc = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const TRACKERS =

@@ -9,13 +9,24 @@ import { CreateForm } from "../components/create-form";
 import { ExploreBrowser } from "../components/explore-browser";
 import { InstallControl } from "../components/install-control";
 import { catalogue } from "./catalogue";
+import { useWebSession } from "./web-session";
 
 const push = vi.fn();
+const signedOut = { authenticated: false, loading: false, user: null };
+const signedIn = {
+  authenticated: true,
+  loading: false,
+  user: { id: "test-user", name: "Tester", email: "test@example.com" },
+};
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
+}));
+
+vi.mock("./web-session", () => ({
+  useWebSession: vi.fn(() => signedOut),
 }));
 
 vi.mock("next/link", () => ({
@@ -52,6 +63,7 @@ async function render(ui: ReactElement) {
 describe("guest access", () => {
   beforeEach(() => {
     push.mockReset();
+    vi.mocked(useWebSession).mockReturnValue(signedOut);
     window.localStorage.clear();
     document.documentElement.removeAttribute("data-prism");
   });
@@ -94,7 +106,7 @@ describe("guest access", () => {
   });
 
   it("shows the comment form after sign-in", async () => {
-    window.localStorage.setItem("prism-web-session", "1");
+    vi.mocked(useWebSession).mockReturnValue(signedIn);
     await render(<CommentsPanel modId="kitten-ad-replace" />);
     expect(host.querySelector("form")).toBeTruthy();
     expect(host.querySelector("textarea")).toBeTruthy();
@@ -102,7 +114,7 @@ describe("guest access", () => {
   });
 
   it("refuses a userscript runtime dump on Create", async () => {
-    window.localStorage.setItem("prism-web-session", "1");
+    vi.mocked(useWebSession).mockReturnValue(signedIn);
     await render(<CreateForm />);
     const userscript = host.querySelector('input[type="radio"]:not(:checked)') as HTMLInputElement;
     await act(async () => {

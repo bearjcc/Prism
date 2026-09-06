@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signedIn } from "./comments-panel";
+import { useWebSession } from "../lib/web-session";
 
 function looksLikeUserscript(text: string): boolean {
   return /==UserScript==|GM_|tampermonkey|violentmonkey/i.test(text);
@@ -24,6 +24,7 @@ function userCssFlags(text: string): string[] {
 
 export function CreateForm() {
   const router = useRouter();
+  const { authenticated, loading } = useWebSession();
   const [mode, setMode] = useState<"usercss" | "userscript">("usercss");
   const [source, setSource] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export function CreateForm() {
     e.preventDefault();
     setMessage(null);
     setError(null);
-    if (!signedIn()) {
+    if (!loading && !authenticated) {
       router.push("/signin");
       return;
     }
