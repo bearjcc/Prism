@@ -144,13 +144,22 @@ export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
 const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
 const YOUTUBE_HOME_TILE_STYLE_ID = "prism-youtube-home-tiles";
 const YOUTUBE_HOME_TILE_CSS = `
+[data-prism-youtube-home-grid] {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  column-gap: 16px;
+  row-gap: 24px;
+  width: 100%;
+}
+
 article[data-prism-owned="youtube-home-video"] {
   box-sizing: border-box;
   display: block;
-  width: 100%;
-  min-width: 210px;
+  width: auto;
   max-width: 100%;
-  margin: 0 0 24px;
+  min-width: 0;
+  margin: 0;
   padding: 0;
   font: 14px/1.4 Roboto, Arial, sans-serif;
   color: #0f0f0f;
@@ -168,8 +177,12 @@ article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb {
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: #000;
+  background: #f2f2f2;
   border-radius: 12px;
+}
+
+article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb.prism-yt-home-thumb-missing {
+  display: none;
 }
 
 article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb img {
@@ -186,6 +199,10 @@ article[data-prism-owned="youtube-home-video"] .prism-yt-home-title {
   overflow: hidden;
 }
 `;
+
+export function youtubeHomeTileStylesheet(): string {
+  return YOUTUBE_HOME_TILE_CSS;
+}
 const YOUTUBE_COMMENTS_SELECTOR =
   "[data-prism-comments-slot], ytd-comments#comments";
 
@@ -1028,6 +1045,58 @@ function applyYoutubeHomeAllowlist(
       }
     }
   }
+  applyYoutubeHomeFeedLayout(feed);
+}
+
+function applyYoutubeHomeFeedLayout(feed: Element): void {
+  try {
+    if (feed.querySelector('[data-prism-owned="youtube-home-video"]') === null) {
+      return;
+    }
+    applyYoutubeHomeGridContainer(feed);
+    for (const row of Array.from(feed.querySelectorAll("ytd-rich-grid-row"))) {
+      if (
+        row.querySelector('[data-prism-owned="youtube-home-video"]') === null
+      ) {
+        continue;
+      }
+      if ("style" in row) {
+        (row as HTMLElement).style.setProperty(
+          "display",
+          "contents",
+          "important",
+        );
+      }
+      const rowContents =
+        row.querySelector(":scope > #contents") ??
+        row.querySelector("#contents");
+      if (rowContents instanceof Element) {
+        applyYoutubeHomeGridContainer(rowContents);
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+}
+
+function applyYoutubeHomeGridContainer(container: Element): void {
+  if (container.getAttribute("data-prism-youtube-home-grid") === "true") {
+    return;
+  }
+  if (!("style" in container)) {
+    return;
+  }
+  const element = container as HTMLElement;
+  element.style.setProperty("display", "grid", "important");
+  element.style.setProperty(
+    "grid-template-columns",
+    "repeat(auto-fill, minmax(280px, 1fr))",
+    "important",
+  );
+  element.style.setProperty("column-gap", "16px", "important");
+  element.style.setProperty("row-gap", "24px", "important");
+  element.style.setProperty("width", "100%", "important");
+  container.setAttribute("data-prism-youtube-home-grid", "true");
 }
 
 function nextUnownedYoutubeHomeFeedChild(feed: Element): Element | undefined {
@@ -1090,6 +1159,7 @@ function createYoutubeHomeTile(
 ): HTMLElement | null {
   if (
     video.id.trim() === "" ||
+    !isValidYoutubeVideoId(video.id) ||
     video.title.trim() === "" ||
     video.href.trim() === ""
   ) {
@@ -1107,13 +1177,7 @@ function createYoutubeHomeTile(
     const thumb = contentDocument.createElement("span");
     thumb.className = "prism-yt-home-thumb";
     const image = contentDocument.createElement("img");
-    image.src =
-      video.thumbnailUrl?.trim() === ""
-        ? defaultYoutubeThumbnailUrl(video.id)
-        : (video.thumbnailUrl ?? defaultYoutubeThumbnailUrl(video.id));
-    image.alt = "";
-    image.loading = "lazy";
-    image.decoding = "async";
+    attachYoutubeHomeThumb(image, thumb, video);
     thumb.append(image);
 
     const title = contentDocument.createElement("span");
@@ -1126,6 +1190,40 @@ function createYoutubeHomeTile(
   } catch {
     return null;
   }
+}
+
+function isValidYoutubeVideoId(id: string): boolean {
+  const trimmed = id.trim();
+  return (
+    trimmed.length >= 6 &&
+    trimmed.length <= 32 &&
+    /^[\w-]+$/u.test(trimmed)
+  );
+}
+
+function attachYoutubeHomeThumb(
+  image: HTMLImageElement,
+  thumb: HTMLElement,
+  video: YoutubeHomeVideo,
+): void {
+  const fallback = defaultYoutubeThumbnailUrl(video.id);
+  const primary =
+    video.thumbnailUrl?.trim() === "" || video.thumbnailUrl === undefined
+      ? fallback
+      : video.thumbnailUrl.trim();
+  image.alt = "";
+  image.loading = "eager";
+  image.decoding = "async";
+  image.referrerPolicy = "origin";
+  image.src = primary;
+  image.addEventListener("error", () => {
+    if (image.src !== fallback) {
+      image.src = fallback;
+      return;
+    }
+    thumb.classList.add("prism-yt-home-thumb-missing");
+    image.remove();
+  });
 }
 
 export function applyCosmeticHides(

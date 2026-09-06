@@ -8,6 +8,7 @@ import {
   activateContentMods,
   createContentHandlers,
   MAX_YOUTUBE_HOME_UNDO_CHILDREN,
+  youtubeHomeTileStylesheet,
 } from "./content-script.js";
 import { findYoutubeHomeFeed } from "./extractors/youtube-home.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
@@ -163,6 +164,11 @@ describe("Phase E YouTube Home tracer", () => {
     expect(
       dom.window.document.getElementById("prism-youtube-home-tiles"),
     ).not.toBeNull();
+    expect(youtubeHomeTileStylesheet()).toContain(
+      "repeat(auto-fill, minmax(280px, 1fr))",
+    );
+    expect(feed?.getAttribute("data-prism-youtube-home-grid")).toBe("true");
+    expect(feed?.style.display).toBe("grid");
   });
 
   test("allowlist never throws through the Prism API on broken feed children", async () => {
