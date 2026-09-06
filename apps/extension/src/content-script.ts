@@ -8,6 +8,11 @@ import type {
   TrustedMessageReplacement,
   TrustedReplacement,
 } from "@prism/schema";
+import { urlMatchesEgressContract } from "@prism/schema/egress";
+import {
+  applyFootprintToImage,
+  measureAdSlotFootprint,
+} from "./ad-slot-replace.js";
 import { cosmeticHideCss, type CosmeticHideInstruction } from "./dnr.js";
 import { loadNativeMods, type BundledMod, type ModLoadState, type NativeMod } from "./loader.js";
 import {
@@ -554,6 +559,14 @@ export function createContentHandlers(
             readAdSlotMessage(content),
           );
         }
+        if (content.kind === "remote-image") {
+          return replaceAdSlotWithRemoteImage(
+            contentDocument,
+            slot,
+            manifest,
+            readRemoteImageReplacement(content),
+          );
+        }
         throw new Error("Unsupported replacement kind");
       }
       if (
@@ -568,22 +581,12 @@ export function createContentHandlers(
           `Asset ${content.asset} is not declared by ${manifest.id}`,
         );
       }
-      const element = findAdSlot(contentDocument, slot);
-      if (element === undefined) {
-        throw new Error(`Ad slot ${slot.id} is not available`);
-      }
-      const previousChildren = Array.from(element.childNodes);
-      const image = contentDocument.createElement("img");
-      image.dataset.prismOwned = "true";
-      image.src = resolveAsset(manifest.id, content.asset);
-      image.alt = content.alt;
-      element.replaceChildren(image);
-
-      return () => {
-        if (image.parentNode === element) {
-          element.replaceChildren(...previousChildren);
-        }
-      };
+      return replaceAdSlotWithImage(
+        contentDocument,
+        slot,
+        resolveAsset(manifest.id, content.asset),
+        content.alt,
+      );
     },
     applyCss(cssText): () => void {
       const style = contentDocument.createElement("style");
@@ -955,6 +958,76 @@ function readAdSlotMessage(
     throw new Error("Ad slot hide message is invalid");
   }
   return content.message;
+}
+
+function readRemoteImageReplacement(
+  content: Readonly<Record<string, unknown>>,
+): { readonly contractId: string; readonly url: string; readonly alt: string } {
+  if (
+    typeof content.contractId !== "string" ||
+    content.contractId.trim() === "" ||
+    typeof content.url !== "string" ||
+    content.url.trim() === "" ||
+    typeof content.alt !== "string"
+  ) {
+    throw new Error("Remote image replacement payload is invalid");
+  }
+  return {
+    contractId: content.contractId.trim(),
+    url: content.url.trim(),
+    alt: content.alt,
+  };
+}
+
+function replaceAdSlotWithImage(
+  contentDocument: Document,
+  slot: AdSlotHandle,
+  src: string,
+  alt: string,
+): () => void {
+  const element = findAdSlot(contentDocument, slot);
+  if (element === undefined) {
+    throw new Error(`Ad slot ${slot.id} is not available`);
+  }
+  const footprint = measureAdSlotFootprint(element);
+  const previousChildren = Array.from(element.childNodes);
+  const image = contentDocument.createElement("img");
+  image.dataset.prismOwned = "true";
+  image.src = src;
+  image.alt = alt;
+  applyFootprintToImage(image, footprint);
+  element.replaceChildren(image);
+
+  return () => {
+    if (image.parentNode === element) {
+      element.replaceChildren(...previousChildren);
+    }
+  };
+}
+
+function replaceAdSlotWithRemoteImage(
+  contentDocument: Document,
+  slot: AdSlotHandle,
+  manifest: PrismManifest,
+  content: { readonly contractId: string; readonly url: string; readonly alt: string },
+): () => void {
+  const contract = manifest.egress?.contracts.find(
+    (entry) => entry.id === content.contractId,
+  );
+  if (contract === undefined) {
+    throw new Error(
+      `Egress contract ${content.contractId} is not declared by ${manifest.id}`,
+    );
+  }
+  if (!urlMatchesEgressContract(content.url, contract)) {
+    throw new Error("Remote image URL is outside the declared egress contract");
+  }
+  return replaceAdSlotWithImage(
+    contentDocument,
+    slot,
+    content.url,
+    content.alt,
+  );
 }
 
 function replaceAdSlotWithMessage(

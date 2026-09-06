@@ -34,6 +34,10 @@
     "./usercss-map": {
       "types": "./dist/usercss-map.d.ts",
       "import": "./dist/usercss-map.js"
+    },
+    "./egress": {
+      "types": "./dist/egress.d.ts",
+      "import": "./dist/egress.js"
     }
   },
   "files": [

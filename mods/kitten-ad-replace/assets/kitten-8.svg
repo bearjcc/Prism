@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Stretching kitten</title>
+  <desc id="description">A simple illustration of a kitten stretching after a nap.</desc>
+  <rect width="640" height="360" rx="24" fill="#f2ebe3"/>
+  <ellipse cx="320" cy="295" rx="170" ry="22" fill="#d8c9b8"/>
+  <ellipse cx="280" cy="220" rx="110" ry="55" fill="#c58f63"/>
+  <circle cx="390" cy="180" r="58" fill="#d49a6a"/>
+  <path d="M350 130 368 78 408 125Z" fill="#b67d4f"/>
+  <path d="M420 118 462 72 472 132Z" fill="#b67d4f"/>
+  <path d="M180 230h120" stroke="#c58f63" stroke-width="28" stroke-linecap="round"/>
+  <ellipse cx="375" cy="172" rx="9" ry="12" fill="#4b382f"/>
+  <ellipse cx="405" cy="172" rx="9" ry="12" fill="#4b382f"/>
+</svg>

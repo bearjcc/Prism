@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Kitten with yarn</title>
+  <desc id="description">A simple illustration of a kitten beside a ball of yarn.</desc>
+  <rect width="640" height="360" rx="24" fill="#e8f0ea"/>
+  <ellipse cx="320" cy="300" rx="150" ry="20" fill="#c5d4c8"/>
+  <circle cx="420" cy="255" r="42" fill="#d45757"/>
+  <path d="M420 255c-35-10-55 18-35 45" fill="none" stroke="#f0efef" stroke-width="8"/>
+  <ellipse cx="250" cy="230" rx="95" ry="70" fill="#9aa59a"/>
+  <circle cx="230" cy="165" r="72" fill="#aab4aa"/>
+  <path d="M170 120 182 62 228 112Z" fill="#8f998f"/>
+  <path d="M250 105 295 58 308 118Z" fill="#8f998f"/>
+  <ellipse cx="205" cy="158" rx="10" ry="13" fill="#3a433d"/>
+  <ellipse cx="255" cy="158" rx="10" ry="13" fill="#3a433d"/>
+</svg>

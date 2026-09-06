@@ -42,6 +42,13 @@ export interface TrustedImageReplacement {
   readonly alt: string;
 }
 
+export interface TrustedRemoteImageReplacement {
+  readonly kind: "remote-image";
+  readonly contractId: string;
+  readonly url: string;
+  readonly alt: string;
+}
+
 export interface RedditComment {
   readonly author: string;
   readonly body: string;
@@ -61,6 +68,7 @@ export interface TrustedMessageReplacement {
 
 export type TrustedReplacement =
   | TrustedImageReplacement
+  | TrustedRemoteImageReplacement
   | TrustedCommentsReplacement
   | TrustedMessageReplacement;
 

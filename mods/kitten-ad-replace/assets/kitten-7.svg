@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Siamese kitten</title>
+  <desc id="description">A simple illustration of a Siamese kitten with dark points.</desc>
+  <rect width="640" height="360" rx="24" fill="#edf3f8"/>
+  <ellipse cx="320" cy="300" rx="135" ry="20" fill="#c8d4df"/>
+  <ellipse cx="320" cy="235" rx="98" ry="76" fill="#f3e9df"/>
+  <circle cx="320" cy="148" r="84" fill="#efe4da"/>
+  <path d="M248 92 262 38 308 88Z" fill="#5d6670"/>
+  <path d="M332 80 382 40 392 102Z" fill="#5d6670"/>
+  <ellipse cx="292" cy="142" rx="11" ry="15" fill="#6a8ea8"/>
+  <ellipse cx="348" cy="142" rx="11" ry="15" fill="#6a8ea8"/>
+  <path d="M320 168 332 176 320 184 308 176Z" fill="#8b6660"/>
+  <ellipse cx="320" cy="205" rx="38" ry="28" fill="#6f7882"/>
+</svg>

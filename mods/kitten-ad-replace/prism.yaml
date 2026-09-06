@@ -12,7 +12,7 @@ scopes:
 egress:
   contracts:
     - id: remote-kitten-images
-      url: https://images.example.test/*
+      url: https://cataas.com/cat*
       methods:
         - GET
 filters:
@@ -21,5 +21,13 @@ filters:
 assets:
   - assets/kitten-1.svg
   - assets/kitten-2.svg
+  - assets/kitten-3.svg
+  - assets/kitten-4.svg
+  - assets/kitten-5.svg
+  - assets/kitten-6.svg
+  - assets/kitten-7.svg
+  - assets/kitten-8.svg
+  - assets/kitten-9.svg
+  - assets/kitten-10.svg
 fixtures:
   - fixtures/ads.html

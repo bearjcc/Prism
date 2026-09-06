@@ -14,6 +14,29 @@ export async function assertKittenTracerOnFixture(
   await expect(
     page.locator('[data-prism-ad-slot="sidebar"] img[data-prism-owned]'),
   ).toHaveCount(1);
+
+  const bannerFootprint = await page.evaluate(() => {
+    const slot = document.querySelector('[data-prism-ad-slot="banner"]');
+    const image = slot?.querySelector("img[data-prism-owned]");
+    if (slot === null || image === null) {
+      return null;
+    }
+    const slotRect = slot.getBoundingClientRect();
+    return {
+      slotWidth: slotRect.width,
+      slotHeight: slotRect.height,
+      imageWidth: image.clientWidth,
+      imageHeight: image.clientHeight,
+    };
+  });
+  expect(bannerFootprint).not.toBeNull();
+  expect(
+    Math.abs(bannerFootprint!.slotWidth - bannerFootprint!.imageWidth),
+  ).toBeLessThanOrEqual(2);
+  expect(
+    Math.abs(bannerFootprint!.slotHeight - bannerFootprint!.imageHeight),
+  ).toBeLessThanOrEqual(2);
+
   await expect(page.getByText("The article remains untouched.")).toBeVisible();
 
   await page.evaluate(() => {

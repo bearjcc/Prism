@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Playful tabby kitten</title>
+  <desc id="description">A simple illustration of a tabby kitten mid pounce.</desc>
+  <rect width="640" height="360" rx="24" fill="#efe8dc"/>
+  <ellipse cx="320" cy="300" rx="160" ry="22" fill="#d4c4b0"/>
+  <ellipse cx="300" cy="220" rx="120" ry="70" fill="#b8895a"/>
+  <circle cx="390" cy="175" r="55" fill="#c99563"/>
+  <path d="M350 125 365 70 405 120Z" fill="#a8744a"/>
+  <path d="M420 118 455 65 470 130Z" fill="#a8744a"/>
+  <ellipse cx="375" cy="168" rx="10" ry="14" fill="#3d3128"/>
+  <ellipse cx="410" cy="168" rx="10" ry="14" fill="#3d3128"/>
+  <path d="M392 188 404 196 392 204 380 196Z" fill="#8f5d52"/>
+</svg>

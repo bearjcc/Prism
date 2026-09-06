@@ -3,18 +3,81 @@
   <head>
     <meta charset="utf-8">
     <title>Kitten ad replacement fixture</title>
+    <style>
+      .fixture-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 16px;
+        max-width: 1040px;
+        margin: 0 auto;
+      }
+      .fixture-banner-slot {
+        display: block;
+        width: 728px;
+        height: 90px;
+        min-width: 728px;
+        min-height: 90px;
+        overflow: hidden;
+        border: 1px solid #d0d7de;
+        background: #f6f8fa;
+      }
+      .fixture-sidebar-slot {
+        display: block;
+        width: 300px;
+        height: 250px;
+        min-width: 300px;
+        min-height: 250px;
+        overflow: hidden;
+        border: 1px solid #d0d7de;
+        background: #f6f8fa;
+      }
+      .fixture-ad-unit {
+        display: inline-block;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        color: #57606a;
+        font: 14px/1.4 sans-serif;
+        text-align: center;
+        padding-top: 36px;
+      }
+    </style>
   </head>
   <body>
-    <main>
-      <section data-prism-ad-slot="banner">
-        <a href="https://ads.example.test/banner">Banner advert</a>
+    <main class="fixture-layout">
+      <section>
+        <div
+          class="fixture-banner-slot"
+          data-prism-ad-slot="banner"
+          aria-label="Leaderboard advert slot"
+        >
+          <div
+            class="fixture-ad-unit"
+            data-ad-client="ca-pub-fixture"
+            data-ad-slot="banner-fixture"
+            style="display:inline-block;width:728px;height:90px"
+          >
+            Banner advert
+          </div>
+        </div>
+        <article>
+          <h1>Fixture article</h1>
+          <p>The article remains untouched.</p>
+        </article>
       </section>
-      <article>
-        <h1>Fixture article</h1>
-        <p>The article remains untouched.</p>
-      </article>
-      <aside data-prism-ad-slot="sidebar">
-        <a href="https://ads.example.test/sidebar">Sidebar advert</a>
+      <aside
+        class="fixture-sidebar-slot"
+        data-prism-ad-slot="sidebar"
+        aria-label="Medium rectangle advert slot"
+      >
+        <div
+          class="fixture-ad-unit"
+          data-ad-client="ca-pub-fixture"
+          data-ad-slot="sidebar-fixture"
+          style="display:inline-block;width:300px;height:250px"
+        >
+          Sidebar advert
+        </div>
       </aside>
     </main>
   </body>

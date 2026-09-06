@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Kitten in a box</title>
+  <desc id="description">A simple illustration of a kitten peeking out of a cardboard box.</desc>
+  <rect width="640" height="360" rx="24" fill="#f5f1ea"/>
+  <ellipse cx="320" cy="305" rx="140" ry="18" fill="#d8cdbf"/>
+  <rect x="180" y="170" width="280" height="120" rx="8" fill="#c9a36d"/>
+  <rect x="190" y="180" width="260" height="90" rx="6" fill="#b48a57"/>
+  <circle cx="320" cy="205" r="58" fill="#d6a06a"/>
+  <path d="M270 165 282 118 320 155Z" fill="#c38d55"/>
+  <path d="M330 152 370 115 382 165Z" fill="#c38d55"/>
+  <ellipse cx="300" cy="200" rx="9" ry="12" fill="#4a382f"/>
+  <ellipse cx="340" cy="200" rx="9" ry="12" fill="#4a382f"/>
+  <path d="M320 214 330 222 320 230 310 222Z" fill="#8f5d52"/>
+</svg>
