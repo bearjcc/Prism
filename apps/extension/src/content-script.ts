@@ -612,21 +612,7 @@ export function createContentHandlers(
         ? Array.from(feed.childNodes)
         : undefined;
 
-      for (const child of Array.from(feed.children)) {
-        if (child.getAttribute("data-prism-owned") === "youtube-home-video") {
-          continue;
-        }
-        const videos = extractYoutubeHome(child).videos;
-        if (videos.length === 0) {
-          child.remove();
-          continue;
-        }
-        child.replaceWith(
-          ...videos.map((video) =>
-            createYoutubeHomeTile(contentDocument, video),
-          ),
-        );
-      }
+      applyYoutubeHomeAllowlist(feed, contentDocument);
 
       if (previousChildren === undefined) {
         return;
@@ -848,18 +834,65 @@ function waitForSelector(
   });
 }
 
+function applyYoutubeHomeAllowlist(
+  feed: Element,
+  contentDocument: Document,
+): void {
+  for (const child of Array.from(feed.children)) {
+    try {
+      if (child.getAttribute("data-prism-owned") === "youtube-home-video") {
+        continue;
+      }
+      const videos = extractYoutubeHome(child).videos;
+      if (videos.length === 0) {
+        safeRemoveFeedChild(child);
+        continue;
+      }
+      const tiles = videos
+        .map((video) => createYoutubeHomeTile(contentDocument, video))
+        .filter((tile): tile is HTMLElement => tile !== null);
+      if (tiles.length === 0) {
+        safeRemoveFeedChild(child);
+        continue;
+      }
+      child.replaceWith(...tiles);
+    } catch {
+      safeRemoveFeedChild(child);
+    }
+  }
+}
+
+function safeRemoveFeedChild(child: Element): void {
+  try {
+    child.remove();
+  } catch {
+    // YouTube custom elements can reject removal on live pages.
+  }
+}
+
 function createYoutubeHomeTile(
   contentDocument: Document,
   video: YoutubeHomeVideo,
-): HTMLElement {
-  const tile = contentDocument.createElement("article");
-  tile.dataset.prismOwned = "youtube-home-video";
-  tile.dataset.videoId = video.id;
-  const link = contentDocument.createElement("a");
-  link.href = video.href;
-  link.textContent = video.title;
-  tile.append(link);
-  return tile;
+): HTMLElement | null {
+  if (
+    video.id.trim() === "" ||
+    video.title.trim() === "" ||
+    video.href.trim() === ""
+  ) {
+    return null;
+  }
+  try {
+    const tile = contentDocument.createElement("article");
+    tile.dataset.prismOwned = "youtube-home-video";
+    tile.dataset.videoId = video.id;
+    const link = contentDocument.createElement("a");
+    link.href = video.href;
+    link.textContent = video.title;
+    tile.append(link);
+    return tile;
+  } catch {
+    return null;
+  }
 }
 
 export function applyCosmeticHides(

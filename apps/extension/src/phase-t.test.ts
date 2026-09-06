@@ -232,6 +232,46 @@ describe("Phase T mod pause after repeated failures", () => {
     ).toEqual(["fixture.empty"]);
   });
 
+  test("paused-on-origin state survives a storage reload", async () => {
+    const stored: StoredState = { enabled: {}, grants: {} };
+    const dependencies = storedDependencies(stored);
+    const mods = Promise.resolve([{ manifest: emptyManifest, entry: null }]);
+
+    for (let i = 0; i < MOD_FAILURE_BUDGET; i += 1) {
+      await handleRuntimeMessage(
+        {
+          type: "record-mod-failure",
+          modId: "fixture.empty",
+          origin: "https://www.youtube.com",
+        },
+        { id: "fixture-extension" },
+        mods,
+        dependencies,
+        auth,
+      );
+    }
+
+    const reloaded = storedDependencies({
+      ...stored,
+      modFailureBudget: stored.modFailureBudget,
+    });
+
+    await expect(
+      handleRuntimeMessage(
+        { type: "list-mods", url: "https://www.youtube.com/" },
+        { id: "fixture-extension" },
+        mods,
+        reloaded,
+        auth,
+      ),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        manifest: emptyManifest,
+        pausedOnOrigin: true,
+      }),
+    ]);
+  });
+
   test("popup lists paused on the affected origin and shows the pause copy", async () => {
     const stored: StoredState = { enabled: {}, grants: {} };
     const dependencies = storedDependencies(stored);

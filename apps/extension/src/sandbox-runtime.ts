@@ -179,7 +179,7 @@ function sandboxSourceDoc(nonce: string): string {
   const prism = {
     slots: { replace: (slot, content) => void call("replace", [slot, content]) },
     styles: { apply: (css) => void call("styles", [css]) },
-    ui: { allowlist: (surface, itemType) => void call("allowlist", [surface, itemType]) },
+    ui: { allowlist: (surface, itemType) => call("allowlist", [surface, itemType]) },
     extract: (capability, input) => call("extract", [capability, input]),
     net: { request: (contractId) => call("request", [contractId]) }
   };

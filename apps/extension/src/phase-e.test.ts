@@ -156,6 +156,39 @@ describe("Phase E YouTube Home tracer", () => {
     ]);
   });
 
+  test("allowlist survives hostile feed children that reject DOM mutation", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const hostile = dom.window.document.createElement("ytd-rich-section-renderer");
+    hostile.setAttribute("data-fixture-kind", "hostile");
+    hostile.innerHTML = "<p>Hostile shelf</p>";
+    hostile.replaceWith = () => {
+      throw new DOMException("replace blocked");
+    };
+    hostile.remove = () => {
+      throw new DOMException("remove blocked");
+    };
+    feed?.append(hostile);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await expect(activateYoutubeHomeMod(prism)).resolves.toBeUndefined();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(feed?.querySelector("[data-fixture-kind='hostile']")).not.toBeNull();
+  });
+
   test("mounts only extracted videos and restores the fixture on undo", async () => {
     const fixture = readFileSync(
       join(youtubeModRoot, "fixtures", "home.html"),
