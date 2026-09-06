@@ -759,7 +759,7 @@ export function waitForYoutubeHomeFeed(
 ): Promise<void> {
   return waitForSelector(
     contentDocument,
-    "ytd-rich-grid-renderer #contents",
+    'ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents, ytd-rich-grid-renderer #contents',
     timeoutMs,
     signal,
   );

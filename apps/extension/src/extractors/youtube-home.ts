@@ -23,12 +23,37 @@ const NON_VIDEO_SELECTOR = [
   "ytd-backstage-post-thread-renderer",
   "ytd-post-renderer",
   "ytd-poll-renderer",
+  "ytd-display-ad-renderer",
+  "ytd-in-feed-ad-layout-renderer",
+  "ytd-inline-survey-renderer",
+  "ytd-continuation-item-renderer",
+  "grid-shelf-view-model",
+].join(",");
+
+const SHORTS_SELECTOR = [
+  "ytd-rich-grid-slim-media",
+  "ytd-shorts-lockup-view-model",
+  "ytm-shorts-lockup-view-model",
+  "ytm-shorts-lockup-view-model-v2",
 ].join(",");
 
 const VIDEO_TITLE_LINK_SELECTOR = [
   'a[id="video-title-link"][href]',
   'a[id="video-title"][href]',
+  "a.ytLockupMetadataViewModelTitle[href]",
+  "a.yt-lockup-metadata-view-model__title[href]",
 ].join(",");
+
+const VIDEO_THUMBNAIL_LINK_SELECTOR = [
+  'a#thumbnail[href*="watch?v="]',
+  'a.ytLockupViewModelContentImage[href*="watch?v="]',
+  'a.yt-lockup-view-model__content-image[href*="watch?v="]',
+].join(",");
+
+const HOME_FEED_SELECTOR = [
+  'ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents',
+  "ytd-rich-grid-renderer #contents",
+].join(", ");
 
 export function extractYoutubeHome(root: ParentNode): YoutubeHomeExtraction {
   const videos: YoutubeHomeVideo[] = [];
@@ -38,10 +63,7 @@ export function extractYoutubeHome(root: ParentNode): YoutubeHomeExtraction {
     if (!isVideoCard(card)) {
       continue;
     }
-    const link = card.querySelector<HTMLAnchorElement>(
-      VIDEO_TITLE_LINK_SELECTOR,
-    );
-    const item = link === null ? undefined : videoFromLink(link);
+    const item = videoFromCard(card);
     if (item === undefined || seen.has(item.id)) {
       continue;
     }
@@ -65,22 +87,77 @@ function isElement(node: ParentNode): node is Element {
 }
 
 export function findYoutubeHomeFeed(root: ParentNode): Element | undefined {
-  return (
-    root.querySelector("ytd-rich-grid-renderer #contents") ?? undefined
-  );
+  for (const selector of HOME_FEED_SELECTOR.split(", ")) {
+    const feed = root.querySelector(selector);
+    if (feed !== null) {
+      return feed;
+    }
+  }
+  return undefined;
 }
 
 function isVideoCard(card: Element): boolean {
+  if (isShortsCard(card)) {
+    return false;
+  }
   if (
     card.closest(NON_VIDEO_SELECTOR) !== null ||
     card.querySelector(NON_VIDEO_SELECTOR) !== null
   ) {
     return false;
   }
+  if (!card.matches("ytd-rich-item-renderer")) {
+    return true;
+  }
   return (
-    !card.matches("ytd-rich-item-renderer") ||
-    card.querySelector("ytd-rich-grid-media") !== null
+    card.querySelector("ytd-rich-grid-media") !== null ||
+    card.querySelector("yt-lockup-view-model") !== null
   );
+}
+
+function isShortsCard(card: Element): boolean {
+  if (card.matches('ytd-rich-item-renderer[is-slim-media]')) {
+    return true;
+  }
+  if (card.querySelector(SHORTS_SELECTOR) !== null) {
+    return true;
+  }
+  const shortsLink = card.querySelector('a[href*="/shorts/"]');
+  if (shortsLink === null) {
+    return false;
+  }
+  return card.querySelector('a[href*="/watch?v="]') === null;
+}
+
+function videoFromCard(card: Element): YoutubeHomeVideo | undefined {
+  const titleLink = card.querySelector<HTMLAnchorElement>(
+    VIDEO_TITLE_LINK_SELECTOR,
+  );
+  if (titleLink !== null) {
+    const fromTitle = videoFromLink(titleLink);
+    if (fromTitle !== undefined) {
+      return fromTitle;
+    }
+  }
+  const thumbnailLink = card.querySelector<HTMLAnchorElement>(
+    VIDEO_THUMBNAIL_LINK_SELECTOR,
+  );
+  if (thumbnailLink === null) {
+    return undefined;
+  }
+  const fromThumbnail = videoFromLink(thumbnailLink);
+  if (fromThumbnail === undefined) {
+    return undefined;
+  }
+  if (fromThumbnail.title !== "") {
+    return fromThumbnail;
+  }
+  const title =
+    titleLink?.getAttribute("title") ??
+    titleLink?.getAttribute("aria-label") ??
+    titleLink?.textContent ??
+    fromThumbnail.id;
+  return { ...fromThumbnail, title: normalizeText(title) };
 }
 
 function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {
@@ -99,17 +176,19 @@ function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {
     return undefined;
   }
   const id = url.pathname === "/watch" ? url.searchParams.get("v")?.trim() : "";
-  const title = (
+  const title = normalizeText(
     link.getAttribute("title") ??
-    link.getAttribute("aria-label") ??
-    link.textContent ??
-    ""
-  )
-    .replace(/\s+/gu, " ")
-    .trim();
+      link.getAttribute("aria-label") ??
+      link.textContent ??
+      "",
+  );
   if (id === undefined || id === "" || title === "") {
     return undefined;
   }
 
   return { id, title, href: url.href };
+}
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/gu, " ").trim();
 }

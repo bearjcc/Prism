@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>YouTube Home live-shaped fixture</title>
+  </head>
+  <body>
+    <ytd-app>
+      <ytd-page-manager>
+        <ytd-browse page-subtype="home">
+          <ytd-two-column-browse-results-renderer>
+            <ytd-rich-grid-renderer>
+              <div id="header">
+                <ytd-feed-filter-chip-bar-renderer></ytd-feed-filter-chip-bar-renderer>
+              </div>
+              <div id="contents">
+                <ytd-rich-grid-row>
+                  <div id="contents">
+                    <ytd-rich-item-renderer lockup rendered-from-rich-grid>
+                      <div id="content">
+                        <yt-lockup-view-model class="ytLockupViewModelWrapper">
+                          <a class="ytLockupViewModelContentImage"
+                             href="/watch?v=lockup-alpha"></a>
+                          <yt-lockup-metadata-view-model>
+                            <div class="ytLockupMetadataViewModelTextContainer">
+                              <a class="ytLockupMetadataViewModelTitle"
+                                 href="/watch?v=lockup-alpha"
+                                 title="Lockup alpha video">Lockup alpha video</a>
+                            </div>
+                          </yt-lockup-metadata-view-model>
+                        </yt-lockup-view-model>
+                      </div>
+                    </ytd-rich-item-renderer>
+                    <ytd-rich-item-renderer lockup rendered-from-rich-grid>
+                      <div id="content">
+                        <yt-lockup-view-model class="ytLockupViewModelWrapper">
+                          <a class="ytLockupViewModelContentImage"
+                             href="/watch?v=lockup-beta"></a>
+                          <yt-lockup-metadata-view-model>
+                            <div class="ytLockupMetadataViewModelTextContainer">
+                              <a class="ytLockupMetadataViewModelTitle"
+                                 href="/watch?v=lockup-beta"
+                                 title="Lockup beta video">Lockup beta video</a>
+                            </div>
+                          </yt-lockup-metadata-view-model>
+                        </yt-lockup-view-model>
+                      </div>
+                    </ytd-rich-item-renderer>
+                  </div>
+                </ytd-rich-grid-row>
+                <ytd-rich-section-renderer data-fixture-kind="shorts-section">
+                  <ytd-rich-shelf-renderer is-shorts>
+                    <h2 class="rich-shelf-title">Shorts</h2>
+                    <div id="contents">
+                      <ytd-rich-item-renderer lockup is-shelf-item is-slim-media>
+                        <ytm-shorts-lockup-view-model-v2>
+                          <ytm-shorts-lockup-view-model class="shortsLockupViewModelHost">
+                            <a class="shortsLockupViewModelHostEndpoint reel-item-endpoint"
+                               href="/shorts/short-one">Short one</a>
+                            <h3 class="shortsLockupViewModelHostMetadataTitle">Short one</h3>
+                          </ytm-shorts-lockup-view-model>
+                        </ytm-shorts-lockup-view-model-v2>
+                      </ytd-rich-item-renderer>
+                    </div>
+                  </ytd-rich-shelf-renderer>
+                </ytd-rich-section-renderer>
+                <ytd-rich-item-renderer data-fixture-kind="post">
+                  <ytd-backstage-post-thread-renderer>
+                    <p>Creator community post</p>
+                  </ytd-backstage-post-thread-renderer>
+                </ytd-rich-item-renderer>
+                <ytd-in-feed-ad-layout-renderer data-fixture-kind="in-feed-ad">
+                  <ytd-ad-slot-renderer>
+                    <a href="https://ads.example.test/promotion">Sponsored promotion</a>
+                  </ytd-ad-slot-renderer>
+                </ytd-in-feed-ad-layout-renderer>
+                <ytd-rich-grid-row>
+                  <div id="contents">
+                    <ytd-rich-item-renderer lockup is-slim-media data-fixture-kind="shorts-card">
+                      <ytm-shorts-lockup-view-model-v2>
+                        <ytm-shorts-lockup-view-model>
+                          <a href="/shorts/inline-short">Inline short</a>
+                        </ytm-shorts-lockup-view-model>
+                      </ytm-shorts-lockup-view-model-v2>
+                    </ytd-rich-item-renderer>
+                    <ytd-rich-item-renderer lockup rendered-from-rich-grid>
+                      <div id="content">
+                        <yt-lockup-view-model class="ytLockupViewModelWrapper">
+                          <a class="ytLockupViewModelContentImage"
+                             href="/watch?v=lockup-gamma"></a>
+                          <yt-lockup-metadata-view-model>
+                            <div class="ytLockupMetadataViewModelTextContainer">
+                              <a class="ytLockupMetadataViewModelTitle"
+                                 href="/watch?v=lockup-gamma"
+                                 title="Lockup gamma video">Lockup gamma video</a>
+                            </div>
+                          </yt-lockup-metadata-view-model>
+                        </yt-lockup-view-model>
+                      </div>
+                    </ytd-rich-item-renderer>
+                  </div>
+                </ytd-rich-grid-row>
+                <ytd-continuation-item-renderer data-fixture-kind="continuation">
+                  <tp-yt-paper-spinner></tp-yt-paper-spinner>
+                </ytd-continuation-item-renderer>
+              </div>
+            </ytd-rich-grid-renderer>
+          </ytd-two-column-browse-results-renderer>
+        </ytd-browse>
+      </ytd-page-manager>
+    </ytd-app>
+  </body>
+</html>

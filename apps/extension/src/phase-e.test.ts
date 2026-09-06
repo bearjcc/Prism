@@ -8,6 +8,7 @@ import {
   activateContentMods,
   createContentHandlers,
 } from "./content-script.js";
+import { findYoutubeHomeFeed } from "./extractors/youtube-home.js";
 import { createPrismApi, TabUndoStack } from "./prism-api.js";
 
 const youtubeModRoot = join(
@@ -18,6 +19,10 @@ const youtubeModRoot = join(
   "mods",
   "youtube-home-videos",
 );
+
+function findHomeFeed(document: Document): Element | null {
+  return findYoutubeHomeFeed(document) ?? null;
+}
 
 describe("Phase E YouTube Home tracer", () => {
   test("the mod only requests the videos-only Home allowlist", async () => {
@@ -116,6 +121,39 @@ describe("Phase E YouTube Home tracer", () => {
     expect(
       dom.window.document.querySelector("[data-fixture-kind='stray']"),
     ).toBe(stray);
+  });
+
+  test("allowlist removes live-shaped Shorts, posts, and ads from the Home feed", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = findHomeFeed(dom.window.document);
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
+    expect(
+      Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
+        link.textContent,
+        link.getAttribute("href"),
+      ]),
+    ).toEqual([
+      ["Lockup alpha video", "https://www.youtube.com/watch?v=lockup-alpha"],
+      ["Lockup beta video", "https://www.youtube.com/watch?v=lockup-beta"],
+      ["Lockup gamma video", "https://www.youtube.com/watch?v=lockup-gamma"],
+    ]);
   });
 
   test("mounts only extracted videos and restores the fixture on undo", async () => {
