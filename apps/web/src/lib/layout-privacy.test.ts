@@ -17,7 +17,7 @@ describe("no telemetry consent gate", () => {
     const layout = read("app/layout.tsx");
     expect(layout).not.toMatch(TRACKERS);
     expect(layout).not.toMatch(/<script[^>]+src=/i);
-    expect(layout).toContain("<body>{children}</body>");
+    expect(layout).toContain("<AuthProvider>{children}</AuthProvider>");
   });
 
   it("does not ship a consent banner or third-party analytics in the site shell", () => {

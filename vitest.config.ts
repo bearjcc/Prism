@@ -34,6 +34,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@\/(.*)$/,
+        replacement: path.join(root, "apps/web/src/$1"),
+      },
+      {
         find: "@prism/schema/archive",
         replacement: path.join(root, "packages/schema/src/archive.ts"),
       },

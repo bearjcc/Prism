@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SITE_NAV_WIDE } from "../lib/breakpoints";
 import { InstallControl } from "./install-control";
+import { NavAuth } from "./nav-auth";
 import { ThemeToggle } from "./theme";
 
 type Props = {
@@ -64,9 +65,7 @@ export function SiteNav({ current }: Props) {
         <Link href="/create" aria-current={current === "create" ? "page" : undefined}>
           Create
         </Link>
-        <Link href="/signin" aria-current={current === "signin" ? "page" : undefined}>
-          Sign in
-        </Link>
+        <NavAuth current={current} />
         <ThemeToggle />
       </nav>
     </>

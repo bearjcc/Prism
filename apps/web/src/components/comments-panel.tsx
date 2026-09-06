@@ -2,28 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-
-const SESSION = "prism-web-session";
+import { useWebSession } from "../lib/web-session";
 
 type Comment = { author: string; body: string };
 
-export function signedIn(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  return window.localStorage.getItem(SESSION) === "1";
-}
-
-export function setSignedIn(value: boolean) {
-  if (value) {
-    window.localStorage.setItem(SESSION, "1");
-  } else {
-    window.localStorage.removeItem(SESSION);
-  }
-}
-
 export function CommentsPanel({ modId }: { modId: string }) {
-  const [authed, setAuthed] = useState(false);
+  const { authenticated, loading, user } = useWebSession();
   const [items, setItems] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
   const [rating, setRating] = useState("5");
@@ -31,7 +15,6 @@ export function CommentsPanel({ modId }: { modId: string }) {
   const ratingKey = `prism-rating:${modId}`;
 
   useEffect(() => {
-    setAuthed(signedIn());
     try {
       const raw = window.localStorage.getItem(storageKey);
       setItems(raw ? (JSON.parse(raw) as Comment[]) : []);
@@ -42,10 +25,11 @@ export function CommentsPanel({ modId }: { modId: string }) {
 
   function publish(e: FormEvent) {
     e.preventDefault();
-    if (!authed || !body.trim()) {
+    if (!authenticated || !body.trim()) {
       return;
     }
-    const next = [...items, { author: "you", body: body.trim() }];
+    const author = user?.name ?? user?.email ?? "you";
+    const next = [...items, { author, body: body.trim() }];
     setItems(next);
     window.localStorage.setItem(storageKey, JSON.stringify(next));
     window.localStorage.setItem(ratingKey, rating);
@@ -64,7 +48,7 @@ export function CommentsPanel({ modId }: { modId: string }) {
           </li>
         ))}
       </ul>
-      {authed ? (
+      {loading ? null : authenticated ? (
         <form className="stack" onSubmit={publish}>
           <label>
             Rating
