@@ -28,14 +28,19 @@ import {
 } from "./loader.js";
 import {
   MOD_FAILURE_BUDGET_STORAGE_KEY,
+  MOD_LAST_FAILURE_STORAGE_KEY,
+  clearModLastFailure,
   isModPausedOnOrigin,
   mergeOriginExclusions,
   originFromPageUrl,
   pausedOriginsByMod,
+  readModLastFailure,
   recordModFailure,
+  recordModLastFailure,
   recordModSuccess,
   setModPausedOnOrigin,
   type ModFailureBudgetState,
+  type ModLastFailureState,
 } from "./mod-pause.js";
 import { loadImportedModsFromStorage } from "./compiled-package-cache.js";
 import {
@@ -140,6 +145,7 @@ export type StoredState = {
   elementHides?: Record<string, string[]>;
   pinHintDismissed?: boolean;
   modFailureBudget?: ModFailureBudgetState;
+  modLastFailure?: ModLastFailureState;
 } & Partial<Record<BehaviourPolicyStorageKey, OriginDenyPolicyState>>;
 
 interface ChromeApi {
@@ -469,6 +475,7 @@ export async function handleRuntimeMessage(
   const grants = { ...state.grants };
   const siteExceptions = { ...state.siteExceptions };
   let modFailureBudget = state.modFailureBudget;
+  let modLastFailure = state.modLastFailure;
   const behaviourPolicies = readBehaviourPolicies(state);
   const pastePolicy = behaviourPolicies.paste;
   const pausedOnOrigin = pausedOriginsByMod(modFailureBudget);
@@ -494,7 +501,12 @@ export async function handleRuntimeMessage(
       lastFailureOnOrigin:
         origin === undefined
           ? undefined
-          : modFailureBudget?.[mod.manifest.id]?.[origin]?.lastError,
+          : readModLastFailure(
+              modLastFailure,
+              modFailureBudget,
+              mod.manifest.id,
+              origin,
+            ),
       sessionExceptedOnOrigin:
         origin !== undefined &&
         isSessionExcepted(sessionExceptions.mods, mod.manifest.id, origin),
@@ -532,11 +544,30 @@ export async function handleRuntimeMessage(
     return state.activity ?? [];
   }
   if (message.type === "activity-event" && isActivityEvent(message.event)) {
+    const event = message.event;
+    const activityOrigin =
+      sender.url === undefined ? undefined : originFromPageUrl(sender.url);
+    if (
+      event.layer === "mod-activate" &&
+      event.outcome === "failed" &&
+      activityOrigin !== undefined &&
+      event.error.trim() !== ""
+    ) {
+      modLastFailure = recordModLastFailure(
+        modLastFailure,
+        event.modId,
+        activityOrigin,
+        event.error,
+      );
+    }
     await dependencies.setState({
       activity: appendActivityEvents(state.activity ?? [], {
-        ...message.event,
+        ...event,
         at: Date.now(),
       }),
+      ...(modLastFailure === state.modLastFailure
+        ? {}
+        : { modLastFailure }),
     });
     return { ok: true };
   }
@@ -712,7 +743,7 @@ export async function handleRuntimeMessage(
       (mod) => mod.manifest.id === message.modId,
     )?.manifest;
     const origin = originFromPageUrl(message.origin);
-    if (manifest === undefined || origin !== message.origin) {
+    if (manifest === undefined || origin === undefined) {
       return { ok: false };
     }
     const previousPaused = isModPausedOnOrigin(
@@ -720,6 +751,18 @@ export async function handleRuntimeMessage(
       message.modId,
       origin,
     );
+    if (
+      message.type === "record-mod-failure" &&
+      message.reason !== undefined &&
+      message.reason.trim() !== ""
+    ) {
+      modLastFailure = recordModLastFailure(
+        modLastFailure,
+        message.modId,
+        origin,
+        message.reason,
+      );
+    }
     modFailureBudget =
       message.type === "record-mod-failure"
         ? recordModFailure(
@@ -729,7 +772,19 @@ export async function handleRuntimeMessage(
             message.reason,
           )
         : recordModSuccess(modFailureBudget, message.modId, origin);
-    await dependencies.setState({ modFailureBudget });
+    if (message.type === "record-mod-success") {
+      modLastFailure = clearModLastFailure(
+        modLastFailure,
+        message.modId,
+        origin,
+      );
+    }
+    await dependencies.setState({
+      modFailureBudget,
+      ...(modLastFailure === state.modLastFailure
+        ? {}
+        : { modLastFailure }),
+    });
     const nowPaused = isModPausedOnOrigin(
       modFailureBudget,
       message.modId,
@@ -1177,6 +1232,7 @@ function createChromeDependencies(): ServiceWorkerDependencies {
         "elementHides",
         "pinHintDismissed",
         MOD_FAILURE_BUDGET_STORAGE_KEY,
+        MOD_LAST_FAILURE_STORAGE_KEY,
         PASTE_POLICY_STORAGE_KEY,
         ...Object.values(BEHAVIOUR_POLICY_STORAGE_KEYS),
       ]),

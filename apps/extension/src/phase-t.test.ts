@@ -4,11 +4,13 @@ import { loadNativeMods } from "./loader.js";
 import {
   MOD_FAILURE_BUDGET,
   isModPausedOnOrigin,
+  readModLastFailure,
   recordModFailure,
   recordModSuccess,
   reportModLoadOutcomes,
 } from "./mod-pause.js";
 import { describeModPause, mountPopup } from "./popup.js";
+import { formatPausedModRule } from "./page-activity.js";
 import { createPrismApi } from "./prism-api.js";
 import {
   handleRuntimeMessage,
@@ -196,6 +198,39 @@ describe("Phase T mod pause after repeated failures", () => {
     expect(
       isModPausedOnOrigin(budget, "fixture.empty", "https://example.com"),
     ).toBe(true);
+  });
+
+  test("record-mod-failure stores the last failure reason", async () => {
+    const stored: StoredState = { enabled: {}, grants: {} };
+    const dependencies = storedDependencies(stored);
+    const mods = Promise.resolve([{ manifest: emptyManifest, entry: null }]);
+
+    await expect(
+      handleRuntimeMessage(
+        {
+          type: "record-mod-failure",
+          modId: "fixture.empty",
+          origin: "https://example.com",
+          reason: "Failed to load bundled mod foo: CSP violation",
+        },
+        { id: "fixture-extension", url: "https://example.com/page" },
+        mods,
+        dependencies,
+        auth,
+      ),
+    ).resolves.toEqual({ ok: true, paused: false });
+
+    expect(
+      stored.modLastFailure?.["fixture.empty"]?.["https://example.com"],
+    ).toBe("Failed to load bundled mod foo: CSP violation");
+    expect(
+      readModLastFailure(
+        stored.modLastFailure,
+        stored.modFailureBudget,
+        "fixture.empty",
+        "https://example.com",
+      ),
+    ).toBe("Failed to load bundled mod foo: CSP violation");
   });
 
   test("a success before the threshold resets the budget", () => {
@@ -412,7 +447,7 @@ describe("Phase T mod pause after repeated failures", () => {
     );
 
     expect(dom.window.document.querySelector(".mod-paused")?.textContent).toBe(
-      describeModPause(),
+      formatPausedModRule(),
     );
     expect(describeModPause()).toBe("Paused on this site after repeated failures.");
     expect(

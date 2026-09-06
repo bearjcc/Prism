@@ -6,6 +6,7 @@ import { classifyModTrust } from "./loader.js";
 import {
   formatPageActivityRow,
   pageActivityRows,
+  formatPausedModRule,
   type PageActivityMod,
 } from "./page-activity.js";
 import { encodeArchiveForStorage } from "./packed-mod.js";
@@ -713,14 +714,8 @@ function renderMod(
   if (mod.pausedOnOrigin === true && pageOrigin !== undefined) {
     const paused = popupDocument.createElement("p");
     paused.className = "mod-paused";
-    paused.textContent = describeModPause();
+    paused.textContent = formatPausedModRule(mod.lastFailureOnOrigin);
     section.append(paused);
-    if (mod.lastFailureOnOrigin !== undefined && mod.lastFailureOnOrigin !== "") {
-      const reason = popupDocument.createElement("p");
-      reason.className = "mod-paused-reason";
-      reason.textContent = mod.lastFailureOnOrigin;
-      section.append(reason);
-    }
     section.append(
       checkbox(
         popupDocument,
@@ -863,6 +858,7 @@ function pageActivityModFromPopup(mod: PopupMod): PageActivityMod {
     grants: mod.grants,
     disabledOnOrigin: mod.disabledOnOrigin,
     pausedOnOrigin: mod.pausedOnOrigin,
+    lastFailureOnOrigin: mod.lastFailureOnOrigin,
     sessionExceptedOnOrigin: mod.sessionExceptedOnOrigin,
   };
 }

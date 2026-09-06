@@ -1382,8 +1382,17 @@ if (typeof chrome !== "undefined") {
         type: "active-mods",
         url,
       }),
-    loadEntry: async (entry) =>
-      import(chrome.runtime.getURL(entry)) as Promise<ContentModModule>,
+    loadEntry: async (entry) => {
+      try {
+        return (await import(
+          chrome.runtime.getURL(entry)
+        )) as ContentModModule;
+      } catch (error) {
+        const detail =
+          error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to load bundled mod ${entry}: ${detail}`);
+      }
+    },
     handlers: createChromeContentHandlers(
       document,
       chrome.runtime,
