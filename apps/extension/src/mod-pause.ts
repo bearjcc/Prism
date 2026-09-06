@@ -152,7 +152,8 @@ export function clearModLastFailure(
     return cloneLastFailure(state);
   }
   const next = cloneLastFailure(state);
-  const { [origin]: _removed, ...rest } = origins;
+  const rest = { ...origins };
+  delete rest[origin];
   if (Object.keys(rest).length === 0) {
     delete next[modId];
   } else {
