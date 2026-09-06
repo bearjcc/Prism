@@ -1,3 +1,5 @@
+import { querySelectorAllDeep } from "./dom-query.js";
+
 export interface YoutubeHomeVideo {
   readonly id: string;
   readonly title: string;
@@ -27,6 +29,12 @@ const NON_VIDEO_SELECTOR = [
   "ytd-in-feed-ad-layout-renderer",
   "ytd-inline-survey-renderer",
   "ytd-continuation-item-renderer",
+  "ytd-banner-promo-renderer",
+  "ytd-promoted-video-renderer",
+  "ytd-rich-card-renderer",
+  "ytd-game-card-renderer",
+  "ytd-playables-renderer",
+  "ytd-feed-nudge-renderer",
   "grid-shelf-view-model",
 ].join(",");
 
@@ -51,35 +59,59 @@ const VIDEO_THUMBNAIL_LINK_SELECTOR = [
 ].join(",");
 
 const HOME_FEED_SELECTOR = [
-  'ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents',
   "ytd-rich-grid-renderer #contents",
+  "ytd-rich-grid-renderer > #contents",
+].join(", ");
+
+const HOME_SEARCH_ROOT_SELECTOR = [
+  'ytd-browse[page-subtype="home"]',
+  "ytd-two-column-browse-results-renderer",
+  "ytd-app",
+].join(", ");
+
+const HOME_FEED_ITEM_SELECTOR = [
+  "ytd-rich-item-renderer",
+  "ytd-rich-section-renderer",
+  "ytd-rich-grid-row",
+  "ytd-rich-shelf-renderer",
+  "ytd-in-feed-ad-layout-renderer",
+  "ytd-continuation-item-renderer",
+  "grid-shelf-view-model",
 ].join(", ");
 
 export function extractYoutubeHome(root: ParentNode): YoutubeHomeExtraction {
-  const videos: YoutubeHomeVideo[] = [];
-  const seen = new Set<string>();
+  try {
+    const videos: YoutubeHomeVideo[] = [];
+    const seen = new Set<string>();
 
-  for (const card of youtubeHomeCards(root)) {
-    if (!isVideoCard(card)) {
-      continue;
+    for (const card of youtubeHomeCards(root)) {
+      if (!isVideoCard(card)) {
+        continue;
+      }
+      const item = videoFromCard(card);
+      if (item === undefined || seen.has(item.id)) {
+        continue;
+      }
+      seen.add(item.id);
+      videos.push(item);
     }
-    const item = videoFromCard(card);
-    if (item === undefined || seen.has(item.id)) {
-      continue;
-    }
-    seen.add(item.id);
-    videos.push(item);
+
+    return { videos };
+  } catch {
+    return { videos: [] };
   }
-
-  return { videos };
 }
 
 function youtubeHomeCards(root: ParentNode): Element[] {
-  const descendants = Array.from(root.querySelectorAll(VIDEO_CARD_SELECTOR));
-  if (isElement(root) && root.matches(VIDEO_CARD_SELECTOR)) {
-    return [root, ...descendants.filter((card) => card !== root)];
+  try {
+    const descendants = Array.from(root.querySelectorAll(VIDEO_CARD_SELECTOR));
+    if (isElement(root) && root.matches(VIDEO_CARD_SELECTOR)) {
+      return [root, ...descendants.filter((card) => card !== root)];
+    }
+    return descendants;
+  } catch {
+    return [];
   }
-  return descendants;
 }
 
 function isElement(node: ParentNode): node is Element {
@@ -87,77 +119,151 @@ function isElement(node: ParentNode): node is Element {
 }
 
 export function findYoutubeHomeFeed(root: ParentNode): Element | undefined {
-  for (const selector of HOME_FEED_SELECTOR.split(", ")) {
-    const feed = root.querySelector(selector);
-    if (feed !== null) {
-      return feed;
+  const searchRoots = homeSearchRoots(root);
+  const candidates: Element[] = [];
+  for (const searchRoot of searchRoots) {
+    for (const selector of HOME_FEED_SELECTOR.split(", ")) {
+      for (const feed of querySelectorAllDeep(searchRoot, selector)) {
+        candidates.push(feed);
+      }
+      if (
+        searchRoot === root ||
+        typeof (
+          searchRoot as ParentNode & { querySelector?: unknown }
+        ).querySelector === "function"
+      ) {
+        const feed = (
+          searchRoot as ParentNode & {
+            querySelector: (value: string) => Element | null;
+          }
+        ).querySelector(selector);
+        if (feed !== null) {
+          candidates.push(feed);
+        }
+      }
     }
   }
-  return undefined;
+  const unique = [...new Set(candidates)];
+  if (unique.length === 0) {
+    return undefined;
+  }
+  return (
+    unique.find((feed) => feedHasHomeItems(feed)) ??
+    unique.find((feed) => feed.children.length > 0) ??
+    unique[0]
+  );
+}
+
+export function youtubeHomeFeedChildren(feed: Element): Element[] {
+  const children: Element[] = [];
+  for (const child of Array.from(feed.children)) {
+    if (child.tagName.toLowerCase() === "ytd-rich-grid-row") {
+      const rowContents =
+        child.querySelector(":scope > #contents") ??
+        child.querySelector("#contents") ??
+        child;
+      for (const item of Array.from(rowContents.children)) {
+        children.push(item);
+      }
+      continue;
+    }
+    children.push(child);
+  }
+  return children;
+}
+
+function homeSearchRoots(root: ParentNode): ParentNode[] {
+  const roots: ParentNode[] = [];
+  for (const selector of HOME_SEARCH_ROOT_SELECTOR.split(", ")) {
+    for (const match of querySelectorAllDeep(root, selector)) {
+      roots.push(match);
+    }
+  }
+  return roots.length > 0 ? roots : [root];
+}
+
+function feedHasHomeItems(feed: Element): boolean {
+  try {
+    return feed.querySelector(HOME_FEED_ITEM_SELECTOR) !== null;
+  } catch {
+    return false;
+  }
 }
 
 function isVideoCard(card: Element): boolean {
-  if (isShortsCard(card)) {
+  try {
+    if (isShortsCard(card)) {
+      return false;
+    }
+    if (
+      card.closest(NON_VIDEO_SELECTOR) !== null ||
+      card.querySelector(NON_VIDEO_SELECTOR) !== null
+    ) {
+      return false;
+    }
+    if (!card.matches("ytd-rich-item-renderer")) {
+      return true;
+    }
+    return (
+      card.querySelector("ytd-rich-grid-media") !== null ||
+      card.querySelector("yt-lockup-view-model") !== null
+    );
+  } catch {
     return false;
   }
-  if (
-    card.closest(NON_VIDEO_SELECTOR) !== null ||
-    card.querySelector(NON_VIDEO_SELECTOR) !== null
-  ) {
-    return false;
-  }
-  if (!card.matches("ytd-rich-item-renderer")) {
-    return true;
-  }
-  return (
-    card.querySelector("ytd-rich-grid-media") !== null ||
-    card.querySelector("yt-lockup-view-model") !== null
-  );
 }
 
 function isShortsCard(card: Element): boolean {
-  if (card.matches('ytd-rich-item-renderer[is-slim-media]')) {
-    return true;
-  }
-  if (card.querySelector(SHORTS_SELECTOR) !== null) {
-    return true;
-  }
-  const shortsLink = card.querySelector('a[href*="/shorts/"]');
-  if (shortsLink === null) {
+  try {
+    if (card.matches('ytd-rich-item-renderer[is-slim-media]')) {
+      return true;
+    }
+    if (card.querySelector(SHORTS_SELECTOR) !== null) {
+      return true;
+    }
+    const shortsLink = card.querySelector('a[href*="/shorts/"]');
+    if (shortsLink === null) {
+      return false;
+    }
+    return card.querySelector('a[href*="/watch?v="]') === null;
+  } catch {
     return false;
   }
-  return card.querySelector('a[href*="/watch?v="]') === null;
 }
 
 function videoFromCard(card: Element): YoutubeHomeVideo | undefined {
-  const titleLink = card.querySelector<HTMLAnchorElement>(
-    VIDEO_TITLE_LINK_SELECTOR,
-  );
-  if (titleLink !== null) {
-    const fromTitle = videoFromLink(titleLink);
-    if (fromTitle !== undefined) {
-      return fromTitle;
+  try {
+    const titleLink = card.querySelector<HTMLAnchorElement>(
+      VIDEO_TITLE_LINK_SELECTOR,
+    );
+    if (titleLink !== null) {
+      const fromTitle = videoFromLink(titleLink);
+      if (fromTitle !== undefined) {
+        return fromTitle;
+      }
     }
-  }
-  const thumbnailLink = card.querySelector<HTMLAnchorElement>(
-    VIDEO_THUMBNAIL_LINK_SELECTOR,
-  );
-  if (thumbnailLink === null) {
+    const thumbnailLink = card.querySelector<HTMLAnchorElement>(
+      VIDEO_THUMBNAIL_LINK_SELECTOR,
+    );
+    if (thumbnailLink === null) {
+      return undefined;
+    }
+    const fromThumbnail = videoFromLink(thumbnailLink);
+    if (fromThumbnail === undefined) {
+      return undefined;
+    }
+    if (fromThumbnail.title !== "") {
+      return fromThumbnail;
+    }
+    const title =
+      titleLink?.getAttribute("title") ??
+      titleLink?.getAttribute("aria-label") ??
+      titleLink?.textContent ??
+      fromThumbnail.id;
+    return { ...fromThumbnail, title: normalizeText(title) };
+  } catch {
     return undefined;
   }
-  const fromThumbnail = videoFromLink(thumbnailLink);
-  if (fromThumbnail === undefined) {
-    return undefined;
-  }
-  if (fromThumbnail.title !== "") {
-    return fromThumbnail;
-  }
-  const title =
-    titleLink?.getAttribute("title") ??
-    titleLink?.getAttribute("aria-label") ??
-    titleLink?.textContent ??
-    fromThumbnail.id;
-  return { ...fromThumbnail, title: normalizeText(title) };
 }
 
 function videoFromLink(link: HTMLAnchorElement): YoutubeHomeVideo | undefined {

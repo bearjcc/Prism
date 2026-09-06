@@ -90,10 +90,14 @@ export async function runNativeModInSandbox(
       } else if (message.operation === "styles") {
         prism.styles.apply(String(message.args[0] ?? ""));
       } else if (message.operation === "allowlist") {
-        prism.ui.allowlist(
-          String(message.args[0] ?? ""),
-          String(message.args[1] ?? ""),
-        );
+        try {
+          prism.ui.allowlist(
+            String(message.args[0] ?? ""),
+            String(message.args[1] ?? ""),
+          );
+        } catch {
+          // Allowlist is fail-soft on live hosts.
+        }
       } else if (message.operation === "extract") {
         result = await prism.extract(
           message.args[0] as Parameters<PrismApi["extract"]>[0],

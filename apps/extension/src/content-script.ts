@@ -17,6 +17,7 @@ import {
 import {
   extractYoutubeHome,
   findYoutubeHomeFeed,
+  youtubeHomeFeedChildren,
   type YoutubeHomeVideo,
 } from "./extractors/youtube-home.js";
 import { normaliseRedditPermalink } from "./extractors/reddit-comments.js";
@@ -597,29 +598,43 @@ export function createContentHandlers(
       return () => style.remove();
     },
     allowlist(surface, itemType): void | (() => void) {
-      if (surface !== "youtube.home" || itemType !== "video") {
-        throw new Error(`Unsupported allowlist ${surface}.${itemType}`);
-      }
-      const feed = findYoutubeHomeFeed(contentDocument);
-      if (feed === undefined) {
-        return () => {};
-      }
+      try {
+        if (surface !== "youtube.home" || itemType !== "video") {
+          return undefined;
+        }
+        const feed = findYoutubeHomeFeed(contentDocument);
+        if (feed === undefined) {
+          return () => {};
+        }
 
-      const firstConversion =
-        feed.querySelector('[data-prism-owned="youtube-home-video"]') ===
-        null;
-      const previousChildren = firstConversion
-        ? Array.from(feed.childNodes)
-        : undefined;
+        let previousChildren: readonly ChildNode[] | undefined;
+        try {
+          const firstConversion =
+            feed.querySelector('[data-prism-owned="youtube-home-video"]') ===
+            null;
+          previousChildren = firstConversion
+            ? Array.from(feed.childNodes)
+            : undefined;
+        } catch {
+          previousChildren = undefined;
+        }
 
-      applyYoutubeHomeAllowlist(feed, contentDocument);
+        applyYoutubeHomeAllowlist(feed, contentDocument);
 
-      if (previousChildren === undefined) {
-        return;
+        if (previousChildren === undefined) {
+          return undefined;
+        }
+        const saved = previousChildren;
+        return () => {
+          try {
+            feed.replaceChildren(...saved);
+          } catch {
+            // Undo is best-effort on live Polymer hosts.
+          }
+        };
+      } catch {
+        return undefined;
       }
-      return () => {
-        feed.replaceChildren(...previousChildren);
-      };
     },
     request(contractId, manifest): Promise<BrokeredResponse> {
       return requestBroker({
@@ -645,8 +660,8 @@ export function pageNeedsSurfaceRefresh(contentDocument: Document): boolean {
   const feed = findYoutubeHomeFeed(contentDocument);
   if (
     feed !== undefined &&
-    Array.from(feed.children).some(
-      (child) => child.getAttribute("data-prism-owned") !== "youtube-home-video",
+    youtubeHomeFeedChildren(feed).some(
+      (child) => !isYoutubeHomeFeedChildOwned(child),
     )
   ) {
     return true;
@@ -743,12 +758,69 @@ export function waitForYoutubeHomeFeed(
   timeoutMs: number = DEFAULT_YOUTUBE_HOME_WAIT_MS,
   signal?: AbortSignal,
 ): Promise<void> {
-  return waitForSelector(
+  return waitForFeedRoot(
+    () => findYoutubeHomeFeed(contentDocument),
     contentDocument,
-    'ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents, ytd-rich-grid-renderer #contents',
     timeoutMs,
     signal,
   );
+}
+
+function waitForFeedRoot(
+  locate: () => Element | undefined,
+  contentDocument: Document,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(createAbortError());
+  }
+  if (timeoutMs <= 0 || locate() !== undefined) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const view = contentDocument.defaultView;
+    if (view === null) {
+      resolve();
+      return;
+    }
+
+    let settled = false;
+    let observer: MutationObserver | undefined;
+
+    const finish = (error?: Error): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      observer?.disconnect();
+      view.clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      if (error === undefined) {
+        resolve();
+        return;
+      }
+      reject(error);
+    };
+
+    const onAbort = (): void => {
+      finish(createAbortError());
+    };
+
+    const MutationObserverCtor = view.MutationObserver;
+    if (MutationObserverCtor !== undefined) {
+      observer = new MutationObserverCtor(() => {
+        if (locate() !== undefined) {
+          finish();
+        }
+      });
+      observer.observe(contentDocument, { childList: true, subtree: true });
+    }
+
+    const timer = view.setTimeout(() => finish(), timeoutMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 export function waitForYoutubeCommentsSlot(
@@ -838,12 +910,17 @@ function applyYoutubeHomeAllowlist(
   feed: Element,
   contentDocument: Document,
 ): void {
-  for (const child of Array.from(feed.children)) {
+  for (const child of youtubeHomeFeedChildren(feed)) {
     try {
-      if (child.getAttribute("data-prism-owned") === "youtube-home-video") {
+      if (isYoutubeHomeFeedChildOwned(child)) {
         continue;
       }
-      const videos = extractYoutubeHome(child).videos;
+      let videos: readonly YoutubeHomeVideo[] = [];
+      try {
+        videos = extractYoutubeHome(child).videos;
+      } catch {
+        videos = [];
+      }
       if (videos.length === 0) {
         safeRemoveFeedChild(child);
         continue;
@@ -855,18 +932,37 @@ function applyYoutubeHomeAllowlist(
         safeRemoveFeedChild(child);
         continue;
       }
-      child.replaceWith(...tiles);
+      try {
+        child.replaceWith(...tiles);
+      } catch {
+        safeRemoveFeedChild(child);
+      }
     } catch {
       safeRemoveFeedChild(child);
     }
   }
 }
 
+function isYoutubeHomeFeedChildOwned(child: Element): boolean {
+  const owned = child.getAttribute("data-prism-owned");
+  return owned === "youtube-home-video" || owned === "youtube-home-hidden";
+}
+
 function safeRemoveFeedChild(child: Element): void {
   try {
     child.remove();
+    return;
   } catch {
-    // YouTube custom elements can reject removal on live pages.
+    // Fall through to hide when Polymer rejects removal.
+  }
+  try {
+    child.setAttribute("hidden", "");
+    if ("style" in child) {
+      (child as HTMLElement).style.display = "none";
+    }
+    child.setAttribute("data-prism-owned", "youtube-home-hidden");
+  } catch {
+    // Best-effort only.
   }
 }
 

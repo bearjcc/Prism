@@ -141,6 +141,41 @@ describe("findYoutubeHomeFeed", () => {
     const feed = findYoutubeHomeFeed(dom.window.document);
     expect(feed).not.toBeNull();
     expect(feed?.querySelector('[data-fixture-kind="stray-grid"]')).toBeNull();
-    expect(feed?.querySelector("ytd-rich-item-renderer[lockup]")).not.toBeNull();
+  });
+
+  test("finds the feed inside an open shadow root", () => {
+    const dom = new JSDOM("<body></body>", {
+      url: "https://www.youtube.com/",
+    });
+    const host = dom.window.document.createElement("ytd-app");
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = `
+      <ytd-browse page-subtype="home">
+        <ytd-rich-grid-renderer>
+          <div id="contents">
+            <ytd-rich-item-renderer lockup>
+              <yt-lockup-view-model>
+                <a class="ytLockupMetadataViewModelTitle"
+                   href="/watch?v=shadow-video"
+                   title="Shadow video">Shadow video</a>
+              </yt-lockup-view-model>
+            </ytd-rich-item-renderer>
+          </div>
+        </ytd-rich-grid-renderer>
+      </ytd-browse>
+    `;
+    dom.window.document.body.append(host);
+
+    const feed = findYoutubeHomeFeed(dom.window.document);
+    expect(feed).not.toBeNull();
+    expect(extractYoutubeHome(feed!)).toEqual({
+      videos: [
+        {
+          id: "shadow-video",
+          title: "Shadow video",
+          href: "https://www.youtube.com/watch?v=shadow-video",
+        },
+      ],
+    });
   });
 });

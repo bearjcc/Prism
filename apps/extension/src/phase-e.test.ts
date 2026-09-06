@@ -156,6 +156,47 @@ describe("Phase E YouTube Home tracer", () => {
     ]);
   });
 
+  test("allowlist never throws through the Prism API on broken feed children", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const feed = findHomeFeed(dom.window.document);
+    const broken = dom.window.document.createElement("ytd-rich-item-renderer");
+    broken.innerHTML = `
+      <ytd-rich-grid-media>
+        <a id="video-title-link" href="/watch?v=broken-child">Broken child</a>
+      </ytd-rich-grid-media>
+    `;
+    broken.replaceWith = () => {
+      throw new DOMException("replace blocked");
+    };
+    broken.remove = () => {
+      throw new DOMException("remove blocked");
+    };
+    feed?.append(broken);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    expect(() => {
+      prism.ui.allowlist("youtube.home", "video");
+    }).not.toThrow();
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
+    ).toHaveLength(3);
+    expect(
+      broken.getAttribute("data-prism-owned") === "youtube-home-hidden" ||
+        broken.parentNode === null,
+    ).toBe(true);
+  });
+
   test("allowlist survives hostile feed children that reject DOM mutation", async () => {
     const fixture = readFileSync(
       join(youtubeModRoot, "fixtures", "home-live.html"),
