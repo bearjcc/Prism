@@ -11,12 +11,6 @@ import { listModManifestPaths } from "../../../../scripts/check-mods-engine.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
-const HOMEgrown = new Map([
-  ["kitten-ad-replace", "prism.kitten-ad-replace"],
-  ["youtube-home-videos", "prism.youtube-home-videos"],
-  ["youtube-reddit-comments", "prism.youtube-reddit-comments"],
-]);
-
 describe("catalogue manifest sync", () => {
   it("lists only the three homegrown tracer mods", () => {
     expect(LISTINGS.map((listing) => listing.id)).toEqual([
@@ -28,13 +22,11 @@ describe("catalogue manifest sync", () => {
   });
 
   it("matches each listing to mods/*/prism.yaml", () => {
-    const manifestPaths = listModManifestPaths(join(repoRoot, "mods")).filter((path) =>
-      [...HOMEgrown.keys()].some((slug) => path.includes(`/mods/${slug}/`)),
-    );
-    expect(manifestPaths).toHaveLength(3);
+    const manifestPaths = listModManifestPaths(join(repoRoot, "mods"));
 
     for (const listing of LISTINGS) {
       const manifestPath = join(repoRoot, "mods", listing.id, "prism.yaml");
+      expect(manifestPaths).toContain(manifestPath);
       const source = readFileSync(manifestPath, "utf8");
       const manifest = validateManifest(source, manifestPath);
 
