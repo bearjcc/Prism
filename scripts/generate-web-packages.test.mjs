@@ -16,15 +16,11 @@ const tscBin = join(
 
 describe("generate-web-packages", () => {
   it("writes a .prism file for each homegrown tracer mod", () => {
-<<<<<<< HEAD
+    // Ensure @prism/schema dist exists for packMod; use node (not npx) for Windows.
     execFileSync(process.execPath, [tscBin, "-b"], { cwd: repoRoot });
     execFileSync(process.execPath, ["scripts/generate-web-packages.mjs"], {
       cwd: repoRoot,
     });
-=======
-    // CI runs `npm run build` before `npm test`, so @prism/schema dist already exists.
-    execFileSync("node", ["scripts/generate-web-packages.mjs"], { cwd: repoRoot });
->>>>>>> b06ca96 (Fix Windows CI for marketplace tests.)
     const expected = [
       "kitten-ad-replace.prism",
       "youtube-home-videos.prism",
