@@ -44,17 +44,17 @@ At least one provider plus `AUTH_SECRET` must be set or the sign-in page explain
 
 ### GitHub OAuth App
 
-1. GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
+1. GitHub -> Settings -> Developer settings -> OAuth Apps -> New OAuth App
 2. Application name: `Prism (web)` (or similar)
 3. Homepage URL: `https://webprism.app`
 4. Authorization callback URL:
    - Production: `https://webprism.app/api/auth/callback/github`
    - Local dev: `http://localhost:3000/api/auth/callback/github`
-5. Copy Client ID → `AUTH_GITHUB_ID`, generate Client Secret → `AUTH_GITHUB_SECRET`
+5. Copy Client ID -> `AUTH_GITHUB_ID`, generate Client Secret -> `AUTH_GITHUB_SECRET`
 
 ### Google Cloud OAuth client
 
-1. Google Cloud Console → APIs & Services → Credentials → Create OAuth client ID
+1. Google Cloud Console -> APIs & Services -> Credentials -> Create OAuth client ID
 2. Application type: Web application
 3. Authorised JavaScript origins:
    - `https://webprism.app`
@@ -62,7 +62,7 @@ At least one provider plus `AUTH_SECRET` must be set or the sign-in page explain
 4. Authorised redirect URIs:
    - Production: `https://webprism.app/api/auth/callback/google`
    - Local dev: `http://localhost:3000/api/auth/callback/google`
-5. Copy Client ID → `AUTH_GOOGLE_ID`, Client secret → `AUTH_GOOGLE_SECRET`
+5. Copy Client ID -> `AUTH_GOOGLE_ID`, Client secret -> `AUTH_GOOGLE_SECRET`
 
 ## Railway environment variables
 
@@ -72,7 +72,7 @@ Set these on the `@prism/web` service (monorepo root build):
 |----------|----------|---------|
 | `AUTH_SECRET` | Yes | Session signing secret (`openssl rand -base64 32`) |
 | `AUTH_URL` | Yes (production) | Canonical site URL, e.g. `https://webprism.app` |
-| `AUTH_TRUST_HOST` | Recommended on Railway | `true` — trust `X-Forwarded-Host` from the proxy |
+| `AUTH_TRUST_HOST` | Recommended on Railway | `true` - trust `X-Forwarded-Host` from the proxy |
 | `AUTH_GITHUB_ID` | One provider min | GitHub OAuth client ID |
 | `AUTH_GITHUB_SECRET` | With GitHub | GitHub OAuth client secret |
 | `AUTH_GOOGLE_ID` | One provider min | Google OAuth client ID |

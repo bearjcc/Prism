@@ -17,7 +17,7 @@ export default function SignInPage() {
         <h1>Sign in</h1>
         <p>Needed to comment, rate, or publish. Not needed to browse or install.</p>
       </div>
-      <Suspense fallback={<p className="note">Loading sign-in…</p>}>
+      <Suspense fallback={<p className="note">Loading sign-in...</p>}>
         <SignInForm providers={providers} enabled={enabled} />
       </Suspense>
     </SiteShell>
