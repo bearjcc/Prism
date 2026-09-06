@@ -8,6 +8,7 @@ export const MOD_FAILURE_BUDGET_STORAGE_KEY = "modFailureBudget";
 export interface ModOriginBudget {
   readonly failures: number;
   readonly paused: boolean;
+  readonly lastError?: string;
 }
 
 export type ModFailureBudgetState = Record<
@@ -65,6 +66,7 @@ export function recordModFailure(
   state: ModFailureBudgetState | undefined,
   modId: string,
   origin: string,
+  lastError?: string,
 ): ModFailureBudgetState {
   const current = state?.[modId]?.[origin];
   if (current?.paused === true) {
@@ -74,6 +76,7 @@ export function recordModFailure(
   return setBudget(state, modId, origin, {
     failures,
     paused: failures >= MOD_FAILURE_BUDGET,
+    ...(lastError === undefined ? {} : { lastError }),
   });
 }
 
@@ -115,6 +118,7 @@ export async function reportModLoadOutcomes(
     readonly type: "record-mod-failure" | "record-mod-success";
     readonly modId: string;
     readonly origin: string;
+    readonly reason?: string;
   }) => Promise<unknown>,
 ): Promise<void> {
   const origin = originFromPageUrl(pageUrl);
@@ -129,6 +133,7 @@ export async function reportModLoadOutcomes(
             type: "record-mod-failure",
             modId: state.id,
             origin,
+            ...(state.error === undefined ? {} : { reason: state.error }),
           });
         } else if (state.status === "active") {
           await send({

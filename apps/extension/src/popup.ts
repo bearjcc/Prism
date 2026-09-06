@@ -27,6 +27,7 @@ interface PopupMod {
   readonly origin?: "bundled" | "imported";
   readonly disabledOnOrigin?: boolean;
   readonly pausedOnOrigin?: boolean;
+  readonly lastFailureOnOrigin?: string;
   readonly sessionExceptedOnOrigin?: boolean;
   readonly trustKind?: ModTrustKind;
   readonly entry?: string | null;
@@ -112,6 +113,9 @@ export function pageOriginFromTabUrl(url: string | undefined): string | undefine
 }
 
 export function describeActivityEvent(event: StoredActivityEvent): string {
+  if (event.layer === "mod-activate") {
+    return `${event.modId} activate failed: ${event.error}`;
+  }
   if (event.layer === "userscript-runtime") {
     return `${event.modId} userscript ${event.outcome}`;
   }
@@ -711,6 +715,12 @@ function renderMod(
     paused.className = "mod-paused";
     paused.textContent = describeModPause();
     section.append(paused);
+    if (mod.lastFailureOnOrigin !== undefined && mod.lastFailureOnOrigin !== "") {
+      const reason = popupDocument.createElement("p");
+      reason.className = "mod-paused-reason";
+      reason.textContent = mod.lastFailureOnOrigin;
+      section.append(reason);
+    }
     section.append(
       checkbox(
         popupDocument,

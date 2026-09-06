@@ -298,6 +298,46 @@ describe("Phase E YouTube Home tracer", () => {
     expect(undo.undoLast(5)).toBe(false);
   });
 
+  test("activateContentMods loads bundled entry files instead of sandbox entrySource", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const loadEntry = vi.fn().mockResolvedValue({
+      activate: activateYoutubeHomeMod,
+    });
+
+    await activateContentMods({
+      url: "https://www.youtube.com/",
+      requestActiveMods: async () => ({
+        mods: [
+          {
+            manifest,
+            entry: "bundled-mods/prism.youtube-home-videos/src/index.js",
+            entrySource:
+              "export async function activate() { throw new Error('sandbox path'); }",
+            grants: ["youtube.home.allowlist"],
+          },
+        ],
+      }),
+      loadEntry,
+      handlers: createContentHandlers(dom.window.document),
+      undo: new TabUndoStack(),
+      contentDocument: dom.window.document,
+    });
+
+    expect(loadEntry).toHaveBeenCalledWith(
+      "bundled-mods/prism.youtube-home-videos/src/index.js",
+    );
+    expect(
+      findHomeFeed(dom.window.document)?.querySelectorAll(
+        '[data-prism-owned="youtube-home-video"]',
+      ),
+    ).toHaveLength(3);
+  });
+
   test("mounts only extracted videos and restores the fixture on undo", async () => {
     const fixture = readFileSync(
       join(youtubeModRoot, "fixtures", "home.html"),

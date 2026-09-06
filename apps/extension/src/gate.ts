@@ -12,6 +12,12 @@ export type ActivityEvent =
       readonly layer: "userscript-runtime";
       readonly modId: string;
       readonly outcome: "allowed" | "denied";
+    }
+  | {
+      readonly layer: "mod-activate";
+      readonly modId: string;
+      readonly outcome: "failed";
+      readonly error: string;
     };
 
 export type StoredActivityEvent = ActivityEvent & {
@@ -24,8 +30,16 @@ export function isActivityEvent(value: unknown): value is ActivityEvent {
   if (
     !isRecord(value) ||
     typeof value.modId !== "string" ||
-    value.modId === "" ||
-    (value.outcome !== "allowed" && value.outcome !== "denied")
+    value.modId === ""
+  ) {
+    return false;
+  }
+  if (value.layer === "mod-activate") {
+    return value.outcome === "failed" && typeof value.error === "string";
+  }
+  if (
+    value.outcome !== "allowed" &&
+    value.outcome !== "denied"
   ) {
     return false;
   }

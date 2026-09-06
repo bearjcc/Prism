@@ -46,6 +46,14 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/inspect-package.ts"),
       },
       {
+        find: "@prism/schema/inspect-css",
+        replacement: path.join(root, "packages/schema/src/inspect-css.ts"),
+      },
+      {
+        find: "@prism/schema/inspect-filter",
+        replacement: path.join(root, "packages/schema/src/inspect-filter.ts"),
+      },
+      {
         find: "@prism/schema/usercss-map",
         replacement: path.join(root, "packages/schema/src/usercss-map.ts"),
       },

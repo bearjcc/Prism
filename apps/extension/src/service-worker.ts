@@ -116,6 +116,7 @@ interface RuntimeMessage {
   readonly deny?: boolean;
   readonly default?: boolean;
   readonly policy?: string;
+  readonly reason?: string;
 }
 
 export interface RuntimeMessageSender {
@@ -490,6 +491,10 @@ export async function handleRuntimeMessage(
       pausedOnOrigin:
         origin !== undefined &&
         isModPausedOnOrigin(modFailureBudget, mod.manifest.id, origin),
+      lastFailureOnOrigin:
+        origin === undefined
+          ? undefined
+          : modFailureBudget?.[mod.manifest.id]?.[origin]?.lastError,
       sessionExceptedOnOrigin:
         origin !== undefined &&
         isSessionExcepted(sessionExceptions.mods, mod.manifest.id, origin),
@@ -717,7 +722,12 @@ export async function handleRuntimeMessage(
     );
     modFailureBudget =
       message.type === "record-mod-failure"
-        ? recordModFailure(modFailureBudget, message.modId, origin)
+        ? recordModFailure(
+            modFailureBudget,
+            message.modId,
+            origin,
+            message.reason,
+          )
         : recordModSuccess(modFailureBudget, message.modId, origin);
     await dependencies.setState({ modFailureBudget });
     const nowPaused = isModPausedOnOrigin(

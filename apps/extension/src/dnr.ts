@@ -1,5 +1,5 @@
 import type { BundledMod } from "./loader.js";
-import { inspectBrowserFilterText } from "@prism/schema/inspect-package";
+import { inspectBrowserFilterText } from "@prism/schema/inspect-filter";
 
 export interface DnrRule {
   readonly id: number;

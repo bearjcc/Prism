@@ -226,10 +226,16 @@ export async function activateContentMods(
           await Promise.all(waits);
         }
         throwIfAborted(options.signal);
+        if (isBundledExtensionEntry(entry)) {
+          return options.loadEntry(entry);
+        }
         if (mod.entrySource !== undefined) {
           return {};
         }
-        return options.loadEntry(entry);
+        if (entry !== null) {
+          return options.loadEntry(entry);
+        }
+        throw new Error(`Bundled mod ${manifest.id} has no entry`);
       },
     };
   });
@@ -1095,6 +1101,10 @@ export function rememberImportedAssets(
       registry.set(`${mod.manifest.id}:${asset}`, url);
     }
   }
+}
+
+function isBundledExtensionEntry(entry: string | null): boolean {
+  return entry !== null && entry.startsWith("bundled-mods/");
 }
 
 function throwIfAborted(signal?: AbortSignal): void {

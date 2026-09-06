@@ -77,7 +77,7 @@ describe("Phase T mod pause after repeated failures", () => {
         },
       ),
     ).resolves.toEqual([
-      { id: "fixture.empty", status: "failed" },
+      { id: "fixture.empty", status: "failed", error: "broken activate" },
       { id: "fixture.sibling", status: "active" },
     ]);
     expect(siblingActivate).toHaveBeenCalledOnce();
@@ -133,7 +133,7 @@ describe("Phase T mod pause after repeated failures", () => {
         },
       ),
     ).resolves.toEqual([
-      { id: "fixture.empty", status: "failed" },
+      { id: "fixture.empty", status: "failed", error: "broken load" },
       { id: "fixture.sibling", status: "active" },
     ]);
     expect(siblingActivate).toHaveBeenCalledOnce();
@@ -167,7 +167,11 @@ describe("Phase T mod pause after repeated failures", () => {
     });
 
     expect(states).toEqual([
-      { id: "fixture.empty", status: "failed" },
+      {
+        id: "fixture.empty",
+        status: "failed",
+        error: "broken activate",
+      },
       { id: "fixture.sibling", status: "active" },
     ]);
     expect(siblingActivate).toHaveBeenCalledOnce();
@@ -175,7 +179,15 @@ describe("Phase T mod pause after repeated failures", () => {
 
   test(`pauses a mod on an origin after ${MOD_FAILURE_BUDGET} consecutive failures`, () => {
     expect(MOD_FAILURE_BUDGET).toBe(3);
-    let budget = recordModFailure(undefined, "fixture.empty", "https://example.com");
+    let budget = recordModFailure(
+      undefined,
+      "fixture.empty",
+      "https://example.com",
+      "Native mod sandbox timed out",
+    );
+    expect(
+      budget["fixture.empty"]?.["https://example.com"]?.lastError,
+    ).toBe("Native mod sandbox timed out");
     budget = recordModFailure(budget, "fixture.empty", "https://example.com");
     expect(
       isModPausedOnOrigin(budget, "fixture.empty", "https://example.com"),

@@ -186,7 +186,7 @@ describe("Phase C extension runtime", () => {
         },
       ),
     ).resolves.toEqual([
-      { id: "fixture.empty", status: "failed" },
+      { id: "fixture.empty", status: "failed", error: "broken mod" },
       { id: "fixture.sibling", status: "active" },
     ]);
     expect(siblingActivate).toHaveBeenCalledOnce();
