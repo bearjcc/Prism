@@ -35,6 +35,8 @@ From the repo root, the verbs are `npm run build`, `npm test`, `npm run lint`, `
 
 Do not commit live credentials, other people's data, or fixtures that hit production.
 
+Release builds: `.github/workflows/release.yml` publishes Chromium and Firefox install archives on GitHub Release. Install steps live in `apps/extension/README.md`.
+
 ## Task checkboxes
 
 Plans use markdown task state:

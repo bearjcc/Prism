@@ -1,0 +1,51 @@
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  extension-packs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npm run build
+      - name: Package Chromium unpack directory
+        run: |
+          mkdir -p dist
+          (cd apps/extension/targets/chrome && zip -r "$GITHUB_WORKSPACE/dist/prism-chromium-unpacked.zip" .)
+      - name: Package Firefox unpack directory
+        run: |
+          (cd apps/extension/targets/firefox && zip -r "$GITHUB_WORKSPACE/dist/prism-firefox-unpacked.zip" .)
+      - name: Package Firefox sideload archive
+        run: |
+          (cd apps/extension/targets/firefox && zip -r "$GITHUB_WORKSPACE/dist/prism-firefox.xpi" .)
+      - name: Pack Chromium CRX with an ephemeral CI key
+        continue-on-error: true
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/chrome-pack.pem
+          google-chrome --pack-extension="$PWD/apps/extension/targets/chrome" --pack-extension-key=/tmp/chrome-pack.pem
+          if [ -f apps/extension/targets/chrome.crx ]; then
+            mv apps/extension/targets/chrome.crx dist/prism-chromium.crx
+          fi
+          rm -f /tmp/chrome-pack.pem apps/extension/targets/chrome.pem
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-packs
+          path: dist/*
+      - name: Attach packs to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
