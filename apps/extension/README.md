@@ -29,6 +29,19 @@ Firefox (temporary, not AMO):
 
 Rebuild after mod or extension source changes, then click Reload on the Chromium extension card, or reload the temporary add-on in Firefox.
 
+## Install from a GitHub Release
+
+Published releases attach built extension packs. The corresponding AGPL source remains this repository; the archives are build outputs only.
+
+| Asset | Use |
+| ----- | --- |
+| `prism-chromium-unpacked.zip` | Unzip anywhere, then **Load unpacked** in `chrome://extensions` and choose the extracted folder. Preferred for local installs. |
+| `prism-chromium.crx` | Optional Chromium pack signed with an ephemeral CI key. Modern Chrome blocks most non-store CRX installs; treat the zip as the supported path. |
+| `prism-firefox-unpacked.zip` | Unzip, then load `manifest.json` from the folder via `about:debugging` (temporary add-on). |
+| `prism-firefox.xpi` | Same Firefox unpack tree in an `.xpi` zip for sideloading; not an AMO-signed listing. |
+
+Maintainers cut releases with `.github/workflows/release.yml` (`release` published, version tags `v*`, or manual dispatch). Each run executes `npm run build` before packaging.
+
 The popup can also import a packed `.prism` zip (vanilla ZIP). The archive is validated with the same `prism.yaml` schema as bundled mods, stored in extension storage, and run through the capability gate. An imported id cannot replace a bundled tracer.
 
 After install, pin Prism from the extensions menu. The toolbar badge is the count of enabled mods on the current tab (blank at zero). The popup lists mods that match this page first, including bundled mods that are still off. **Find mods for** this host opens the fixture Explore page (`http://localhost:3000/explore?q=`) with a search; Prism does not send the current site until that click. Right-click: Hide this element (this visit), Hide this element on this site (stored sanitised CSS), Pause Prism on this site. Mods cannot add context-menu items.
