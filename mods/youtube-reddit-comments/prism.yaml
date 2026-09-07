@@ -11,4 +11,5 @@ scopes:
   - https://www.youtube.com/watch*
 fixtures:
   - fixtures/watch.html
+  - fixtures/watch-live.html
   - fixtures/reddit-search.html

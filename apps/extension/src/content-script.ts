@@ -28,6 +28,11 @@ import {
 } from "./extractors/youtube-home.js";
 import { normaliseRedditPermalink } from "./extractors/reddit-comments.js";
 import {
+  findYoutubeCommentsFallbackHost,
+  findYoutubeCommentsSlot,
+  watchPageNeedsCommentsMount,
+} from "./extractors/youtube-comments.js";
+import {
   dismissYoutubeIdlePrompt,
   constrainYoutubeAutoplay,
   constrainYoutubeEndScreens,
@@ -142,7 +147,7 @@ export interface ActivateContentModsOptions {
 
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
-export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 2_000;
+export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 8_000;
 export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
 /** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
 export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
@@ -208,9 +213,6 @@ article[data-prism-owned="youtube-home-video"] .prism-yt-home-title {
 export function youtubeHomeTileStylesheet(): string {
   return YOUTUBE_HOME_TILE_CSS;
 }
-const YOUTUBE_COMMENTS_SELECTOR =
-  "[data-prism-comments-slot], ytd-comments#comments";
-
 const CONTENT_TAB_STACK = 0;
 
 export async function activateContentMods(
@@ -757,12 +759,7 @@ export function pageNeedsSurfaceRefresh(contentDocument: Document): boolean {
     return true;
   }
 
-  const comments = contentDocument.querySelector(YOUTUBE_COMMENTS_SELECTOR);
-  if (
-    comments !== null &&
-    comments.querySelector('[data-prism-owned="youtube-reddit-comments"]') ===
-      null
-  ) {
+  if (watchPageNeedsCommentsMount(contentDocument, contentDocument.location.href)) {
     return true;
   }
 
@@ -918,9 +915,9 @@ export function waitForYoutubeCommentsSlot(
   timeoutMs: number = DEFAULT_YOUTUBE_WATCH_WAIT_MS,
   signal?: AbortSignal,
 ): Promise<void> {
-  return waitForSelector(
+  return waitForSurface(
+    () => findYoutubeCommentsSlot(contentDocument),
     contentDocument,
-    YOUTUBE_COMMENTS_SELECTOR,
     timeoutMs,
     signal,
   );
@@ -937,6 +934,63 @@ export function waitForRedditFeed(
     timeoutMs,
     signal,
   );
+}
+
+function waitForSurface(
+  locate: () => Element | undefined,
+  contentDocument: Document,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(createAbortError());
+  }
+  if (timeoutMs <= 0 || locate() !== undefined) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const view = contentDocument.defaultView;
+    if (view === null) {
+      resolve();
+      return;
+    }
+
+    let settled = false;
+    let observer: MutationObserver | undefined;
+
+    const finish = (error?: Error): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      observer?.disconnect();
+      view.clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      if (error === undefined) {
+        resolve();
+        return;
+      }
+      reject(error);
+    };
+
+    const onAbort = (): void => {
+      finish(createAbortError());
+    };
+
+    const MutationObserverCtor = view.MutationObserver;
+    if (MutationObserverCtor !== undefined) {
+      observer = new MutationObserverCtor(() => {
+        if (locate() !== undefined) {
+          finish();
+        }
+      });
+      observer.observe(contentDocument, { childList: true, subtree: true });
+    }
+
+    const timer = view.setTimeout(() => finish(), timeoutMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function waitForSelector(
@@ -1424,24 +1478,29 @@ function replaceCommentsSlot(
   slot: AdSlotHandle,
   content: TrustedCommentsReplacement | TrustedMessageReplacement,
 ): () => void {
-  const fixtureElement = Array.from(
-    contentDocument.querySelectorAll("[data-prism-comments-slot]"),
-  ).find(
-    (candidate) =>
-      candidate.getAttribute("data-prism-comments-slot")?.trim() === slot.id,
-  );
+  const commentsSlot = findYoutubeCommentsSlot(contentDocument);
   const element =
-    fixtureElement ??
+    commentsSlot ??
     (slot.id === "youtube-comments"
-      ? (contentDocument.querySelector("ytd-comments#comments") ?? undefined)
+      ? findYoutubeCommentsFallbackHost(contentDocument)
       : undefined);
   if (element === undefined) {
-    throw new Error(`Comments slot ${slot.id} is not available`);
+    throw new Error(
+      `Comments slot ${slot.id} is not available on this watch page`,
+    );
   }
 
   const previousChildren = Array.from(element.childNodes);
   const replacement = contentDocument.createElement("section");
   replacement.dataset.prismOwned = "youtube-reddit-comments";
+  if (commentsSlot === undefined) {
+    replacement.dataset.prismCommentsFallbackHost = "secondary";
+    const notice = contentDocument.createElement("p");
+    notice.dataset.prismCommentsMountNotice = "true";
+    notice.textContent =
+      "Reddit comments could not mount in the YouTube comments area. Showing this panel in the sidebar instead.";
+    replacement.append(notice);
+  }
   if (content.kind === "message") {
     const message = contentDocument.createElement("p");
     message.dataset.prismCommentsFallback = "true";

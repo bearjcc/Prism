@@ -84,6 +84,31 @@ describe("Phase F Reddit comments on YouTube", () => {
     ).toContain("Enable Reddit comments");
   });
 
+  test("mounts on a live-shaped watch fixture inside shadow DOM", async () => {
+    const dom = new JSDOM(
+      readFileSync(join(modRoot, "fixtures", "watch-live.html"), "utf8"),
+      { url: "https://www.youtube.com/watch?v=fixture-video-id" },
+    );
+    const manifest = loadUnpackedMod(modRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: manifest.capabilities.required,
+      tabId: 4,
+      handlers: createContentHandlers(dom.window.document),
+      undo: new TabUndoStack(),
+    });
+
+    await activateYoutubeRedditMod(prism);
+
+    expect(
+      dom.window.document.querySelector("[data-prism-comments-fallback]")
+        ?.textContent,
+    ).toContain("Enable Reddit comments");
+    expect(
+      dom.window.document.querySelector("ytd-comments#comments"),
+    ).toBeNull();
+  });
+
   test("granted capability lists parsed comments and hides raw HTML from the mod", async () => {
     const dom = new JSDOM(watchFixture, {
       url: "https://www.youtube.com/watch?v=fixture-video-id",

@@ -19,3 +19,14 @@ export const watchFixture = readFileSync(
   ),
   "utf8",
 );
+
+export const watchLiveFixture = readFileSync(
+  join(
+    repoRoot,
+    "mods",
+    "youtube-reddit-comments",
+    "fixtures",
+    "watch-live.html",
+  ),
+  "utf8",
+);

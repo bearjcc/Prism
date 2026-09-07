@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { ExtensionSession } from "./extension-session.js";
-import { homeFixture, watchFixture } from "./tracer-fixtures.js";
+import { homeFixture, watchFixture, watchLiveFixture } from "./tracer-fixtures.js";
 
 export async function assertKittenTracerOnFixture(
   page: Page,
@@ -94,6 +94,17 @@ export async function assertYoutubeWatchRedditFallback(
   page: Page,
 ): Promise<void> {
   await stubYoutubeHtml(page, { "/watch": watchFixture });
+  await page.goto("https://www.youtube.com/watch?v=fixture-video-id");
+  await expect(page.getByText("Fixture watch page")).toBeVisible();
+  await expect(page.locator("[data-prism-comments-fallback]")).toContainText(
+    "Enable Reddit comments",
+  );
+}
+
+export async function assertYoutubeWatchRedditLiveFixture(
+  page: Page,
+): Promise<void> {
+  await stubYoutubeHtml(page, { "/watch": watchLiveFixture });
   await page.goto("https://www.youtube.com/watch?v=fixture-video-id");
   await expect(page.getByText("Fixture watch page")).toBeVisible();
   await expect(page.locator("[data-prism-comments-fallback]")).toContainText(
