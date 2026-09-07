@@ -12,6 +12,7 @@ import {
   assertYoutubeHomeTracer,
   assertYoutubeSpaWatchTracer,
   assertYoutubeWatchRedditFallback,
+  assertYoutubeWatchRedditLiveFixture,
 } from "./tracer-assertions.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -55,6 +56,16 @@ test("YouTube watch fixture shows Reddit fallback without a live fetch", async (
   try {
     const page = await session.context.newPage();
     await assertYoutubeWatchRedditFallback(page);
+  } finally {
+    await session.close();
+  }
+});
+
+test("YouTube live-shaped watch fixture mounts Reddit fallback", async () => {
+  const session = await launchChromeExtensionContext();
+  try {
+    const page = await session.context.newPage();
+    await assertYoutubeWatchRedditLiveFixture(page);
   } finally {
     await session.close();
   }
