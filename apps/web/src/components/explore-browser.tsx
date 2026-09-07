@@ -73,7 +73,7 @@ export function ExploreBrowser() {
         <div className="grid">
           {list.map((mod) => (
             <Link key={mod.id} className="card" href={`/mods/${mod.id}`}>
-              <ModShot hue={mod.screenshotHue} label={mod.screenshotLabel} scene={mod.screenshotScene} />
+              <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
               <div className="card-meta">
                 <h2>{mod.name}</h2>
                 <p>

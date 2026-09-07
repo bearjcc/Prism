@@ -77,7 +77,7 @@ export default async function ModPage({ params }: Props) {
           </ul>
         </section>
         <div className="shot-strip">
-          <ModShot hue={mod.screenshotHue} label={mod.screenshotLabel} scene={mod.screenshotScene} />
+          <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
         </div>
         <section className="mod-versions">
           <h2>Versions</h2>

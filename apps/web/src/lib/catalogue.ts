@@ -34,9 +34,6 @@ export type CatalogueListing = {
   bundledEntry: string;
   previewSrc?: string;
   previewAlt?: string;
-  screenshotLabel: string;
-  screenshotHue: number;
-  screenshotScene: "kittens" | "yt-home" | "yt-watch";
   capabilities: CapabilityDisclosure[];
   versions: ModVersion[];
 };
@@ -64,9 +61,6 @@ export const LISTINGS: CatalogueListing[] = [
     bundledEntry: bundledEntryPath("prism.kitten-ad-replace"),
     previewSrc: "/previews/kitten-ad-replace.webp",
     previewAlt: "Browser page with ad slots replaced by kitten images",
-    screenshotLabel: "Feed with kitten tiles",
-    screenshotHue: 12,
-    screenshotScene: "kittens",
     capabilities: [
       {
         id: "visual.ad-slot.replace",
@@ -105,9 +99,6 @@ export const LISTINGS: CatalogueListing[] = [
     bundledEntry: bundledEntryPath("prism.youtube-home-videos"),
     previewSrc: "/previews/youtube-home-videos.webp",
     previewAlt: "YouTube Home feed showing video thumbnails only",
-    screenshotLabel: "YouTube Home, videos only",
-    screenshotHue: 0,
-    screenshotScene: "yt-home",
     capabilities: [
       {
         id: "youtube.home.allowlist",
@@ -136,9 +127,6 @@ export const LISTINGS: CatalogueListing[] = [
     bundledEntry: bundledEntryPath("prism.youtube-reddit-comments"),
     previewSrc: "/previews/youtube-reddit-comments.webp",
     previewAlt: "YouTube watch page with Reddit comments alongside the video",
-    screenshotLabel: "Watch page with Reddit thread",
-    screenshotHue: 18,
-    screenshotScene: "yt-watch",
     capabilities: [
       {
         id: "visual.ad-slot.replace",
@@ -176,9 +164,7 @@ export const LISTINGS: CatalogueListing[] = [
     scopes: ["https://www.linkedin.com/*"],
     bundledEntry: bundledEntryPath("prism.linkedin-home-first-degree"),
     previewSrc: "/previews/linkedin-home-first-degree.webp",
-    screenshotLabel: "LinkedIn Home, first degree",
-    screenshotHue: 210,
-    screenshotScene: "yt-home",
+    previewAlt: "LinkedIn Home feed showing first-degree and followed-page posts only",
     capabilities: [
       {
         id: "linkedin.home.allowlist",
