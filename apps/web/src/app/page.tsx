@@ -1,39 +1,24 @@
 import Link from "next/link";
 import { HomeSteps } from "../components/home-steps";
 import { HomeSurface } from "../components/home-surface";
+import { ModShot } from "../components/mod-shot";
 import { PrismScene } from "../components/prism-scene";
 import { PrismMark } from "../components/wordmark";
+import { CHROME_STORE } from "../lib/extension-store";
+import { catalogue } from "../lib/catalogue";
 import styles from "./home.module.css";
 
-const reasons = [
-  {
-    tone: styles.slabRed,
-    title: "You stay in control",
-    line: "Nothing runs until you say so.",
-  },
-  {
-    tone: styles.slabYellow,
-    title: "Sites you already use",
-    line: "Mods for YouTube, Reddit, and the rest of your tab bar.",
-  },
-  {
-    tone: styles.slabGreen,
-    title: "Only what you enable",
-    line: "Optional capabilities stay off until you turn them on.",
-  },
-  {
-    tone: styles.slabBlue,
-    title: "Secure by default",
-    line: "Default deny. The listing shows what a mod can access.",
-  },
-  {
-    tone: styles.slabMagenta,
-    title: "Make or take",
-    line: "Publish your own, or install from the commons. UserCSS in. Userscripts get translated.",
-  },
+const spectrumTones = [
+  styles.slabRed,
+  styles.slabYellow,
+  styles.slabGreen,
+  styles.slabBlue,
+  styles.slabMagenta,
 ];
 
 export default function HomePage() {
+  const mods = catalogue();
+
   return (
     <div className={styles.home} data-surface="home">
       <HomeSurface />
@@ -49,17 +34,55 @@ export default function HomePage() {
         </div>
         <HomeSteps />
         <PrismScene />
-        <section className={styles.slabs} data-slabs aria-label="Why Prism">
-          {reasons.map((reason) => (
-            <article key={reason.title} className={`${styles.slab} ${reason.tone}`}>
-              <h2>{reason.title}</h2>
-              <p>{reason.line}</p>
-            </article>
+        <div className={styles.spectrumStrip} data-slabs aria-hidden="true">
+          {spectrumTones.map((tone) => (
+            <span key={tone} className={`${styles.spectrumBand} ${tone}`} />
           ))}
-        </section>
+        </div>
       </section>
 
       <div className={styles.inner}>
+        <section className={styles.narrative} aria-labelledby="mods-heading">
+          <h2 id="mods-heading">Secure mods for sites you already use</h2>
+          <p>
+            First-party tracer mods reshape YouTube, Reddit cross-posts, and ad slots on pages you
+            already open. Each listing shows declared capabilities before anything runs.
+          </p>
+          <ul className={styles.previewStrip}>
+            {mods.map((mod) => (
+              <li key={mod.id}>
+                <Link href={`/mods/${mod.id}`} className={styles.previewLink}>
+                  <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
+                  <span>{mod.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className={styles.narrative} aria-labelledby="deny-heading">
+          <h2 id="deny-heading">Nothing runs until you allow it</h2>
+          <p>
+            Default deny. Optional capabilities stay off until you grant them in the popup. Explore
+            lists every required and optional scope before install.
+          </p>
+        </section>
+
+        <section className={styles.narrative} aria-labelledby="start-heading">
+          <h2 id="start-heading">Install, enable, reshape</h2>
+          <ol className={styles.startList}>
+            <li>
+              <a href={CHROME_STORE}>Install the Prism extension</a>
+            </li>
+            <li>
+              <Link href="/explore">Enable a mod from Explore</Link>
+            </li>
+            <li>
+              <Link href="/create">Publish your own package</Link>
+            </li>
+          </ol>
+        </section>
+
         <footer className={styles.footer}>
           <PrismMark className={styles.footerMark} />
           <a href="https://github.com/bearjcc/Prism">Source</a>
