@@ -314,10 +314,39 @@ button:disabled,
 }
 
 .tabs button[aria-pressed="true"],
-.chips button[aria-pressed="true"] {
+.chips button[aria-pressed="true"],
+.tabs .tab-active,
+.chips .chip-active {
   background: var(--text);
   color: var(--bg);
   border-color: var(--text);
+}
+
+.tabs .tab-active,
+.chips .chip-active {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius);
+  border: var(--hairline) solid var(--text);
+  text-decoration: none;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: default;
+}
+
+@media (min-width: 60rem) {
+  .tabs .tab-active,
+  .chips .chip-active {
+    min-height: 0;
+  }
+}
+
+.tabs .tab-active:hover,
+.chips .chip-active:hover {
+  text-decoration: none;
+  opacity: 0.92;
 }
 
 .tabs button:hover,
@@ -399,12 +428,25 @@ button:disabled,
 }
 
 .card-meta p {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 0.7rem;
   margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: var(--text-sm);
+}
+
+.card-byline,
+.card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+}
+
+.card-summary,
+.card-cap {
+  text-wrap: pretty;
+}
+
+.card-cap {
+  font-size: var(--text-xs);
 }
 
 .page-head {
