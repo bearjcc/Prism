@@ -1,14 +1,41 @@
 :root {
   color-scheme: light dark;
+  --bg: #f7f7f8;
+  --text: #141418;
+  --muted: #5a5d66;
+  --line: rgb(20 20 24 / 0.14);
+  --card: #fff;
+  --hover: rgb(20 20 24 / 0.05);
+  --accent: #2f6feb;
+  --radius: 6px;
   font:
-    14px/1.4 system-ui,
+    14px/1.45 system-ui,
+    -apple-system,
     sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121316;
+    --text: #ececf0;
+    --muted: #a2a6b0;
+    --line: rgb(236 236 240 / 0.14);
+    --card: #1a1b20;
+    --hover: rgb(236 236 240 / 0.06);
+    --accent: #6ea8ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  padding: 16px;
+  padding: 14px 16px 16px;
+  background: var(--bg);
+  color: var(--text);
 }
 
 header,
@@ -20,16 +47,68 @@ label {
   justify-content: space-between;
 }
 
+header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
 h1,
 h2,
 p {
   margin: 0;
 }
 
+h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+h1::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+button,
+input[type="file"]::file-selector-button {
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+}
+
+button:hover,
+input[type="file"]::file-selector-button:hover {
+  background: var(--hover);
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 #page-origin {
   font-size: 12px;
-  margin-top: 8px;
-  opacity: 0.85;
+  margin-top: 10px;
+  color: var(--muted);
 }
 
 #pin-hint,
@@ -41,6 +120,8 @@ p {
 
 #find-mods {
   margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 #find-mods a {
@@ -48,30 +129,34 @@ p {
 }
 
 .site-mods,
+.other-mods,
+.page-activity,
+.policies,
+.activity {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.site-mods,
 .other-mods {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
 }
 
 .policies {
   display: grid;
   gap: 8px;
-  margin-top: 16px;
 }
 
 #mods {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
-.page-activity,
-.activity {
-  margin-top: 16px;
-}
-
-#page-activity {
+#page-activity,
+#activity {
   display: grid;
   gap: 6px;
   font-size: 12px;
@@ -79,16 +164,11 @@ p {
   max-height: 16em;
   overflow: auto;
   padding-left: 1.2em;
+  color: var(--muted);
 }
 
 #activity {
-  display: grid;
-  gap: 6px;
-  font-size: 12px;
-  margin: 8px 0 0;
   max-height: 12em;
-  overflow: auto;
-  padding-left: 1.2em;
 }
 
 .mod-kind {
@@ -98,37 +178,58 @@ p {
   letter-spacing: 0.02em;
   padding: 2px 8px;
   white-space: nowrap;
+  border: 1px solid var(--line);
 }
 
 .mod-kind-css {
-  background: #d7efe4;
+  background: #e8f4ee;
   color: #0b3d2e;
 }
 
 .mod-kind-declarative {
-  background: #d7e4f5;
+  background: #e8eef8;
   color: #123154;
 }
 
 .mod-kind-userscript {
-  background: #f7e0c4;
+  background: #f8ebdc;
   color: #5a3208;
 }
 
+@media (prefers-color-scheme: dark) {
+  .mod-kind-css {
+    background: #173328;
+    color: #b8e8d2;
+  }
+
+  .mod-kind-declarative {
+    background: #1a2840;
+    color: #b8d4f5;
+  }
+
+  .mod-kind-userscript {
+    background: #3a2818;
+    color: #f0d4b0;
+  }
+}
+
 .mod {
-  border: 1px solid currentColor;
-  border-radius: 6px;
-  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--card);
 }
 
 .capabilities {
   display: grid;
   gap: 6px;
   margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .required {
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .disclosure {
@@ -136,19 +237,38 @@ p {
   line-height: 1.45;
   margin: 0;
   max-width: 36em;
-  opacity: 0.85;
+  color: var(--muted);
 }
 
 .mod-paused {
   font-size: 12px;
   font-weight: 600;
   margin: 8px 0 0;
+  color: var(--muted);
 }
 
 .import {
   display: grid;
   gap: 6px;
-  margin-top: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#import-feedback {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .popup-footer {

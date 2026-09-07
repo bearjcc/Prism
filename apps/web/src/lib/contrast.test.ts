@@ -35,20 +35,18 @@ describe("WCAG AA contrast", () => {
   const homeText = parseOklch("oklch(0.98 0 0)");
   const blurb = parseOklch("oklch(0.86 0.008 268)");
   const footer = parseOklch("oklch(0.78 0.008 268)");
-  const chalk = parseOklch("oklch(0.93 0.03 92)");
-  const arrow = parseOklch("oklch(0.82 0.04 92)");
+  const narrative = parseOklch("oklch(0.82 0.008 268)");
 
   it("keeps home type on black above AA", () => {
     expect(contrastRatio(homeText, black)).toBeGreaterThanOrEqual(AA);
     expect(contrastRatio(blurb, black)).toBeGreaterThanOrEqual(AA);
     expect(contrastRatio(footer, black)).toBeGreaterThanOrEqual(AA);
-    expect(contrastRatio(chalk, black)).toBeGreaterThanOrEqual(AA);
-    expect(contrastRatio(arrow, black)).toBeGreaterThanOrEqual(AA);
+    expect(contrastRatio(narrative, black)).toBeGreaterThanOrEqual(AA);
   });
 
-  it("pairs each slab ink with its hue without washed body opacity", () => {
-    expect(homeCss).toMatch(/\.slab p \{[^}]*color:\s*var\(--slab-ink\)/s);
-    expect(homeCss).not.toMatch(/\.slab p \{[^}]*opacity:/s);
+  it("keeps spectrum lane inks at AA on their hues", () => {
+    expect(homeCss).toMatch(/\.narrative p \{[^}]*color:/s);
+    expect(homeCss).not.toMatch(/\.narrative p \{[^}]*opacity:/s);
 
     const lanes = ["red", "yellow", "green", "blue", "magenta"] as const;
     for (const lane of lanes) {
