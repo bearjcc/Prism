@@ -24,8 +24,8 @@
 - Refine the prism graphic so the white hotspot does not wash out top-right CTAs.
 - Move HomeSteps (Install, Enable, Explore) to the **top-right** on desktop.
 - Restyle steps as real buttons:
-  - **Install** — primary solid button.
-  - **Enable a mod**, **Explore** — secondary clear link-buttons with focus rings.
+  - **Install** - primary solid button.
+  - **Enable a mod**, **Explore** - secondary clear link-buttons with focus rings.
 - On mobile, stack steps under the blurb.
 - Scene animation is enhancement only (respect `prefers-reduced-motion`).
 
@@ -33,9 +33,9 @@
 
 Three narrative sections:
 
-1. **Secure mods for sites you already use** — copy plus a real preview strip linking to `/mods/[id]`.
-2. **Nothing runs until you allow it** — default-deny posture and capability disclosure.
-3. **Install / enable / reshape** — HTML list with real hrefs (extension install, Explore, Create).
+1. **Secure mods for sites you already use** - copy plus a real preview strip linking to `/mods/[id]`.
+2. **Nothing runs until you allow it** - default-deny posture and capability disclosure.
+3. **Install / enable / reshape** - HTML list with real hrefs (extension install, Explore, Create).
 
 Demote the five colour slabs to a thin spectrum accent strip (not full-height blocks).
 
@@ -70,7 +70,7 @@ Demote the five colour slabs to a thin spectrum accent strip (not full-height bl
 
 - Black ATF on home; light inner pages.
 - Hairlines over heavy shadows.
-- Spectrum as thin strip or small mark accent — never full-page rainbow glow.
+- Spectrum as thin strip or small mark accent - never full-page rainbow glow.
 - Readable type, touch-friendly targets, visible focus rings.
 
 ## Testing constraints

@@ -15,6 +15,6 @@ A coordinator should replace them with real extension captures:
 | `youtube-reddit-comments.webp` | Reddit comments on YouTube | youtube.com/watch with Reddit thread panel |
 | `linkedin-home-first-degree.webp` | LinkedIn Home, first degree | Signed-in `/feed` capture when available |
 
-Recommended size: 640×400 (16:10), WebP quality ~80.
+Recommended size: 640x400 (16:10), WebP quality ~80.
 
 Do not commit CSS-mock scenes as final previews. Paths are referenced from `apps/web/src/lib/catalogue.ts` as `previewSrc`.
