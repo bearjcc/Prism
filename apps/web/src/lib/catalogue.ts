@@ -33,6 +33,7 @@ export type CatalogueListing = {
   scopes: readonly string[];
   bundledEntry: string;
   previewSrc?: string;
+  previewAlt?: string;
   screenshotLabel: string;
   screenshotHue: number;
   screenshotScene: "kittens" | "yt-home" | "yt-watch";
@@ -61,6 +62,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["<all_urls>"],
     bundledEntry: bundledEntryPath("prism.kitten-ad-replace"),
+    previewSrc: "/previews/kitten-ad-replace.webp",
+    previewAlt: "Browser page with ad slots replaced by kitten images",
     screenshotLabel: "Feed with kitten tiles",
     screenshotHue: 12,
     screenshotScene: "kittens",
@@ -100,6 +103,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["https://www.youtube.com/"],
     bundledEntry: bundledEntryPath("prism.youtube-home-videos"),
+    previewSrc: "/previews/youtube-home-videos.webp",
+    previewAlt: "YouTube Home feed showing video thumbnails only",
     screenshotLabel: "YouTube Home, videos only",
     screenshotHue: 0,
     screenshotScene: "yt-home",
@@ -129,6 +134,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["https://www.youtube.com/watch*"],
     bundledEntry: bundledEntryPath("prism.youtube-reddit-comments"),
+    previewSrc: "/previews/youtube-reddit-comments.webp",
+    previewAlt: "YouTube watch page with Reddit comments alongside the video",
     screenshotLabel: "Watch page with Reddit thread",
     screenshotHue: 18,
     screenshotScene: "yt-watch",
@@ -224,10 +231,18 @@ export function filterCatalogue(
       if (b.installs !== a.installs) {
         return b.installs - a.installs;
       }
-      return a.updated < b.updated ? 1 : -1;
+      if (a.updated !== b.updated) {
+        return a.updated < b.updated ? 1 : -1;
+      }
+      return a.id.localeCompare(b.id);
     });
   } else {
-    list = [...list].sort((a, b) => (a.updated < b.updated ? 1 : -1));
+    list = [...list].sort((a, b) => {
+      if (a.updated !== b.updated) {
+        return a.updated < b.updated ? 1 : -1;
+      }
+      return a.id.localeCompare(b.id);
+    });
   }
   return list;
 }
