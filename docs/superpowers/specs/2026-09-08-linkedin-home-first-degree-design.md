@@ -117,7 +117,7 @@ Fixtures live under `mods/linkedin-home-first-degree/fixtures/` (sanitised captu
 
 ## Implementation checklist
 
-High-level only; detailed implementation plan follows Bear review.
+High-level only. Detailed TDD plan: [`docs/superpowers/plans/2026-09-08-linkedin-home-first-degree.md`](../plans/2026-09-08-linkedin-home-first-degree.md).
 
 - [ ] Add `linkedin.home.allowlist` to `packages/schema` capability registry and copy strings.
 - [ ] Implement `apps/extension/src/extractors/linkedin-home.ts` (classification + feed discovery, shadow-aware).
