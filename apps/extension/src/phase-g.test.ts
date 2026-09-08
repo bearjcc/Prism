@@ -390,6 +390,7 @@ describe("Phase G docs", () => {
     expect(readme).toMatch(/desktop/iu);
     expect(readme).toContain("kitten-ad-replace");
     expect(readme).toContain("youtube-home-videos");
+    expect(readme).toContain("linkedin-home-first-degree");
     expect(readme).toContain("youtube-reddit-comments");
     expect(readme).toMatch(/this site|this origin/iu);
     expect(readme).toMatch(/Allow User Scripts/u);

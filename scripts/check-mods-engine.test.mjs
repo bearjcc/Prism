@@ -13,6 +13,7 @@ const TRACER_IDS = [
   "prism.kitten-ad-replace",
   "prism.youtube-home-videos",
   "prism.youtube-reddit-comments",
+  "prism.linkedin-home-first-degree",
 ];
 
 describe("checkModsEngine", () => {

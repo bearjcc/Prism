@@ -119,6 +119,8 @@ Fixtures live under `mods/linkedin-home-first-degree/fixtures/` (sanitised captu
 
 High-level only. Detailed TDD plan: [`docs/superpowers/plans/2026-09-08-linkedin-home-first-degree.md`](../plans/2026-09-08-linkedin-home-first-degree.md).
 
+Detailed TDD plan: [`docs/superpowers/plans/2026-09-08-linkedin-home-first-degree.md`](../plans/2026-09-08-linkedin-home-first-degree.md).
+
 - [ ] Add `linkedin.home.allowlist` to `packages/schema` capability registry and copy strings.
 - [ ] Implement `apps/extension/src/extractors/linkedin-home.ts` (classification + feed discovery, shadow-aware).
 - [ ] Wire `prism.ui.allowlist("linkedin.home", "post")` handler in `content-script.ts` (hide/remove, observer, `pageNeedsSurfaceRefresh`).

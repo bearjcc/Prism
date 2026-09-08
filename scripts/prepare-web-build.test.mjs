@@ -10,6 +10,7 @@ const expected = [
   "kitten-ad-replace.prism",
   "youtube-home-videos.prism",
   "youtube-reddit-comments.prism",
+  "linkedin-home-first-degree.prism",
 ];
 
 describe("prepare-web-build", () => {

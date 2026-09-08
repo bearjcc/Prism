@@ -100,6 +100,17 @@ Allowlist-style: if the user asked for videos, the UI is videos. Not shorts, ads
 
 YouTube's DOM will drift. Adapter version and fixture update are engine work, not a reason to give the mod `querySelector`.
 
+### 4. LinkedIn Home first degree (`mods/linkedin-home-first-degree`)
+
+Allowlist-style: signed-in Home (`/feed`) keeps first-degree and followed company/page posts. Extended network, promoted, activity reshares, and recommendation modules are stripped in place.
+
+- Required: `linkedin.home.allowlist`.
+- Extractor in the extension returns `{ items: LinkedinHomeItem[] }` with `allowlisted` and `reason`. Allowlisted posts stay as native DOM nodes.
+- Fixtures: captured Home structure (sanitised); golden: only allowlisted posts remain.
+- Implementation plan: `docs/superpowers/plans/2026-09-08-linkedin-home-first-degree.md`.
+
+LinkedIn's DOM will drift. Soft extractor failures must not consume the per-origin mod failure budget.
+
 ### 3. Reddit comments on YouTube (`mods/youtube-reddit-comments`)
 
 Cross-site interaction without a public API key.

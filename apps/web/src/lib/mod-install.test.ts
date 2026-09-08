@@ -8,6 +8,9 @@ describe("mod install helpers", () => {
     expect(bundledEntryPath("prism.youtube-home-videos")).toBe(
       "bundled-mods/prism.youtube-home-videos/src/index.js",
     );
+    expect(bundledEntryPath("prism.linkedin-home-first-degree")).toBe(
+      "bundled-mods/prism.linkedin-home-first-degree/src/index.js",
+    );
   });
 
   it("points downloads at public package files", () => {
