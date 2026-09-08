@@ -9,7 +9,7 @@ const linkedinManifest: PrismManifest = {
   capabilities: {
     required: ["linkedin.home.allowlist"],
   },
-  scopes: ["https://www.linkedin.com/"],
+  scopes: ["https://www.linkedin.com/*"],
 };
 
 describe("prism.ui.allowlist capability gate", () => {

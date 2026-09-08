@@ -26,6 +26,13 @@ import {
   youtubeHomeFeedChildren,
   type YoutubeHomeVideo,
 } from "./extractors/youtube-home.js";
+import {
+  classifyLinkedinHomeItem,
+  extractLinkedinHome,
+  findLinkedinHomeFeed,
+  linkedinHomeFeedChildren,
+  linkedinHomeFeedHasUnlabelledPosts,
+} from "./extractors/linkedin-home.js";
 import { normaliseRedditPermalink } from "./extractors/reddit-comments.js";
 import {
   findYoutubeCommentsFallbackHost,
@@ -132,6 +139,7 @@ export interface ActivateContentModsOptions {
   readonly contentDocument?: Document;
   readonly adSlotWaitMs?: number;
   readonly youtubeHomeWaitMs?: number;
+  readonly linkedinHomeWaitMs?: number;
   readonly youtubeWatchWaitMs?: number;
   readonly redditFeedWaitMs?: number;
   readonly signal?: AbortSignal;
@@ -147,11 +155,14 @@ export interface ActivateContentModsOptions {
 
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
+export const DEFAULT_LINKEDIN_HOME_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 8_000;
 export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
 /** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
 export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
+export const MAX_LINKEDIN_HOME_UNDO_CHILDREN = 24;
 const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
+const MAX_LINKEDIN_HOME_ALLOWLIST_PASSES = 200;
 const YOUTUBE_HOME_TILE_STYLE_ID = "prism-youtube-home-tiles";
 const YOUTUBE_HOME_TILE_CSS = `
 [data-prism-youtube-home-grid] {
@@ -268,6 +279,17 @@ export async function activateContentMods(
               waitForYoutubeHomeFeed(
                 options.contentDocument,
                 options.youtubeHomeWaitMs ?? DEFAULT_YOUTUBE_HOME_WAIT_MS,
+                options.signal,
+              ),
+            );
+          }
+          if (
+            manifest.capabilities.required.includes("linkedin.home.allowlist")
+          ) {
+            waits.push(
+              waitForLinkedinHomeFeed(
+                options.contentDocument,
+                options.linkedinHomeWaitMs ?? DEFAULT_LINKEDIN_HOME_WAIT_MS,
                 options.signal,
               ),
             );
@@ -602,6 +624,9 @@ export function createContentHandlers(
       if (capability === "reddit.feed.posts") {
         return extractRedditFeedPosts(contentDocument);
       }
+      if (capability === "linkedin.home.allowlist") {
+        return extractLinkedinHome(contentDocument);
+      }
       if (capability === "reddit.comments.search") {
         const query = input?.query;
         if (
@@ -685,6 +710,45 @@ export function createContentHandlers(
     },
     allowlist(surface, itemType): void | (() => void) {
       try {
+        if (surface === "linkedin.home" && itemType === "post") {
+          const feed = findLinkedinHomeFeed(contentDocument);
+          if (feed === undefined || !feed.isConnected) {
+            recordLinkedinHomeDegradation("linkedin.home.allowlist degraded: feed not found");
+            return () => {};
+          }
+
+          let previousChildren: readonly ChildNode[] | undefined;
+          try {
+            const firstConversion =
+              feed.querySelector('[data-prism-owned="linkedin-home-kept"]') ===
+              null;
+            if (firstConversion) {
+              const childCount = feed.childNodes.length;
+              if (childCount <= MAX_LINKEDIN_HOME_UNDO_CHILDREN) {
+                previousChildren = Array.from(feed.childNodes);
+              }
+            }
+          } catch {
+            previousChildren = undefined;
+          }
+
+          applyLinkedinHomeAllowlist(feed);
+
+          if (previousChildren === undefined) {
+            return undefined;
+          }
+          const saved = previousChildren;
+          return () => {
+            try {
+              if (!feed.isConnected) {
+                return;
+              }
+              feed.replaceChildren(...saved);
+            } catch {
+              // Undo is best-effort on live hosts.
+            }
+          };
+        }
         if (surface !== "youtube.home" || itemType !== "video") {
           return undefined;
         }
@@ -755,6 +819,14 @@ export function pageNeedsSurfaceRefresh(contentDocument: Document): boolean {
     youtubeHomeFeedChildren(feed).some(
       (child) => !isYoutubeHomeFeedChildOwned(child),
     )
+  ) {
+    return true;
+  }
+
+  const linkedinFeed = findLinkedinHomeFeed(contentDocument);
+  if (
+    linkedinFeed !== undefined &&
+    linkedinHomeFeedHasUnlabelledPosts(linkedinFeed)
   ) {
     return true;
   }
@@ -847,6 +919,19 @@ export function waitForYoutubeHomeFeed(
 ): Promise<void> {
   return waitForFeedRoot(
     () => findYoutubeHomeFeed(contentDocument),
+    contentDocument,
+    timeoutMs,
+    signal,
+  );
+}
+
+export function waitForLinkedinHomeFeed(
+  contentDocument: Document,
+  timeoutMs: number = DEFAULT_LINKEDIN_HOME_WAIT_MS,
+  signal?: AbortSignal,
+): Promise<void> {
+  return waitForFeedRoot(
+    () => findLinkedinHomeFeed(contentDocument),
     contentDocument,
     timeoutMs,
     signal,
@@ -1173,7 +1258,10 @@ function isYoutubeHomeFeedChildOwned(child: Element): boolean {
   return owned === "youtube-home-video" || owned === "youtube-home-hidden";
 }
 
-function safeRemoveFeedChild(child: Element): void {
+function safeRemoveFeedChild(
+  child: Element,
+  hiddenMarker: "youtube-home-hidden" | "linkedin-home-hidden" = "youtube-home-hidden",
+): void {
   try {
     child.remove();
     return;
@@ -1185,10 +1273,70 @@ function safeRemoveFeedChild(child: Element): void {
     if ("style" in child) {
       (child as HTMLElement).style.display = "none";
     }
-    child.setAttribute("data-prism-owned", "youtube-home-hidden");
+    child.setAttribute("data-prism-owned", hiddenMarker);
   } catch {
     // Best-effort only.
   }
+}
+
+let lastLinkedinHomeDegradation: string | undefined;
+
+export function readLinkedinHomeDegradation(): string | undefined {
+  return lastLinkedinHomeDegradation;
+}
+
+export function resetLinkedinHomeDegradationForTests(): void {
+  lastLinkedinHomeDegradation = undefined;
+}
+
+function recordLinkedinHomeDegradation(message: string): void {
+  lastLinkedinHomeDegradation = message;
+}
+
+function isLinkedinHomeFeedChildOwned(child: Element): boolean {
+  const owned = child.getAttribute("data-prism-owned");
+  return owned === "linkedin-home-kept" || owned === "linkedin-home-hidden";
+}
+
+function applyLinkedinHomeAllowlist(feed: Element): void {
+  let passes = 0;
+  while (passes < MAX_LINKEDIN_HOME_ALLOWLIST_PASSES) {
+    passes += 1;
+    const child = nextUnownedLinkedinHomeFeedChild(feed);
+    if (child === undefined) {
+      break;
+    }
+    if (!child.isConnected) {
+      continue;
+    }
+    try {
+      const item = classifyLinkedinHomeItem(child);
+      if (!child.isConnected) {
+        continue;
+      }
+      if (item.allowlisted) {
+        child.setAttribute("data-prism-owned", "linkedin-home-kept");
+        continue;
+      }
+      safeRemoveFeedChild(child, "linkedin-home-hidden");
+    } catch {
+      if (child.isConnected) {
+        safeRemoveFeedChild(child, "linkedin-home-hidden");
+      }
+    }
+  }
+}
+
+function nextUnownedLinkedinHomeFeedChild(feed: Element): Element | undefined {
+  for (const child of linkedinHomeFeedChildren(feed)) {
+    if (!child.isConnected) {
+      continue;
+    }
+    if (!isLinkedinHomeFeedChildOwned(child)) {
+      return child;
+    }
+  }
+  return undefined;
 }
 
 function ensureYoutubeHomeTileStyles(contentDocument: Document): void {

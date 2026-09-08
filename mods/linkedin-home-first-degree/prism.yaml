@@ -1,0 +1,11 @@
+id: prism.linkedin-home-first-degree
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - linkedin.home.allowlist
+scopes:
+  - https://www.linkedin.com/*
+fixtures:
+  - fixtures/feed.html
+  - fixtures/feed-live.html
