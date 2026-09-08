@@ -11,6 +11,7 @@ import { describe, expect, test, vi } from "vitest";
 import { extractAdSlots } from "./extractors/ad-slot.js";
 import { parseRedditComments } from "./extractors/reddit-comments.js";
 import { parseSponsorSegments } from "./extractors/sponsor-segments.js";
+import { extractLinkedinHome } from "./extractors/linkedin-home.js";
 import { extractYoutubeHome } from "./extractors/youtube-home.js";
 import { extractYoutubeWatch, extractYoutubeIdlePrompt, constrainYoutubeAutoplay } from "./extractors/youtube-watch.js";
 import {
@@ -36,6 +37,7 @@ const TRACER_MODS = [
   "kitten-ad-replace",
   "youtube-home-videos",
   "youtube-reddit-comments",
+  "linkedin-home-first-degree",
 ] as const;
 const FORBIDDEN_MOD_PRIMITIVES = /\b(?:eval|fetch)\b|innerHTML/u;
 
@@ -106,6 +108,13 @@ describe("Phase G hardening", () => {
       ),
       { url: "https://www.youtube.com/" },
     );
+    const linkedinDom = new JSDOM(
+      readFileSync(
+        join(modsRoot, "linkedin-home-first-degree", "fixtures", "feed.html"),
+        "utf8",
+      ),
+      { url: "https://www.linkedin.com/feed" },
+    );
     const redditHtml = readFileSync(
       join(
         modsRoot,
@@ -117,6 +126,7 @@ describe("Phase G hardening", () => {
     );
     const adSlots = extractAdSlots(adDom.window.document);
     const home = extractYoutubeHome(homeDom.window.document);
+    const linkedinHome = extractLinkedinHome(linkedinDom.window.document);
     const watch = extractYoutubeWatch(
       "https://www.youtube.com/watch?v=fixture-video-id",
     );
@@ -149,6 +159,7 @@ describe("Phase G hardening", () => {
 
     jsonLeavesHaveNoHtml(adSlots);
     jsonLeavesHaveNoHtml(home);
+    jsonLeavesHaveNoHtml(linkedinHome);
     jsonLeavesHaveNoHtml(watch);
     jsonLeavesHaveNoHtml(comments);
     jsonLeavesHaveNoHtml(idle);
