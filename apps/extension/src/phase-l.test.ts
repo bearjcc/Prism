@@ -259,7 +259,7 @@ describe("Phase L LinkedIn Home tracer", () => {
     late.innerHTML = `
       <div class="update-components-actor">
         <span class="update-components-actor__name">Late Network</span>
-        <span class="update-components-actor__supplementary-actor-info">• 2nd</span>
+        <span class="update-components-actor__supplementary-actor-info">2nd</span>
       </div>
     `;
     feed?.append(late);
