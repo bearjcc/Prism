@@ -12,6 +12,7 @@ describe("capability registry", () => {
       "network.browser.block",
       "network.egress",
       "youtube.home.allowlist",
+      "linkedin.home.allowlist",
       "youtube.watch.videoId",
       "reddit.comments.search",
       "youtube.watch.dismissIdle",
@@ -26,6 +27,18 @@ describe("capability registry", () => {
 
   test("defines JSON result schemas for extractor capabilities", () => {
     expect(CAPABILITY_REGISTRY["youtube.home.allowlist"].resultSchema).toBeDefined();
+    expect(
+      CAPABILITY_REGISTRY["linkedin.home.allowlist"].resultSchema,
+    ).toMatchObject({
+      required: ["items"],
+      properties: {
+        items: {
+          items: {
+            required: ["id", "allowlisted", "reason"],
+          },
+        },
+      },
+    });
     expect(CAPABILITY_REGISTRY["youtube.watch.videoId"].resultSchema).toBeDefined();
     expect(CAPABILITY_REGISTRY["reddit.comments.search"].resultSchema).toBeDefined();
     expect(

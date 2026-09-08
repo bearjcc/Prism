@@ -4,6 +4,7 @@ export const CAPABILITY_IDS = [
   "network.browser.block",
   "network.egress",
   "youtube.home.allowlist",
+  "linkedin.home.allowlist",
   "youtube.watch.videoId",
   "reddit.comments.search",
   "youtube.watch.dismissIdle",
@@ -37,6 +38,19 @@ const videoItemSchema = {
     id: { type: "string" },
     title: { type: "string" },
     href: { type: "string" },
+  },
+} as const;
+
+const linkedinHomeItemSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "allowlisted", "reason"],
+  properties: {
+    id: { type: "string" },
+    title: { type: "string" },
+    href: { type: "string" },
+    allowlisted: { type: "boolean" },
+    reason: { type: "string" },
   },
 } as const;
 
@@ -76,6 +90,20 @@ export const CAPABILITY_REGISTRY: Readonly<
         videos: {
           type: "array",
           items: videoItemSchema,
+        },
+      },
+    },
+  },
+  "linkedin.home.allowlist": {
+    id: "linkedin.home.allowlist",
+    resultSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["items"],
+      properties: {
+        items: {
+          type: "array",
+          items: linkedinHomeItemSchema,
         },
       },
     },
