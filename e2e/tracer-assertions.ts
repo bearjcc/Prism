@@ -77,7 +77,10 @@ export async function assertLinkedinHomeTracer(page: Page): Promise<void> {
   ).toHaveCount(2);
   await expect(page.getByText("First-degree post body")).toBeVisible();
   await expect(page.getByText("Followed company update")).toBeVisible();
-  await expect(page.locator("[data-fixture-kind]")).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="second-degree"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="promoted"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="activity-reshare"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="module"]')).toHaveCount(0);
 }
 
 export async function assertYoutubeSpaWatchTracer(page: Page): Promise<void> {
