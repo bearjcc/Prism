@@ -182,6 +182,13 @@ export const LISTINGS: CatalogueListing[] = [
   },
 ];
 
+export function modPreviewProps(mod: CatalogueListing): { src: string; alt: string } {
+  return {
+    src: mod.previewSrc ?? `/previews/${mod.id}.webp`,
+    alt: mod.previewAlt ?? mod.name,
+  };
+}
+
 export function catalogue(): CatalogueMod[] {
   return LISTINGS.map((listing) => ({ ...listing, ...listingStats(listing.id) }));
 }

@@ -44,6 +44,7 @@ describe("filterCatalogue", () => {
     const list = filterCatalogue(catalogue(), "", "popular", null);
     expect(list.every((mod) => mod.installs === 0)).toBe(true);
     expect(list.map((m) => m.id)).toEqual([
+      "linkedin-home-first-degree",
       "youtube-reddit-comments",
       "youtube-home-videos",
       "kitten-ad-replace",

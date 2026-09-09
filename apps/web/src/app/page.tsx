@@ -5,7 +5,7 @@ import { ModShot } from "../components/mod-shot";
 import { PrismScene } from "../components/prism-scene";
 import { PrismMark } from "../components/wordmark";
 import { CHROME_STORE } from "../lib/extension-store";
-import { catalogue } from "../lib/catalogue";
+import { catalogue, modPreviewProps } from "../lib/catalogue";
 import styles from "./home.module.css";
 
 const spectrumTones = [
@@ -52,7 +52,7 @@ export default function HomePage() {
             {mods.map((mod) => (
               <li key={mod.id}>
                 <Link href={`/mods/${mod.id}`} className={styles.previewLink}>
-                  <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
+                  <ModShot {...modPreviewProps(mod)} />
                   <span>{mod.name}</span>
                 </Link>
               </li>

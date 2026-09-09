@@ -4,7 +4,7 @@ import { CommentsPanel } from "../../../components/comments-panel";
 import { ModInstallPanel } from "../../../components/mod-install-panel";
 import { ModShot } from "../../../components/mod-shot";
 import { SiteShell } from "../../../components/site-shell";
-import { catalogue, formatInstalls, formatRating, getMod } from "../../../lib/catalogue";
+import { catalogue, formatInstalls, formatRating, getMod, modPreviewProps } from "../../../lib/catalogue";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -77,7 +77,7 @@ export default async function ModPage({ params }: Props) {
           </ul>
         </section>
         <div className="shot-strip">
-          <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
+          <ModShot {...modPreviewProps(mod)} />
         </div>
         <section className="mod-versions">
           <h2>Versions</h2>

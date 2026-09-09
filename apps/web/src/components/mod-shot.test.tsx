@@ -3,15 +3,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ModShot } from "./mod-shot";
-import { catalogue } from "../lib/catalogue";
+import { catalogue, modPreviewProps } from "../lib/catalogue";
 
 describe("ModShot", () => {
   it("renders catalogue previews from /previews/", () => {
     for (const mod of catalogue()) {
-      const html = renderToStaticMarkup(<ModShot src={mod.previewSrc} alt={mod.previewAlt} />);
+      const preview = modPreviewProps(mod);
+      const html = renderToStaticMarkup(<ModShot src={preview.src} alt={preview.alt} />);
       expect(html).toMatch(/img[^>]+src="\/previews\//);
-      expect(html).toContain(mod.previewSrc);
-      expect(html).toContain(mod.previewAlt);
+      expect(html).toContain(preview.src);
+      expect(html).toContain(preview.alt);
     }
   });
 });

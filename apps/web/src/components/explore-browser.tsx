@@ -6,6 +6,7 @@ import {
   filterCatalogue,
   formatInstalls,
   formatRating,
+  modPreviewProps,
   type CatalogueListing,
   type ExploreSort,
 } from "../lib/catalogue";
@@ -123,7 +124,7 @@ export function ExploreBrowser({ q, sort, site }: ExploreSearch) {
         <div className="grid">
           {list.map((mod) => (
             <Link key={mod.id} className="card" href={`/mods/${mod.id}`}>
-              <ModShot src={mod.previewSrc} alt={mod.previewAlt} />
+              <ModShot {...modPreviewProps(mod)} />
               <div className="card-meta">
                 <h2>{mod.name}</h2>
                 <p className="card-byline">
