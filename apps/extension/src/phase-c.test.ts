@@ -1488,6 +1488,40 @@ describe("Phase C extension runtime", () => {
     ]);
   });
 
+  test("accepts import-mod from the options page sender", async () => {
+    const packed = packMod(goldenDir);
+    const archive = encodeArchiveForStorage(packed.archive);
+    const stored: StoredState = {};
+    const dependencies: ServiceWorkerDependencies = {
+      getState: vi.fn(async () => stored),
+      setState: vi.fn(async (state) => {
+        Object.assign(stored, state);
+      }),
+      sendToTab: vi.fn(),
+      reloadTab: vi.fn(),
+      queryTabs: vi.fn().mockResolvedValue([]),
+      syncBrowserRules: vi.fn(),
+    };
+    const auth = {
+      extensionId: "fixture-extension",
+      popupUrl: "chrome-extension://fixture-extension/popup.html",
+      optionsUrl: "chrome-extension://fixture-extension/options.html",
+    };
+
+    await expect(
+      handleRuntimeMessage(
+        { type: "import-mod", archive },
+        {
+          id: "fixture-extension",
+          url: auth.optionsUrl,
+        },
+        Promise.resolve([]),
+        dependencies,
+        auth,
+      ),
+    ).resolves.toEqual({ ok: true, id: "golden.mod" });
+  });
+
   test("rejects import-mod from a content-script sender", async () => {
     const packed = packMod(goldenDir);
     const setState = vi.fn();
