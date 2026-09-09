@@ -76,7 +76,7 @@ describe("guest access", () => {
   });
 
   it("renders Explore listings with no session", async () => {
-    await render(<ExploreBrowser />);
+    await render(<ExploreBrowser q="" sort="popular" site={null} />);
     for (const mod of catalogue()) {
       expect(host.textContent).toContain(mod.name);
       expect(host.querySelector(`a[href="/mods/${mod.id}"]`)).toBeTruthy();
@@ -85,7 +85,10 @@ describe("guest access", () => {
     expect(host.textContent).toContain("No ratings");
     expect(host.textContent).not.toMatch(/\d+(\.\d+)?k installs/);
     expect(host.textContent).not.toMatch(/\d+(\.\d+)?\/5/);
-    expect(host.querySelector("form")).toBeNull();
+    const form = host.querySelector("form");
+    expect(form).toBeTruthy();
+    expect(form?.getAttribute("method")).toBe("get");
+    expect(form?.getAttribute("action")).toBe("/explore");
     expect(host.textContent).not.toMatch(/sign in to browse/i);
   });
 

@@ -33,9 +33,7 @@ export type CatalogueListing = {
   scopes: readonly string[];
   bundledEntry: string;
   previewSrc?: string;
-  screenshotLabel: string;
-  screenshotHue: number;
-  screenshotScene: "kittens" | "yt-home" | "yt-watch";
+  previewAlt?: string;
   capabilities: CapabilityDisclosure[];
   versions: ModVersion[];
 };
@@ -61,9 +59,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["<all_urls>"],
     bundledEntry: bundledEntryPath("prism.kitten-ad-replace"),
-    screenshotLabel: "Feed with kitten tiles",
-    screenshotHue: 12,
-    screenshotScene: "kittens",
+    previewSrc: "/previews/kitten-ad-replace.webp",
+    previewAlt: "Browser page with ad slots replaced by kitten images",
     capabilities: [
       {
         id: "visual.ad-slot.replace",
@@ -100,9 +97,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["https://www.youtube.com/"],
     bundledEntry: bundledEntryPath("prism.youtube-home-videos"),
-    screenshotLabel: "YouTube Home, videos only",
-    screenshotHue: 0,
-    screenshotScene: "yt-home",
+    previewSrc: "/previews/youtube-home-videos.webp",
+    previewAlt: "YouTube Home feed showing video thumbnails only",
     capabilities: [
       {
         id: "youtube.home.allowlist",
@@ -129,9 +125,8 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["https://www.youtube.com/watch*"],
     bundledEntry: bundledEntryPath("prism.youtube-reddit-comments"),
-    screenshotLabel: "Watch page with Reddit thread",
-    screenshotHue: 18,
-    screenshotScene: "yt-watch",
+    previewSrc: "/previews/youtube-reddit-comments.webp",
+    previewAlt: "YouTube watch page with Reddit comments alongside the video",
     capabilities: [
       {
         id: "visual.ad-slot.replace",
@@ -169,9 +164,7 @@ export const LISTINGS: CatalogueListing[] = [
     scopes: ["https://www.linkedin.com/*"],
     bundledEntry: bundledEntryPath("prism.linkedin-home-first-degree"),
     previewSrc: "/previews/linkedin-home-first-degree.webp",
-    screenshotLabel: "LinkedIn Home, first degree",
-    screenshotHue: 210,
-    screenshotScene: "yt-home",
+    previewAlt: "LinkedIn Home feed showing first-degree and followed-page posts only",
     capabilities: [
       {
         id: "linkedin.home.allowlist",
@@ -188,6 +181,13 @@ export const LISTINGS: CatalogueListing[] = [
     ],
   },
 ];
+
+export function modPreviewProps(mod: CatalogueListing): { src: string; alt: string } {
+  return {
+    src: mod.previewSrc ?? `/previews/${mod.id}.webp`,
+    alt: mod.previewAlt ?? mod.name,
+  };
+}
 
 export function catalogue(): CatalogueMod[] {
   return LISTINGS.map((listing) => ({ ...listing, ...listingStats(listing.id) }));
@@ -224,10 +224,18 @@ export function filterCatalogue(
       if (b.installs !== a.installs) {
         return b.installs - a.installs;
       }
-      return a.updated < b.updated ? 1 : -1;
+      if (a.updated !== b.updated) {
+        return a.updated < b.updated ? 1 : -1;
+      }
+      return a.id.localeCompare(b.id);
     });
   } else {
-    list = [...list].sort((a, b) => (a.updated < b.updated ? 1 : -1));
+    list = [...list].sort((a, b) => {
+      if (a.updated !== b.updated) {
+        return a.updated < b.updated ? 1 : -1;
+      }
+      return a.id.localeCompare(b.id);
+    });
   }
   return list;
 }

@@ -47,7 +47,7 @@ export function PrismScene() {
       const hostRect = node.getBoundingClientRect();
       const articles =
         !stacked && slabs instanceof HTMLElement
-          ? Array.from(slabs.querySelectorAll("article"))
+          ? Array.from(slabs.querySelectorAll("span"))
           : [];
       const slabCenters =
         articles.length === SPECTRUM_HUES.length
@@ -151,14 +151,14 @@ export function PrismScene() {
             y2={entry.y}
           >
             <stop offset="0" stopColor="#fff" stopOpacity="0" />
-            <stop offset="0.22" stopColor="#fff" stopOpacity="0.18" />
-            <stop offset="0.78" stopColor="#fff" stopOpacity="0.7" />
-            <stop offset="1" stopColor="#fff" stopOpacity="1" />
+            <stop offset="0.22" stopColor="#fff" stopOpacity="0.12" />
+            <stop offset="0.78" stopColor="#fff" stopOpacity="0.45" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0.82" />
           </linearGradient>
 
           <radialGradient id={`${uid}-lamp`} cx="50%" cy="50%" r="50%">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
-            <stop offset="0.18" stopColor="#fff" stopOpacity="0.16" />
+            <stop offset="0" stopColor="#fff" stopOpacity="0.28" />
+            <stop offset="0.18" stopColor="#fff" stopOpacity="0.08" />
             <stop offset="1" stopColor="#fff" stopOpacity="0" />
           </radialGradient>
 
@@ -193,8 +193,8 @@ export function PrismScene() {
           </linearGradient>
 
           <radialGradient id={`${uid}-flare`}>
-            <stop offset="0" stopColor="#fff" stopOpacity="0.95" />
-            <stop offset="0.35" stopColor="#fff" stopOpacity="0.28" />
+            <stop offset="0" stopColor="#fff" stopOpacity="0.65" />
+            <stop offset="0.35" stopColor="#fff" stopOpacity="0.16" />
             <stop offset="1" stopColor="#fff" stopOpacity="0" />
           </radialGradient>
 
@@ -250,7 +250,7 @@ export function PrismScene() {
             strokeWidth="70"
             strokeLinecap="round"
             filter={`url(#${uid}-bloom)`}
-            opacity="0.32"
+            opacity="0.18"
           />
           <line
             x1={origin.x}
@@ -261,7 +261,7 @@ export function PrismScene() {
             strokeWidth="16"
             strokeLinecap="round"
             filter={`url(#${uid}-soft)`}
-            opacity="0.5"
+            opacity="0.32"
           />
           <line
             x1={origin.x}
@@ -271,7 +271,7 @@ export function PrismScene() {
             stroke={`url(#${uid}-in)`}
             strokeWidth="2"
             strokeLinecap="round"
-            opacity="0.95"
+            opacity="0.78"
           />
         </g>
 
@@ -326,8 +326,8 @@ export function PrismScene() {
           <polygon points={fan} fill={`url(#${uid}-fan)`} />
         </g>
 
-        <circle cx={entry.x} cy={entry.y} r="22" fill={`url(#${uid}-flare)`} opacity="0.7" />
-        <circle cx={exit.x} cy={exit.y} r="36" fill={`url(#${uid}-flare)`} />
+        <circle cx={entry.x} cy={entry.y} r="22" fill={`url(#${uid}-flare)`} opacity="0.38" />
+        <circle cx={exit.x} cy={exit.y} r="36" fill={`url(#${uid}-flare)`} opacity="0.55" />
         <circle cx={exit.x} cy={exit.y} r="3.2" fill="#fff" />
       </svg>
     </div>

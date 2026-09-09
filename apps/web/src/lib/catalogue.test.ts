@@ -39,4 +39,27 @@ describe("filterCatalogue", () => {
     const list = filterCatalogue(catalogue(), "kitten", "recent", null);
     expect(list.map((m) => m.id)).toEqual(["kitten-ad-replace"]);
   });
+
+  it("tie-breaks stable popular order when all installs are zero", () => {
+    const list = filterCatalogue(catalogue(), "", "popular", null);
+    expect(list.every((mod) => mod.installs === 0)).toBe(true);
+    expect(list.map((m) => m.id)).toEqual([
+      "linkedin-home-first-degree",
+      "youtube-reddit-comments",
+      "youtube-home-videos",
+      "kitten-ad-replace",
+    ]);
+  });
+});
+
+describe("catalogue listings", () => {
+  it("exposes preview paths and honest empty stats in production", () => {
+    for (const mod of catalogue()) {
+      expect(mod.previewSrc).toBe(`/previews/${mod.id}.webp`);
+      expect(mod.previewAlt.length).toBeGreaterThan(0);
+      expect(mod.installs).toBe(0);
+      expect(mod.rating).toBeNull();
+      expect(mod.ratingCount).toBe(0);
+    }
+  });
 });
