@@ -23,7 +23,11 @@ type Manifest = FirefoxManifest & {
     matches: string[];
     run_at: string;
   }>;
-  action: { default_popup: string };
+  action: {
+    default_popup: string;
+    default_icon: Record<string, string>;
+  };
+  options_ui: { page: string; open_in_tab: boolean };
   optional_host_permissions?: string[];
   web_accessible_resources?: Array<{
     resources: string[];
@@ -66,12 +70,19 @@ test("generate writes the Firefox target from the Chrome pack", () => {
   expect(existsSync(join(firefoxRoot, "dist", "popup.js"))).toBe(true);
   expect(existsSync(join(firefoxRoot, "popup.html"))).toBe(true);
   expect(existsSync(join(firefoxRoot, "popup.css"))).toBe(true);
+  expect(existsSync(join(firefoxRoot, "options.html"))).toBe(true);
+  expect(existsSync(join(firefoxRoot, "options.css"))).toBe(true);
+  expect(existsSync(join(firefoxRoot, "dist", "options.js"))).toBe(true);
+  expect(existsSync(join(firefoxRoot, "icons", "icon16.png"))).toBe(true);
 
   expect(readFileSync(join(firefoxRoot, "popup.html"), "utf8")).toBe(
     readFileSync(join(chromeRoot, "popup.html"), "utf8"),
   );
   expect(readFileSync(join(firefoxRoot, "popup.css"), "utf8")).toBe(
     readFileSync(join(chromeRoot, "popup.css"), "utf8"),
+  );
+  expect(readFileSync(join(firefoxRoot, "options.html"), "utf8")).toBe(
+    readFileSync(join(chromeRoot, "options.html"), "utf8"),
   );
 
   const chromeIndex = readFileSync(join(chromeRoot, "bundled-mods.json"), "utf8");
@@ -104,6 +115,7 @@ test("Firefox manifest matches Chrome declarations with a Gecko background form"
     chrome.web_accessible_resources,
   );
   expect(firefox.action).toEqual(chrome.action);
+  expect(firefox.options_ui).toEqual(chrome.options_ui);
   expect(firefox.content_scripts).toEqual(chrome.content_scripts);
   expect(firefox.content_scripts).toContainEqual({
     js: ["dist/content-script.js"],

@@ -1,0 +1,16 @@
+body {
+  margin: 0 auto;
+  max-width: 42rem;
+  padding: 24px;
+}
+
+.options-header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.options-origin {
+  font-size: 13px;
+  opacity: 0.85;
+}

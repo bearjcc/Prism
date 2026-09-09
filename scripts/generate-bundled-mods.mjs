@@ -96,6 +96,7 @@ async function buildDist(outputRoot) {
     entryPoints: [
       join(sourceRoot, "service-worker.ts"),
       join(sourceRoot, "popup.ts"),
+      join(sourceRoot, "options.ts"),
     ],
     bundle: true,
     entryNames: "[name]",
@@ -117,24 +118,27 @@ async function buildDist(outputRoot) {
   });
 }
 
-function copyChromePopup(outputRoot) {
+function copyChromeShell(outputRoot) {
   copyFileSync(join(chromeRoot, "popup.html"), join(outputRoot, "popup.html"));
   copyFileSync(join(chromeRoot, "popup.css"), join(outputRoot, "popup.css"));
+  copyFileSync(join(chromeRoot, "options.html"), join(outputRoot, "options.html"));
+  copyFileSync(join(chromeRoot, "options.css"), join(outputRoot, "options.css"));
+  const iconSource = join(chromeRoot, "icons");
+  const iconDestination = join(outputRoot, "icons");
+  if (resolve(iconSource) !== resolve(iconDestination)) {
+    cpSync(iconSource, iconDestination, { recursive: true });
+  }
 }
 
 const [firstRoot, ...otherRoots] = outputRoots;
 writePacked(firstRoot);
 await buildDist(firstRoot);
-if (resolve(firstRoot) === firefoxRoot) {
-  copyChromePopup(firstRoot);
-}
+copyChromeShell(firstRoot);
 
 for (const outputRoot of otherRoots) {
   writePacked(outputRoot);
   cpSync(join(firstRoot, "dist"), join(outputRoot, "dist"), {
     recursive: true,
   });
-  if (resolve(outputRoot) === firefoxRoot) {
-    copyChromePopup(outputRoot);
-  }
+  copyChromeShell(outputRoot);
 }

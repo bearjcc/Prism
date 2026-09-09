@@ -5,6 +5,7 @@ import { userscriptRegistrations, type BundledMod } from "./loader.js";
 import {
   describeModKind,
   describeUserscriptRequirement,
+  mountOptions,
   mountPopup,
 } from "./popup.js";
 
@@ -174,41 +175,58 @@ document.title = 'ok';`;
         },
       ];
     });
-    const dom = new JSDOM(`<!doctype html><p id="page-origin"></p>
-      <ol id="page-activity"></ol>
-      <section id="global-policies"></section>
-      <main id="mods"></main>
-      <ol id="activity"></ol>
-      <button id="undo" type="button">Undo</button>
-      <input id="import-mod" type="file">`);
-    await mountPopup(
-      {
-        runtime: { sendMessage },
-        permissions: { request: vi.fn(), remove: vi.fn() },
-        tabs: {
-          query: vi.fn().mockResolvedValue([
-            { id: 3, url: "https://example.com/" },
-          ]),
-        },
+    const api = {
+      runtime: { sendMessage },
+      permissions: { request: vi.fn(), remove: vi.fn() },
+      tabs: {
+        query: vi.fn().mockResolvedValue([
+          { id: 3, url: "https://example.com/" },
+        ]),
       },
-      dom.window.document,
-    );
+    };
+    const popupDom = new JSDOM(`<!doctype html><p id="page-origin"></p>
+      <div id="origin-pause"></div>
+      <p id="find-mods"></p>
+      <ol id="page-activity"></ol>
+      <main id="mods"></main>
+      <button id="undo" type="button">Undo</button>
+      <button id="open-options" type="button">Open settings</button>`);
+    await mountPopup(api, popupDom.window.document);
 
-    const sections = [
-      ...dom.window.document.querySelectorAll("section.mod"),
+    const popupSections = [
+      ...popupDom.window.document.querySelectorAll("section.mod"),
     ];
-    const nativeCard = sections.find((section) =>
+    const popupNativeCard = popupSections.find((section) =>
       (section.textContent ?? "").includes("fixture.native"),
     );
-    const userscriptCard = sections.find((section) =>
+    const popupUserscriptCard = popupSections.find((section) =>
       (section.textContent ?? "").includes("fixture.userscript"),
     );
-    expect(nativeCard?.querySelector(".mod-kind")?.textContent).toBe(
+    expect(popupNativeCard?.querySelector(".mod-kind")?.textContent).toBe(
       "CSS + JSON",
     );
-    expect(nativeCard?.textContent).not.toMatch(/Userscript/u);
-    expect(userscriptCard?.querySelector(".mod-kind")?.textContent).toBe(
+    expect(popupNativeCard?.textContent).not.toMatch(/Userscript/u);
+    expect(popupUserscriptCard?.querySelector(".mod-kind")?.textContent).toBe(
       "Userscript",
+    );
+    expect(popupUserscriptCard?.textContent).not.toContain(
+      describeUserscriptRequirement(),
+    );
+
+    const optionsDom = new JSDOM(`<!doctype html>
+      <div id="pin-hint"></div>
+      <main id="mods"></main>
+      <section id="other-mods"></section>
+      <section id="global-policies"></section>
+      <ol id="activity"></ol>
+      <input id="import-mod" type="file">`);
+    await mountOptions(api, optionsDom.window.document);
+
+    const optionsSections = [
+      ...optionsDom.window.document.querySelectorAll("section.mod"),
+    ];
+    const userscriptCard = optionsSections.find((section) =>
+      (section.textContent ?? "").includes("fixture.userscript"),
     );
     expect(userscriptCard?.textContent).toContain(
       describeUserscriptRequirement(),
@@ -216,7 +234,7 @@ document.title = 'ok';`;
     expect(userscriptCard?.textContent).not.toMatch(
       /native-safe|first-party prism\.\*/iu,
     );
-    expect(dom.window.document.body.textContent).not.toMatch(
+    expect(optionsDom.window.document.body.textContent).not.toMatch(
       /\bMAIN\b|unrestricted/u,
     );
   });

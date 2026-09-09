@@ -39,6 +39,7 @@ interface PopupMod {
 interface PopupChromeApi {
   readonly runtime: {
     sendMessage<T>(message: unknown): Promise<T>;
+    openOptionsPage?(): void;
   };
   readonly permissions: {
     request(permissions: { origins: string[] }): Promise<boolean>;
@@ -158,7 +159,11 @@ export function describeUserscriptRequirement(): string {
   return "This mod's JavaScript is a userscript. It runs only in Chromium's isolated USER_SCRIPT world, only on the package's declared scopes, and is refused if the source lists remote script URLs. CSS, JSON, and filter lists still run through the extension. Chromium 138+ requires Allow User Scripts on this extension's details page; older Chrome uses Developer mode. If that toggle is off, the script is a no-op.";
 }
 
-if (typeof document !== "undefined" && typeof chrome !== "undefined") {
+if (
+  typeof document !== "undefined" &&
+  typeof chrome !== "undefined" &&
+  document.getElementById("open-options") !== null
+) {
   void mountPopup(chrome, document);
 }
 
@@ -227,19 +232,11 @@ export async function mountPopup(
   popupDocument: Document,
 ): Promise<void> {
   const modsRoot = requiredElement(popupDocument, "mods");
-  const activityRoot = requiredElement(popupDocument, "activity");
   const pageActivityRoot = requiredElement(popupDocument, "page-activity");
   const undoButton = requiredElement(popupDocument, "undo");
   const pageOriginRoot = requiredElement(popupDocument, "page-origin");
-  const policiesRoot = requiredElement(popupDocument, "global-policies");
-  const pinHintRoot = popupDocument.getElementById("pin-hint");
   const findModsRoot = popupDocument.getElementById("find-mods");
-  const otherModsRoot = popupDocument.getElementById("other-mods");
-  const importInput = requiredElement(
-    popupDocument,
-    "import-mod",
-  ) as HTMLInputElement;
-  const importFeedback = popupDocument.getElementById("import-feedback");
+  const openOptionsButton = popupDocument.getElementById("open-options");
 
   undoButton.addEventListener("click", async () => {
     const [tab] = await api.tabs.query({
@@ -253,6 +250,35 @@ export async function mountPopup(
       });
     }
   });
+  openOptionsButton?.addEventListener("click", () => {
+    api.runtime.openOptionsPage?.();
+  });
+  await refreshPopup(
+    api,
+    popupDocument,
+    modsRoot,
+    pageActivityRoot,
+    pageOriginRoot,
+    findModsRoot,
+  );
+}
+
+export async function mountOptions(
+  api: PopupChromeApi,
+  optionsDocument: Document,
+): Promise<void> {
+  const modsRoot = requiredElement(optionsDocument, "mods");
+  const activityRoot = requiredElement(optionsDocument, "activity");
+  const policiesRoot = requiredElement(optionsDocument, "global-policies");
+  const pinHintRoot = optionsDocument.getElementById("pin-hint");
+  const otherModsRoot = optionsDocument.getElementById("other-mods");
+  const optionsOriginRoot = optionsDocument.getElementById("options-origin");
+  const importInput = requiredElement(
+    optionsDocument,
+    "import-mod",
+  ) as HTMLInputElement;
+  const importFeedback = optionsDocument.getElementById("import-feedback");
+
   importInput.addEventListener("change", () => {
     const file = importInput.files?.[0];
     if (file === undefined) {
@@ -264,17 +290,15 @@ export async function mountPopup(
         if (importFeedback !== null) {
           importFeedback.textContent = `Imported ${result.id ?? "package"}. Reload the page to activate it.`;
         }
-        return refreshPopup(
+        return refreshOptions(
           api,
-          popupDocument,
+          optionsDocument,
           modsRoot,
           activityRoot,
-          pageActivityRoot,
-          pageOriginRoot,
           policiesRoot,
           pinHintRoot,
-          findModsRoot,
           otherModsRoot,
+          optionsOriginRoot,
         );
       }
       if (importFeedback !== null) {
@@ -286,17 +310,15 @@ export async function mountPopup(
       return undefined;
     });
   });
-  await refreshPopup(
+  await refreshOptions(
     api,
-    popupDocument,
+    optionsDocument,
     modsRoot,
     activityRoot,
-    pageActivityRoot,
-    pageOriginRoot,
     policiesRoot,
     pinHintRoot,
-    findModsRoot,
     otherModsRoot,
+    optionsOriginRoot,
   );
 }
 
@@ -304,13 +326,9 @@ async function refreshPopup(
   api: PopupChromeApi,
   popupDocument: Document,
   modsRoot: HTMLElement,
-  activityRoot: HTMLElement,
   pageActivityRoot: HTMLElement,
   pageOriginRoot: HTMLElement,
-  policiesRoot: HTMLElement,
-  pinHintRoot: HTMLElement | null,
   findModsRoot: HTMLElement | null,
-  otherModsRoot: HTMLElement | null,
 ): Promise<void> {
   const [tab] = await api.tabs.query({
     active: true,
@@ -323,20 +341,56 @@ async function refreshPopup(
       ? "Open a web page to set a site exception."
       : `This site: ${pageOrigin}`;
   await Promise.all([
-    renderPinHint(api, popupDocument, pinHintRoot),
     renderFindMods(api, popupDocument, findModsRoot, pageOrigin),
     renderOriginPause(api, popupDocument, pageOrigin),
-    renderGlobalPolicies(api, popupDocument, policiesRoot, pageOrigin),
     renderMods(
       api,
       popupDocument,
       modsRoot,
       pageOrigin,
       pageUrl,
-      otherModsRoot,
+      null,
+      "brief",
     ),
     renderPageActivity(api, popupDocument, pageActivityRoot, pageOrigin),
-    renderActivity(api, popupDocument, activityRoot),
+  ]);
+}
+
+async function refreshOptions(
+  api: PopupChromeApi,
+  optionsDocument: Document,
+  modsRoot: HTMLElement,
+  activityRoot: HTMLElement,
+  policiesRoot: HTMLElement,
+  pinHintRoot: HTMLElement | null,
+  otherModsRoot: HTMLElement | null,
+  optionsOriginRoot: HTMLElement | null,
+): Promise<void> {
+  const [tab] = await api.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  const pageUrl = tab?.url;
+  const pageOrigin = pageOriginFromTabUrl(pageUrl);
+  if (optionsOriginRoot !== null) {
+    optionsOriginRoot.textContent =
+      pageOrigin === undefined
+        ? "Open a web page to manage per-site exceptions."
+        : `Current tab: ${pageOrigin}`;
+  }
+  await Promise.all([
+    renderPinHint(api, optionsDocument, pinHintRoot),
+    renderGlobalPolicies(api, optionsDocument, policiesRoot, pageOrigin),
+    renderMods(
+      api,
+      optionsDocument,
+      modsRoot,
+      pageOrigin,
+      pageUrl,
+      otherModsRoot,
+      "full",
+    ),
+    renderActivity(api, optionsDocument, activityRoot),
   ]);
 }
 
@@ -542,6 +596,7 @@ async function renderMods(
   pageOrigin: string | undefined,
   pageUrl: string | undefined,
   otherModsRoot: HTMLElement | null,
+  detail: "brief" | "full",
 ): Promise<void> {
   const mods = await api.runtime.sendMessage<PopupMod[]>({
     type: "list-mods",
@@ -554,12 +609,17 @@ async function renderMods(
     return;
   }
   const { matching, other } = partitionModsForPage(mods, pageUrl);
-  const matchingList = otherModsRoot === null ? mods : matching;
-  if (matchingList.length === 0 && otherModsRoot !== null) {
-    modsRoot.textContent = "No mods match this page.";
+  const matchingList = otherModsRoot === null ? matching : matching;
+  if (matchingList.length === 0) {
+    modsRoot.textContent =
+      otherModsRoot === null
+        ? "No mods match this page."
+        : "No mods match the current tab.";
   } else {
     for (const mod of matchingList) {
-      modsRoot.append(renderMod(api, popupDocument, mod, pageOrigin));
+      modsRoot.append(
+        renderMod(api, popupDocument, mod, pageOrigin, detail),
+      );
     }
   }
   if (otherModsRoot !== null) {
@@ -570,7 +630,9 @@ async function renderMods(
     heading.textContent = "Other mods";
     otherModsRoot.append(heading);
     for (const mod of other) {
-      otherModsRoot.append(renderMod(api, popupDocument, mod, pageOrigin));
+      otherModsRoot.append(
+        renderMod(api, popupDocument, mod, pageOrigin, detail),
+      );
     }
   }
 }
@@ -672,6 +734,7 @@ function renderMod(
   popupDocument: Document,
   mod: PopupMod,
   pageOrigin: string | undefined,
+  detail: "brief" | "full",
 ): HTMLElement {
   const section = popupDocument.createElement("section");
   section.className = "mod";
@@ -747,7 +810,7 @@ function renderMod(
     );
   }
 
-  if (kind === "userscript") {
+  if (detail === "full" && kind === "userscript") {
     section.append(disclosure(popupDocument, describeUserscriptRequirement()));
   }
 
@@ -779,50 +842,54 @@ function renderMod(
           });
         },
       ),
-      disclosure(popupDocument, describeAllowOnce()),
     );
-  }
-
-  const hostAccess = describeModHostAccess(mod.manifest);
-  if (hostAccess !== "") {
-    section.append(disclosure(popupDocument, hostAccess));
-  }
-
-  const capabilities = popupDocument.createElement("div");
-  capabilities.className = "capabilities";
-  for (const capability of mod.manifest.capabilities.required) {
-    const row = popupDocument.createElement("p");
-    row.className = "required";
-    row.textContent = `${capability} (required)`;
-    capabilities.append(row);
-    const copy = describeOptionalCapability(capability);
-    if (copy !== "") {
-      capabilities.append(disclosure(popupDocument, copy));
+    if (detail === "full") {
+      section.append(disclosure(popupDocument, describeAllowOnce()));
     }
   }
-  for (const capability of mod.manifest.capabilities.optional ?? []) {
-    capabilities.append(
-      checkbox(
-        popupDocument,
-        capability,
-        mod.grants.includes(capability),
-        async (granted) => {
-          return applyOptionalCapabilityChange(
-            api,
-            mod.manifest.id,
-            capability,
-            granted,
-            mod.manifest,
-          );
-        },
-      ),
-    );
-    const copy = describeOptionalCapability(capability);
-    if (copy !== "") {
-      capabilities.append(disclosure(popupDocument, copy));
+
+  if (detail === "full") {
+    const hostAccess = describeModHostAccess(mod.manifest);
+    if (hostAccess !== "") {
+      section.append(disclosure(popupDocument, hostAccess));
     }
+
+    const capabilities = popupDocument.createElement("div");
+    capabilities.className = "capabilities";
+    for (const capability of mod.manifest.capabilities.required) {
+      const row = popupDocument.createElement("p");
+      row.className = "required";
+      row.textContent = `${capability} (required)`;
+      capabilities.append(row);
+      const copy = describeOptionalCapability(capability);
+      if (copy !== "") {
+        capabilities.append(disclosure(popupDocument, copy));
+      }
+    }
+    for (const capability of mod.manifest.capabilities.optional ?? []) {
+      capabilities.append(
+        checkbox(
+          popupDocument,
+          capability,
+          mod.grants.includes(capability),
+          async (granted) => {
+            return applyOptionalCapabilityChange(
+              api,
+              mod.manifest.id,
+              capability,
+              granted,
+              mod.manifest,
+            );
+          },
+        ),
+      );
+      const copy = describeOptionalCapability(capability);
+      if (copy !== "") {
+        capabilities.append(disclosure(popupDocument, copy));
+      }
+    }
+    section.append(capabilities);
   }
-  section.append(capabilities);
   return section;
 }
 
