@@ -113,8 +113,10 @@ describe("Phase E YouTube Home tracer", () => {
       "ytd-rich-grid-renderer #contents",
     );
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map((link) =>
-        link.getAttribute("href"),
+      Array.from(
+        feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]') ?? [],
+      ).map((tile) =>
+        tile.querySelector("a.prism-yt-home-title")?.getAttribute("href"),
       ),
     ).toEqual([
       "https://www.youtube.com/watch?v=video-alpha",
@@ -147,10 +149,11 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(3);
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
-        link.querySelector(".prism-yt-home-title")?.textContent ??
-          link.textContent,
-        link.getAttribute("href"),
+      Array.from(
+        feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]') ?? [],
+      ).map((tile) => [
+        tile.querySelector("a.prism-yt-home-title")?.textContent,
+        tile.querySelector("a.prism-yt-home-title")?.getAttribute("href"),
       ]),
     ).toEqual([
       ["Lockup alpha video", "https://www.youtube.com/watch?v=lockup-alpha"],
@@ -169,6 +172,55 @@ describe("Phase E YouTube Home tracer", () => {
     );
     expect(feed?.getAttribute("data-prism-youtube-home-grid")).toBe("true");
     expect(feed?.style.display).toBe("grid");
+  });
+
+  test("owned Home tile titles are visible under YouTube feed anchor styles", async () => {
+    const fixture = readFileSync(
+      join(youtubeModRoot, "fixtures", "home-live.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.youtube.com/" });
+    const youtubeCss = dom.window.document.createElement("style");
+    youtubeCss.textContent = `
+      ytd-rich-grid-renderer a > :not(img) {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      ytd-rich-grid-renderer a {
+        font-size: 0 !important;
+        line-height: 0 !important;
+        color: transparent !important;
+      }
+    `;
+    dom.window.document.head.append(youtubeCss);
+
+    const manifest = loadUnpackedMod(youtubeModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["youtube.home.allowlist"],
+      tabId: 5,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await activateYoutubeHomeMod(prism);
+
+    const feed = findHomeFeed(dom.window.document);
+    const tiles = Array.from(
+      feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]') ?? [],
+    );
+    expect(tiles).toHaveLength(3);
+    for (const tile of tiles) {
+      const title = tile.querySelector(".prism-yt-home-title");
+      expect(title?.textContent?.trim()).not.toBe("");
+      const computed = dom.window.getComputedStyle(title!);
+      expect(computed.display).not.toBe("none");
+      expect(computed.visibility).not.toBe("hidden");
+      expect(parseFloat(computed.fontSize)).toBeGreaterThan(0);
+      expect(computed.color).not.toBe("transparent");
+    }
+    expect(tiles[0]?.querySelector(".prism-yt-home-title")?.textContent).toBe(
+      "Lockup alpha video",
+    );
   });
 
   test("allowlist never throws through the Prism API on broken feed children", async () => {
@@ -377,10 +429,11 @@ describe("Phase E YouTube Home tracer", () => {
       feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]'),
     ).toHaveLength(2);
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map((link) => [
-        link.querySelector(".prism-yt-home-title")?.textContent ??
-          link.textContent,
-        link.getAttribute("href"),
+      Array.from(
+        feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]') ?? [],
+      ).map((tile) => [
+        tile.querySelector("a.prism-yt-home-title")?.textContent,
+        tile.querySelector("a.prism-yt-home-title")?.getAttribute("href"),
       ]),
     ).toEqual([
       ["Alpha video", "https://www.youtube.com/watch?v=video-alpha"],
@@ -428,10 +481,10 @@ describe("Phase E YouTube Home tracer", () => {
     ).toHaveLength(3);
     expect(feed?.querySelector("[data-fixture-kind]")).toBeNull();
     expect(
-      Array.from(feed?.querySelectorAll("a") ?? []).map(
-        (link) =>
-          link.querySelector(".prism-yt-home-title")?.textContent ??
-          link.textContent,
+      Array.from(
+        feed?.querySelectorAll('[data-prism-owned="youtube-home-video"]') ?? [],
+      ).map(
+        (tile) => tile.querySelector("a.prism-yt-home-title")?.textContent,
       ),
     ).toEqual(["Alpha video", "Beta video", "Gamma video"]);
   });
