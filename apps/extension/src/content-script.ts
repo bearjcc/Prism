@@ -192,6 +192,18 @@ article[data-prism-owned="youtube-home-video"] a.prism-yt-home-card {
   text-decoration: none;
 }
 
+article[data-prism-owned="youtube-home-video"] a.prism-yt-home-title {
+  display: block !important;
+  visibility: visible !important;
+  margin-top: 12px;
+  max-height: 4.2em;
+  overflow: hidden;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: #0f0f0f !important;
+  text-decoration: none;
+}
+
 article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb {
   display: block;
   position: relative;
@@ -213,12 +225,6 @@ article[data-prism-owned="youtube-home-video"] .prism-yt-home-thumb img {
   object-fit: cover;
 }
 
-article[data-prism-owned="youtube-home-video"] .prism-yt-home-title {
-  display: block;
-  margin-top: 12px;
-  max-height: 4.2em;
-  overflow: hidden;
-}
 `;
 
 export function youtubeHomeTileStylesheet(): string {
@@ -1375,22 +1381,23 @@ function createYoutubeHomeTile(
     tile.dataset.prismOwned = "youtube-home-video";
     tile.dataset.videoId = video.id;
 
-    const link = contentDocument.createElement("a");
-    link.className = "prism-yt-home-card";
-    link.href = video.href;
+    const thumbLink = contentDocument.createElement("a");
+    thumbLink.className = "prism-yt-home-card";
+    thumbLink.href = video.href;
 
     const thumb = contentDocument.createElement("span");
     thumb.className = "prism-yt-home-thumb";
     const image = contentDocument.createElement("img");
     attachYoutubeHomeThumb(image, thumb, video);
     thumb.append(image);
+    thumbLink.append(thumb);
 
-    const title = contentDocument.createElement("span");
+    const title = contentDocument.createElement("a");
     title.className = "prism-yt-home-title";
+    title.href = video.href;
     title.textContent = video.title;
 
-    link.append(thumb, title);
-    tile.append(link);
+    tile.append(thumbLink, title);
     return tile;
   } catch {
     return null;
