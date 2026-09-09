@@ -1,4 +1,4 @@
-# LinkedIn Home first-degree feed filter — implementation plan
+# LinkedIn Home first-degree feed filter - implementation plan
 
 **Spec:** [`docs/superpowers/specs/2026-09-08-linkedin-home-first-degree-design.md`](../specs/2026-09-08-linkedin-home-first-degree-design.md)  
 **Date:** 2026-09-08  
@@ -19,9 +19,9 @@
 
 ---
 
-## 1. Schema — register `linkedin.home.allowlist`
+## 1. Schema - register `linkedin.home.allowlist`
 
-### Task 1 — Capability id in registry
+### Task 1 - Capability id in registry
 
 | | |
 | --- | --- |
@@ -30,7 +30,7 @@
 | **Implement** | Add `"linkedin.home.allowlist"` to `CAPABILITY_IDS`. Register `resultSchema` with `items` array of classified post objects (`id`, `title?`, `href?`, `allowlisted`, `reason`). |
 | **Verify** | `npm test --workspace=@prism/schema -- capabilities.test` |
 
-### Task 2 — Capability copy for marketplace
+### Task 2 - Capability copy for marketplace
 
 | | |
 | --- | --- |
@@ -39,7 +39,7 @@
 | **Implement** | Add `CAPABILITY_SUMMARIES["linkedin.home.allowlist"]` entry. |
 | **Verify** | `npm test --workspace=@prism/web -- capability` |
 
-### Task 3 — Prism API gate
+### Task 3 - Prism API gate
 
 | | |
 | --- | --- |
@@ -52,16 +52,16 @@
 
 ## 2. Fixtures and extractor
 
-### Task 4 — Static Home fixture (sanitised)
+### Task 4 - Static Home fixture (sanitised)
 
 | | |
 | --- | --- |
 | **Files** | `mods/linkedin-home-first-degree/fixtures/feed.html` |
 | **Test first** | None yet (fixture-only); sanity-check file loads in JSDOM manually. |
-| **Implement** | Minimal signed-in `/feed` DOM: feed container, one 1st-degree post (`• 1st`), one followed company post (no degree badge), one 2nd-degree post, one Promoted post, one activity wrapper ("X commented on…" with non-allowlisted underlying author), one PYMK module. Use `data-fixture-kind` attributes for test assertions. No credentials or PII. |
+| **Implement** | Minimal signed-in `/feed` DOM: feed container, one 1st-degree post (`1st`), one followed company post (no degree badge), one 2nd-degree post, one Promoted post, one activity wrapper ("X commented on..." with non-allowlisted underlying author), one PYMK module. Use `data-fixture-kind` attributes for test assertions. No credentials or PII. |
 | **Verify** | `node -e "require('fs').readFileSync('mods/linkedin-home-first-degree/fixtures/feed.html')"` |
 
-### Task 5 — Live-shaped fixture
+### Task 5 - Live-shaped fixture
 
 | | |
 | --- | --- |
@@ -70,7 +70,7 @@
 | **Implement** | Second fixture mirroring shadow-heavy / A/B-shaped markup (nested wrappers, alternate badge text). Same keep/strip coverage as `feed.html`. |
 | **Verify** | Loaded by extractor tests in task 6. |
 
-### Task 6 — Extractor unit tests (failing)
+### Task 6 - Extractor unit tests (failing)
 
 | | |
 | --- | --- |
@@ -79,16 +79,16 @@
 | **Implement** | Stub `linkedin-home.ts` exports that throw or return empty until task 7. |
 | **Verify** | `npm test --workspace=@prism/extension -- linkedin-home.test` (expect red) |
 
-### Task 7 — Extractor implementation
+### Task 7 - Extractor implementation
 
 | | |
 | --- | --- |
 | **Files** | `apps/extension/src/extractors/linkedin-home.ts`, reuse `apps/extension/src/extractors/dom-query.ts` |
 | **Test first** | Task 6 tests (already red). |
-| **Implement** | `findLinkedinHomeFeed(root)` with deep/shadow-aware selectors; `classifyLinkedinHomeItem(element)` returning `{ id, allowlisted, reason }`; `extractLinkedinHome(root)` aggregating feed children. Heuristics per spec: 1st-degree badge, followed page (no 2nd/3rd+, not promoted), activity-card author walk, module detection. All paths try/catch → `unknown` / empty, never throw. |
+| **Implement** | `findLinkedinHomeFeed(root)` with deep/shadow-aware selectors; `classifyLinkedinHomeItem(element)` returning `{ id, allowlisted, reason }`; `extractLinkedinHome(root)` aggregating feed children. Heuristics per spec: 1st-degree badge, followed page (no 2nd/3rd+, not promoted), activity-card author walk, module detection. All paths try/catch -> `unknown` / empty, never throw. |
 | **Verify** | `npm test --workspace=@prism/extension -- linkedin-home.test` (green) |
 
-### Task 8 — Extractor schema / phase-g guard
+### Task 8 - Extractor schema / phase-g guard
 
 | | |
 | --- | --- |
@@ -101,7 +101,7 @@
 
 ## 3. Content-script allowlist wiring
 
-### Task 9 — Allowlist handler tests (failing)
+### Task 9 - Allowlist handler tests (failing)
 
 | | |
 | --- | --- |
@@ -110,7 +110,7 @@
 | **Implement** | Import mod from `mods/linkedin-home-first-degree/` once task 12 exists; stub handler in `content-script.ts` until task 10. |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test` (red) |
 
-### Task 10 — `applyLinkedinHomeAllowlist` core
+### Task 10 - `applyLinkedinHomeAllowlist` core
 
 | | |
 | --- | --- |
@@ -119,7 +119,7 @@
 | **Implement** | Branch `handlers.allowlist` for `linkedin.home` + `post`. `applyLinkedinHomeAllowlist(feed, doc)`: iterate feed children, classify, `safeRemoveFeedChild` (reuse YouTube helper or LinkedIn-named twin) when not allowlisted; mark allowlisted with `data-prism-owned="linkedin-home-kept"`. Never throw through handler (fail-soft). |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test` (partial green) |
 
-### Task 11 — Feed wait and activation gate
+### Task 11 - Feed wait and activation gate
 
 | | |
 | --- | --- |
@@ -128,7 +128,7 @@
 | **Implement** | `waitForLinkedinHomeFeed` + `DEFAULT_LINKEDIN_HOME_WAIT_MS`; push wait in `activateContentMods` when manifest requires `linkedin.home.allowlist`. Path check in `findLinkedinHomeFeed` or activation guard. |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test` |
 
-### Task 12 — SPA refresh and `pageNeedsSurfaceRefresh`
+### Task 12 - SPA refresh and `pageNeedsSurfaceRefresh`
 
 | | |
 | --- | --- |
@@ -137,7 +137,7 @@
 | **Implement** | Export `linkedinHomeFeedChildren` / ownership check; extend `pageNeedsSurfaceRefresh` and existing `watchPageSurfaces` observer path to re-run LinkedIn allowlist (same debounce as YouTube). |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test` |
 
-### Task 13 — Fail-soft and adapter degradation signal
+### Task 13 - Fail-soft and adapter degradation signal
 
 | | |
 | --- | --- |
@@ -146,7 +146,7 @@
 | **Implement** | try/catch per child; optional activity event via existing gate record path when feed missing after wait. Document that soft failures must not call `recordModActivateFailure`. |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test mod-pause` |
 
-### Task 14 — Sandbox runtime pass-through
+### Task 14 - Sandbox runtime pass-through
 
 | | |
 | --- | --- |
@@ -159,7 +159,7 @@
 
 ## 4. Mod package
 
-### Task 15 — `prism.yaml` and manifest validation
+### Task 15 - `prism.yaml` and manifest validation
 
 | | |
 | --- | --- |
@@ -168,7 +168,7 @@
 | **Implement** | Manifest: `id: prism.linkedin-home-first-degree`, `runtime: native`, `capabilities.required: [linkedin.home.allowlist]`, `scopes: [https://www.linkedin.com/]`, `fixtures` list. |
 | **Verify** | `npm test -- scripts/check-mods-engine.test.mjs` |
 
-### Task 16 — Mod activate source
+### Task 16 - Mod activate source
 
 | | |
 | --- | --- |
@@ -177,7 +177,7 @@
 | **Implement** | `export async function activate(prism) { await Promise.resolve(prism.ui.allowlist("linkedin.home", "post")); }` |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-l.test` |
 
-### Task 17 — Mod README (bundled tracer note)
+### Task 17 - Mod README (bundled tracer note)
 
 | | |
 | --- | --- |
@@ -190,7 +190,7 @@
 
 ## 5. Bundle into extension build
 
-### Task 18 — `generate-bundled-mods` picks up new mod
+### Task 18 - `generate-bundled-mods` picks up new mod
 
 | | |
 | --- | --- |
@@ -199,7 +199,7 @@
 | **Implement** | Run `node scripts/generate-bundled-mods.mjs`; commit generated `apps/extension/targets/*/bundled-mods/**` only as part of implementation PR (or CI build). For local verify, run full `npm run build`. |
 | **Verify** | `npm test --workspace=@prism/extension -- shell.test` |
 
-### Task 19 — Web package artefact
+### Task 19 - Web package artefact
 
 | | |
 | --- | --- |
@@ -212,7 +212,7 @@
 
 ## 6. Catalogue and Explore metadata
 
-### Task 20 — Catalogue listing
+### Task 20 - Catalogue listing
 
 | | |
 | --- | --- |
@@ -221,7 +221,7 @@
 | **Implement** | Add `CatalogueListing` with honest `EMPTY_LISTING_STATS` (0 installs, null rating), `site: linkedin.com`, capability row, `previewSrc: /previews/linkedin-home-first-degree.webp` (placeholder per previews README if capture unavailable). |
 | **Verify** | `npm test --workspace=@prism/web -- catalogue` |
 
-### Task 21 — Preview asset placeholder
+### Task 21 - Preview asset placeholder
 
 | | |
 | --- | --- |
@@ -230,7 +230,7 @@
 | **Implement** | Minimal valid WebP placeholder; README notes temporary until live capture. |
 | **Verify** | `npm test --workspace=@prism/web` |
 
-### Task 22 — Explore filters
+### Task 22 - Explore filters
 
 | | |
 | --- | --- |
@@ -243,7 +243,7 @@
 
 ## 7. Unit, phase, and integration tests (summary gate)
 
-### Task 23 — Phase-g corpus alignment
+### Task 23 - Phase-g corpus alignment
 
 | | |
 | --- | --- |
@@ -252,7 +252,7 @@
 | **Implement** | Wire any missing imports / paths. |
 | **Verify** | `npm test --workspace=@prism/extension -- phase-g.test` |
 
-### Task 24 — Full unit suite
+### Task 24 - Full unit suite
 
 | | |
 | --- | --- |
@@ -265,7 +265,7 @@
 
 ## 8. E2E (Playwright)
 
-### Task 25 — E2E fixture stub
+### Task 25 - E2E fixture stub
 
 | | |
 | --- | --- |
@@ -274,7 +274,7 @@
 | **Implement** | Export `linkedinFeedFixture` from mod fixtures. Optional `stubLinkedinHtml` helper in `tracer-assertions.ts` (mirror `stubYoutubeHtml`). |
 | **Verify** | Typecheck: `npx tsc -p e2e` if configured |
 
-### Task 26 — E2E tracer assertion
+### Task 26 - E2E tracer assertion
 
 | | |
 | --- | --- |
@@ -287,7 +287,7 @@
 
 ## 9. Documentation cross-links
 
-### Task 27 — Spec and runtime doc pointers
+### Task 27 - Spec and runtime doc pointers
 
 | | |
 | --- | --- |
@@ -300,7 +300,7 @@
 
 ## 10. Manual live `/feed` smoke checklist
 
-Out of band; not CI-blocking. Run signed-in on a real account after tasks 1–26 merge.
+Out of band; not CI-blocking. Run signed-in on a real account after tasks 1-26 merge.
 
 | Step | Pass |
 | --- | --- |
@@ -309,7 +309,7 @@ Out of band; not CI-blocking. Run signed-in on a real account after tasks 1–26
 | Followed company/page post remains visible (no false strip). | [ ] |
 | 2nd / 3rd-degree post hidden or removed. | [ ] |
 | Promoted / Sponsored post stripped. | [ ] |
-| Activity card ("X commented…") stripped when underlying author not allowlisted. | [ ] |
+| Activity card ("X commented...") stripped when underlying author not allowlisted. | [ ] |
 | PYMK / jobs / news module stripped. | [ ] |
 | Scroll load (SPA insert) filters new cards within ~2s. | [ ] |
 | Navigate to `/in/me` or messaging: mod does not break non-feed pages. | [ ] |
@@ -330,4 +330,4 @@ Out of band; not CI-blocking. Run signed-in on a real account after tasks 1–26
 
 ## Task count
 
-**27** implementation tasks (tasks 1–27), plus **11** manual smoke checks (section 10).
+**27** implementation tasks (tasks 1-27), plus **11** manual smoke checks (section 10).

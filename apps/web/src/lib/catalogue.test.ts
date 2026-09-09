@@ -27,9 +27,12 @@ describe("filterCatalogue", () => {
   });
 
   it("filters by site chip", () => {
-    const list = filterCatalogue(catalogue(), "", "popular", "youtube.com");
-    expect(list.every((m) => m.siteHost === "youtube.com")).toBe(true);
-    expect(list.length).toBe(2);
+    const youtube = filterCatalogue(catalogue(), "", "popular", "youtube.com");
+    expect(youtube.every((m) => m.siteHost === "youtube.com")).toBe(true);
+    expect(youtube.length).toBe(2);
+
+    const linkedin = filterCatalogue(catalogue(), "", "popular", "linkedin.com");
+    expect(linkedin.map((m) => m.id)).toEqual(["linkedin-home-first-degree"]);
   });
 
   it("matches name search", () => {

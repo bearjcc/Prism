@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>LinkedIn Home first-degree fixture</title>
+  </head>
+  <body>
+    <main class="scaffold-layout__main">
+      <div class="scaffold-finite-scroll__content" data-linkedin-home-feed>
+        <div
+          data-view-name="feed-full-update"
+          data-fixture-kind="first-degree"
+          data-urn="urn:li:activity:first-degree"
+        >
+          <div class="update-components-actor">
+            <span class="update-components-actor__name">Alice Connection</span>
+            <span class="update-components-actor__supplementary-actor-info">1st</span>
+          </div>
+          <div class="feed-shared-update-v2__description">First-degree post body</div>
+        </div>
+        <div
+          data-view-name="feed-full-update"
+          data-fixture-kind="followed-page"
+          data-urn="urn:li:activity:followed-page"
+        >
+          <div class="update-components-actor">
+            <span class="update-components-actor__name">Acme Corp</span>
+          </div>
+          <div class="feed-shared-update-v2__description">Followed company update</div>
+        </div>
+        <div
+          data-view-name="feed-full-update"
+          data-fixture-kind="second-degree"
+          data-urn="urn:li:activity:second-degree"
+        >
+          <div class="update-components-actor">
+            <span class="update-components-actor__name">Bob Network</span>
+            <span class="update-components-actor__supplementary-actor-info">2nd</span>
+          </div>
+          <div class="feed-shared-update-v2__description">Extended network post</div>
+        </div>
+        <div
+          data-view-name="feed-full-update"
+          data-fixture-kind="promoted"
+          data-urn="urn:li:activity:promoted"
+        >
+          <div class="update-components-actor">
+            <span class="update-components-actor__name">Sponsor Brand</span>
+            <span class="update-components-actor__supplementary-actor-info">Promoted</span>
+          </div>
+          <div class="feed-shared-update-v2__description">Paid placement</div>
+        </div>
+        <div
+          data-view-name="feed-full-update"
+          data-fixture-kind="activity-reshare"
+          data-urn="urn:li:activity:activity-reshare"
+        >
+          <span class="update-components-header__text-view">
+            <span>Charlie Connector commented on this</span>
+          </span>
+          <div class="update-components-actor">
+            <span class="update-components-actor__name">Remote Author</span>
+            <span class="update-components-actor__supplementary-actor-info">3rd+</span>
+          </div>
+          <div class="feed-shared-update-v2__description">Underlying post</div>
+        </div>
+        <section
+          data-view-name="pymk-module"
+          data-fixture-kind="module"
+          data-urn="urn:li:module:pymk"
+        >
+          <h2>People you may know</h2>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

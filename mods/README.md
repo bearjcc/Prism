@@ -4,7 +4,7 @@ Same package format as future marketplace and sideload. See `Documentation/specs
 
 v1: packed into the extension at build time. Users may disable them in the extension UI. No native host seeder.
 
-Tracers (plan Phases D--F): `kitten-ad-replace`, `youtube-home-videos`, `youtube-reddit-comments`.
+Tracers (plan Phases D--F): `kitten-ad-replace`, `youtube-home-videos`, `youtube-reddit-comments`, `linkedin-home-first-degree`.
 
 If a feature cannot be expressed here, that is an engine gap.
 

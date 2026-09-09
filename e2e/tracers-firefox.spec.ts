@@ -3,6 +3,7 @@ import { launchFirefoxExtensionContext } from "./firefox-extension.js";
 import { startFixtureServer } from "./fixture-server.js";
 import {
   assertKittenTracerOnFixture,
+  assertLinkedinHomeTracer,
   assertYoutubeHomeTracer,
   assertYoutubeSpaWatchTracer,
   assertYoutubeWatchRedditFallback,
@@ -27,6 +28,16 @@ test("YouTube Home fixture keeps videos and drops non-video units", async () => 
   try {
     const page = await session.context.newPage();
     await assertYoutubeHomeTracer(page);
+  } finally {
+    await session.close();
+  }
+});
+
+test("LinkedIn Home fixture keeps 1st-degree posts and strips the rest", async () => {
+  const session = await launchFirefoxExtensionContext();
+  try {
+    const page = await session.context.newPage();
+    await assertLinkedinHomeTracer(page);
   } finally {
     await session.close();
   }

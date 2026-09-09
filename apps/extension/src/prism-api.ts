@@ -119,7 +119,13 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
     },
     ui: {
       allowlist(surface, itemType): void {
-        if (!gate.assert("youtube.home.allowlist")) {
+        const capability =
+          surface === "linkedin.home"
+            ? "linkedin.home.allowlist"
+            : surface === "youtube.home"
+              ? "youtube.home.allowlist"
+              : undefined;
+        if (capability === undefined || !gate.assert(capability)) {
           return;
         }
         record(options.handlers.allowlist?.(surface, itemType));

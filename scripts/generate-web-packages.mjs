@@ -11,6 +11,7 @@ const HOMEgrown = new Set([
   "kitten-ad-replace",
   "youtube-home-videos",
   "youtube-reddit-comments",
+  "linkedin-home-first-degree",
 ]);
 
 mkdirSync(outputRoot, { recursive: true });

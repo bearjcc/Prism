@@ -33,7 +33,7 @@ Applies only when the user is signed in on LinkedIn Home (`https://www.linkedin.
 
 | Item | Rule |
 | --- | --- |
-| First-degree person post | Original post card where the **original author** shows a 1st-degree badge (e.g. `• 1st` or equivalent first-connection indicator on the author line). |
+| First-degree person post | Original post card where the **original author** shows a 1st-degree badge (e.g. `1st` or equivalent first-connection indicator on the author line). |
 | Followed company or page post | Original post card authored by a company or page the user follows: no 2nd/3rd/3rd+ badge on the author line, and not labelled Promoted or Sponsored. |
 
 "Original post" means the primary content card, not a wrapper that only describes someone else's activity.
@@ -44,7 +44,7 @@ Applies only when the user is signed in on LinkedIn Home (`https://www.linkedin.
 | --- | --- |
 | Extended network posts | Author line shows 2nd, 3rd, 3rd+, or equivalent non-first-degree badge. |
 | Paid / amplified content | Promoted, Sponsored, or equivalent paid-placement labels. |
-| Reshares and activity wrappers | Reshare cards; "X commented on…", "X likes…", and similar activity cards when the **underlying original author** is not allowlisted. |
+| Reshares and activity wrappers | Reshare cards; "X commented on...", "X likes...", and similar activity cards when the **underlying original author** is not allowlisted. |
 | Home modules (non-post chrome) | People you may know, job recommendations, newsletters, LinkedIn News, and similar sidebar or in-feed modules that are not original posts from allowlisted authors. |
 
 When a card is stripped, it is removed or hidden in place. The feed should not leave empty placeholders or broken layout where avoidable.
@@ -63,14 +63,14 @@ When a card is stripped, it is removed or hidden in place. The feed should not l
 
 ### Extension adapter (mirror YouTube Home)
 
-1. **Feed discovery** — Locate the main Home feed container on `/feed` (signed-in). Use shadow-aware deep queries where LinkedIn nests content (`querySelectorAllDeep` or equivalent).
-2. **Per-item classification** — For each feed child, run `extractLinkedinHome` to return structured JSON only (no HTML to the mod):
+1. **Feed discovery** - Locate the main Home feed container on `/feed` (signed-in). Use shadow-aware deep queries where LinkedIn nests content (`querySelectorAllDeep` or equivalent).
+2. **Per-item classification** - For each feed child, run `extractLinkedinHome` to return structured JSON only (no HTML to the mod):
    - `allowlisted: boolean`
    - `reason`: e.g. `first-degree`, `followed-page`, `extended-network`, `promoted`, `activity-reshare`, `module`, `unknown`
    - Stable `id` for dedupe and ownership markers
-3. **In-place filter** — Non-allowlisted children: `remove()` with hide fallback (`hidden`, `display: none`, `data-prism-owned="linkedin-home-hidden"`). Allowlisted children: leave DOM intact; mark owned where needed for refresh detection.
-4. **SPA / late inserts** — `MutationObserver` plus existing surface-refresh hooks (`pageNeedsSurfaceRefresh` pattern) re-run classification when LinkedIn injects new feed items or modules.
-5. **Undo** — Best-effort undo snapshot for small feeds (same policy as YouTube Home); skip on very large live feeds.
+3. **In-place filter** - Non-allowlisted children: `remove()` with hide fallback (`hidden`, `display: none`, `data-prism-owned="linkedin-home-hidden"`). Allowlisted children: leave DOM intact; mark owned where needed for refresh detection.
+4. **SPA / late inserts** - `MutationObserver` plus existing surface-refresh hooks (`pageNeedsSurfaceRefresh` pattern) re-run classification when LinkedIn injects new feed items or modules.
+5. **Undo** - Best-effort undo snapshot for small feeds (same policy as YouTube Home); skip on very large live feeds.
 
 ### Fail-soft and activation budget
 

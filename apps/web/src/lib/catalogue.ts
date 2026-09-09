@@ -32,6 +32,7 @@ export type CatalogueListing = {
   runtime: "native" | "userscript";
   scopes: readonly string[];
   bundledEntry: string;
+  previewSrc?: string;
   screenshotLabel: string;
   screenshotHue: number;
   screenshotScene: "kittens" | "yt-home" | "yt-watch";
@@ -41,7 +42,7 @@ export type CatalogueListing = {
 
 export type CatalogueMod = CatalogueListing & ListingStats;
 
-export const SITE_CHIPS = ["youtube.com", "any site"] as const;
+export const SITE_CHIPS = ["youtube.com", "linkedin.com", "any site"] as const;
 
 /** First-party tracer mods shipped bundled in the Prism extension. */
 export const LISTINGS: CatalogueListing[] = [
@@ -150,6 +151,40 @@ export const LISTINGS: CatalogueListing[] = [
     ],
     versions: [
       { version: "1.0.0", released: "2026-08-24", notes: "First public package." },
+    ],
+  },
+  {
+    id: "linkedin-home-first-degree",
+    packageId: "prism.linkedin-home-first-degree",
+    name: "LinkedIn Home, first degree",
+    author: "Prism",
+    site: "linkedin.com",
+    siteHost: "linkedin.com",
+    version: "1.0.0",
+    updated: "2026-09-08",
+    summary: "Home feed shows first-degree and followed-page posts only.",
+    description:
+      "An allowlist filter over the signed-in LinkedIn Home feed. Extended network posts, promoted items, activity reshares, and recommendation modules are stripped in place.",
+    runtime: "native",
+    scopes: ["https://www.linkedin.com/*"],
+    bundledEntry: bundledEntryPath("prism.linkedin-home-first-degree"),
+    previewSrc: "/previews/linkedin-home-first-degree.webp",
+    screenshotLabel: "LinkedIn Home, first degree",
+    screenshotHue: 210,
+    screenshotScene: "yt-home",
+    capabilities: [
+      {
+        id: "linkedin.home.allowlist",
+        summary: capabilitySummary("linkedin.home.allowlist"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-09-08",
+        notes: "First public package.",
+      },
     ],
   },
 ];

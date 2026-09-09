@@ -8,6 +8,8 @@ export const CAPABILITY_SUMMARIES: Readonly<Record<string, string>> = {
     "Brokered GET to declared URL contracts through the extension. Off until granted.",
   "youtube.home.allowlist":
     "Mount only video items from the YouTube Home extractor. Shorts, ads, and shelves stay out.",
+  "linkedin.home.allowlist":
+    "Filter the LinkedIn Home feed to first-degree connections and followed company or page posts.",
   "youtube.watch.videoId":
     "Read the watch video id from the page URL for cross-site extractors.",
   "reddit.comments.search":

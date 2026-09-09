@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { ExtensionSession } from "./extension-session.js";
-import { homeFixture, watchFixture, watchLiveFixture } from "./tracer-fixtures.js";
+import { homeFixture, linkedinFeedFixture, watchFixture, watchLiveFixture } from "./tracer-fixtures.js";
 
 export async function assertKittenTracerOnFixture(
   page: Page,
@@ -69,6 +69,20 @@ export async function assertYoutubeHomeTracer(page: Page): Promise<void> {
   await expect(page.locator("[data-fixture-kind]")).toHaveCount(0);
 }
 
+export async function assertLinkedinHomeTracer(page: Page): Promise<void> {
+  await stubLinkedinHtml(page, { "/feed": linkedinFeedFixture });
+  await page.goto("https://www.linkedin.com/feed");
+  await expect(
+    page.locator('[data-prism-owned="linkedin-home-kept"]'),
+  ).toHaveCount(2);
+  await expect(page.getByText("First-degree post body")).toBeVisible();
+  await expect(page.getByText("Followed company update")).toBeVisible();
+  await expect(page.locator('[data-fixture-kind="second-degree"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="promoted"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="activity-reshare"]')).toHaveCount(0);
+  await expect(page.locator('[data-fixture-kind="module"]')).toHaveCount(0);
+}
+
 export async function assertYoutubeSpaWatchTracer(page: Page): Promise<void> {
   await stubYoutubeHtml(page, { "/": homeFixture });
   await page.goto("https://www.youtube.com/");
@@ -118,6 +132,28 @@ export async function stubYoutubeHtml(
 ): Promise<void> {
   await page.route(
     (url) => url.hostname === "www.youtube.com",
+    async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      const body = pages[pathname];
+      if (body === undefined) {
+        await route.abort();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html; charset=utf-8",
+        body,
+      });
+    },
+  );
+}
+
+export async function stubLinkedinHtml(
+  page: Page,
+  pages: Readonly<Record<string, string>>,
+): Promise<void> {
+  await page.route(
+    (url) => url.hostname === "www.linkedin.com",
     async (route) => {
       const pathname = new URL(route.request().url()).pathname;
       const body = pages[pathname];

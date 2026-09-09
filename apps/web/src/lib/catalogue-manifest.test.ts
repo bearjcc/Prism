@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -12,13 +12,14 @@ import { listModManifestPaths } from "../../../../scripts/check-mods-engine.mjs"
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 describe("catalogue manifest sync", () => {
-  it("lists only the three homegrown tracer mods", () => {
+  it("lists only the four homegrown tracer mods", () => {
     expect(LISTINGS.map((listing) => listing.id)).toEqual([
       "kitten-ad-replace",
       "youtube-home-videos",
       "youtube-reddit-comments",
+      "linkedin-home-first-degree",
     ]);
-    expect(catalogue()).toHaveLength(3);
+    expect(catalogue()).toHaveLength(4);
   });
 
   it("matches each listing to mods/*/prism.yaml", () => {
@@ -45,6 +46,17 @@ describe("catalogue manifest sync", () => {
         expect(optional, cap.id).toContain(cap.id);
       }
       expect(listing.capabilities).toHaveLength(required.length + optional.length);
+    }
+  });
+
+  it("has preview assets for listings with previewSrc", () => {
+    for (const listing of LISTINGS) {
+      if (listing.previewSrc === undefined) {
+        continue;
+      }
+      expect(
+        existsSync(join(repoRoot, "apps", "web", "public", listing.previewSrc)),
+      ).toBe(true);
     }
   });
 });
