@@ -28,6 +28,7 @@ import {
   describeConsentRejectPolicyDefault,
   describeAutoplayPolicyDefault,
   importPackedArchive,
+  mountOptions,
   mountPopup,
 } from "./popup.js";
 
@@ -219,7 +220,7 @@ describe("Phase G popup disclosure", () => {
     ).toBe("fixture.userscript userscript denied");
   });
 
-  test("renders disclosure copy in the popup", async () => {
+  test("renders disclosure copy in popup and options", async () => {
     const kitten = loadUnpackedMod(join(modsRoot, "kitten-ad-replace"));
     const reddit = loadUnpackedMod(join(modsRoot, "youtube-reddit-comments"));
     const sendMessage = vi.fn(async (message: { readonly type?: string }) => {
@@ -286,60 +287,70 @@ describe("Phase G popup disclosure", () => {
         },
       ];
     });
-    const dom = new JSDOM(`<!doctype html><p id="page-origin"></p>
-      <ol id="page-activity"></ol>
-      <section id="global-policies"></section>
-      <main id="mods"></main>
-      <ol id="activity"></ol>
-      <button id="undo" type="button">Undo</button>
-      <input id="import-mod" type="file">`);
-    await mountPopup(
-      {
-        runtime: { sendMessage },
-        permissions: { request: vi.fn(), remove: vi.fn() },
-        tabs: {
-          query: vi.fn().mockResolvedValue([
-            { id: 3, url: "https://www.youtube.com/" },
-          ]),
-        },
+    const api = {
+      runtime: { sendMessage },
+      permissions: { request: vi.fn(), remove: vi.fn() },
+      tabs: {
+        query: vi.fn().mockResolvedValue([
+          { id: 3, url: "https://www.youtube.com/" },
+        ]),
       },
-      dom.window.document,
-    );
+    };
+    const popupDom = new JSDOM(`<!doctype html><p id="page-origin"></p>
+      <div id="origin-pause"></div>
+      <p id="find-mods"></p>
+      <ol id="page-activity"></ol>
+      <main id="mods"></main>
+      <button id="undo" type="button">Undo</button>
+      <button id="open-options" type="button">Open settings</button>`);
+    await mountPopup(api, popupDom.window.document);
 
-    const body = dom.window.document.body.textContent ?? "";
-    expect(body).toContain(
+    const popupBody = popupDom.window.document.body.textContent ?? "";
+    expect(popupBody).toContain("prism.kitten-ad-replace");
+    expect(popupBody).toContain("visual.ad-slot.replace");
+    expect(popupBody).toContain("Disable on this site");
+    expect(popupBody).toContain("CSS + JSON");
+    expect(popupBody).not.toContain(describePastePolicyDefault());
+    expect(popupBody).not.toMatch(/Allow User Scripts/u);
+
+    const optionsDom = new JSDOM(`<!doctype html>
+      <div id="pin-hint"></div>
+      <main id="mods"></main>
+      <section id="other-mods"></section>
+      <section id="global-policies"></section>
+      <ol id="activity"></ol>
+      <input id="import-mod" type="file">`);
+    await mountOptions(api, optionsDom.window.document);
+
+    const optionsBody = optionsDom.window.document.body.textContent ?? "";
+    expect(optionsBody).toContain(
       describeOptionalCapability("reddit.comments.search"),
     );
-    expect(body).toContain(describeModHostAccess(kitten.manifest));
-    expect(body).toContain(
-      "prism.kitten-ad-replace visual.ad-slot.replace allowed",
-    );
-    expect(body).toContain("Disable on this site");
-    expect(body).toContain(describePastePolicy());
-    expect(body).toContain(describePastePolicyDefault());
-    expect(body).toContain(describePopupSuppressPolicyDefault());
-    expect(body).toContain(describeTitleFreezePolicyDefault());
-    expect(body).toContain(describeScrollLockPolicyDefault());
-    expect(body).toContain(describeOverlaySuppressPolicyDefault());
-    expect(body).toContain(describeConsentRejectPolicyDefault());
-    expect(body).toContain(describeAutoplayPolicyDefault());
-    expect(body).toContain("Allow paste");
-    expect(body).toContain("Turn off paste-allow on this site");
-    expect(body).toContain("Suppress unsolicited popups");
-    expect(body).toContain("Keep page title stable");
-    expect(body).toContain("Release scroll lock");
-    expect(body).toContain("Hide labelled modals and chatbots");
-    expect(body).toContain("Reject labelled consent panels");
-    expect(body).toContain("Constrain autoplay");
-    expect(body).toContain("Turn off popup suppression on this site");
-    expect(body).toContain("Turn off title freeze on this site");
-    expect(body).toContain("Turn off scroll-lock release on this site");
-    expect(body).toContain("Turn off overlay suppression on this site");
-    expect(body).toContain("Turn off consent rejection on this site");
-    expect(body).toContain("Turn off autoplay constraint on this site");
-    expect(body).toContain("CSS + JSON");
-    expect(body).toContain("Userscript");
-    expect(body).toMatch(/Allow User Scripts/u);
+    expect(optionsBody).toContain(describeModHostAccess(kitten.manifest));
+    expect(optionsBody).toContain(describePastePolicy());
+    expect(optionsBody).toContain(describePastePolicyDefault());
+    expect(optionsBody).toContain(describePopupSuppressPolicyDefault());
+    expect(optionsBody).toContain(describeTitleFreezePolicyDefault());
+    expect(optionsBody).toContain(describeScrollLockPolicyDefault());
+    expect(optionsBody).toContain(describeOverlaySuppressPolicyDefault());
+    expect(optionsBody).toContain(describeConsentRejectPolicyDefault());
+    expect(optionsBody).toContain(describeAutoplayPolicyDefault());
+    expect(optionsBody).toContain("Allow paste");
+    expect(optionsBody).toContain("Turn off paste-allow on this site");
+    expect(optionsBody).toContain("Suppress unsolicited popups");
+    expect(optionsBody).toContain("Keep page title stable");
+    expect(optionsBody).toContain("Release scroll lock");
+    expect(optionsBody).toContain("Hide labelled modals and chatbots");
+    expect(optionsBody).toContain("Reject labelled consent panels");
+    expect(optionsBody).toContain("Constrain autoplay");
+    expect(optionsBody).toContain("Turn off popup suppression on this site");
+    expect(optionsBody).toContain("Turn off title freeze on this site");
+    expect(optionsBody).toContain("Turn off scroll-lock release on this site");
+    expect(optionsBody).toContain("Turn off overlay suppression on this site");
+    expect(optionsBody).toContain("Turn off consent rejection on this site");
+    expect(optionsBody).toContain("Turn off autoplay constraint on this site");
+    expect(optionsBody).toContain("Userscript");
+    expect(optionsBody).toMatch(/Allow User Scripts/u);
   });
 });
 

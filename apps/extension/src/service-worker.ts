@@ -138,6 +138,7 @@ export interface RuntimeMessageSender {
 export interface RuntimeMessageAuthentication {
   readonly extensionId: string;
   readonly popupUrl: string;
+  readonly optionsUrl?: string;
 }
 
 export type StoredState = {
@@ -382,6 +383,7 @@ if (typeof chrome !== "undefined") {
       {
         extensionId: chrome.runtime.id,
         popupUrl: chrome.runtime.getURL("popup.html"),
+        optionsUrl: chrome.runtime.getURL("options.html"),
       },
     ).then(sendResponse, () => sendResponse({ ok: false }));
     return true;
@@ -1048,7 +1050,7 @@ const EXTENSION_MESSAGE_TYPES = new Set([
   "set-session-exception",
   "undo-last",
 ]);
-const POPUP_ONLY_MESSAGE_TYPES = new Set([
+const EXTENSION_UI_MESSAGE_TYPES = new Set([
   "dismiss-pin-hint",
   "import-mod",
   "set-behaviour-policy",
@@ -1072,10 +1074,13 @@ export function isAuthorisedRuntimeMessage(
   ) {
     return false;
   }
-  if (!POPUP_ONLY_MESSAGE_TYPES.has(message.type)) {
+  if (!EXTENSION_UI_MESSAGE_TYPES.has(message.type)) {
     return true;
   }
-  return sender.url === authentication.popupUrl;
+  const optionsUrl =
+    authentication.optionsUrl ??
+    authentication.popupUrl.replace(/popup\.html$/u, "options.html");
+  return sender.url === authentication.popupUrl || sender.url === optionsUrl;
 }
 
 function syncSkips(

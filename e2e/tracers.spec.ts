@@ -82,7 +82,7 @@ test("YouTube live-shaped watch fixture mounts Reddit fallback", async () => {
   }
 });
 
-test("popup can import a packed .prism zip", async () => {
+test("options page can import a packed .prism zip", async () => {
   const packed = packMod(
     join(repoRoot, "packages", "schema", "test", "fixtures", "golden"),
   );
@@ -91,8 +91,11 @@ test("popup can import a packed .prism zip", async () => {
   const session = await launchChromeExtensionContext();
   try {
     const page = await session.context.newPage();
-    await page.goto(session.extensionUrl("popup.html"));
+    await page.goto(session.extensionUrl("options.html"));
     await page.locator("#import-mod").setInputFiles(archivePath);
+    await expect(page.locator("#import-feedback")).toContainText(
+      "Imported golden.mod",
+    );
     await expect(
       page.getByRole("heading", { name: "golden.mod (imported)" }),
     ).toBeVisible();
@@ -102,7 +105,7 @@ test("popup can import a packed .prism zip", async () => {
   }
 });
 
-test("popup shows why a package with disallowed code was refused", async () => {
+test("options page shows why a package with disallowed code was refused", async () => {
   const manifest = readFileSync(
     join(repoRoot, "packages", "schema", "test", "fixtures", "golden", "prism.yaml"),
     "utf8",
@@ -120,7 +123,7 @@ test("popup shows why a package with disallowed code was refused", async () => {
   const session = await launchChromeExtensionContext();
   try {
     const page = await session.context.newPage();
-    await page.goto(session.extensionUrl("popup.html"));
+    await page.goto(session.extensionUrl("options.html"));
     await page.locator("#import-mod").setInputFiles(archivePath);
     await expect(page.locator("#import-feedback")).toContainText(
       "document is not available to native mod code",

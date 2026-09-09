@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prism settings</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <header class="options-header">
+      <h1>Prism settings</h1>
+      <p id="options-origin" class="options-origin">Loading current site...</p>
+    </header>
+    <div id="pin-hint"></div>
+    <section class="site-mods">
+      <h2>Mods for this site</h2>
+      <main id="mods" aria-live="polite">Loading mods...</main>
+    </section>
+    <section id="other-mods" class="other-mods"></section>
+    <section class="policies" id="global-policies">
+      <h2>Global policies</h2>
+    </section>
+    <section class="activity">
+      <h2>Activity</h2>
+      <ol id="activity"></ol>
+    </section>
+    <label class="import">
+      <span>Import .prism package</span>
+      <input id="import-mod" type="file" accept=".prism,.zip,application/zip">
+    </label>
+    <p id="import-feedback" role="status" aria-live="polite"></p>
+    <script type="module" src="dist/options.js"></script>
+  </body>
+</html>

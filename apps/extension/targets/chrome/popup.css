@@ -150,3 +150,11 @@ p {
   gap: 6px;
   margin-top: 16px;
 }
+
+.popup-footer {
+  margin-top: 16px;
+}
+
+.popup-footer button {
+  width: 100%;
+}

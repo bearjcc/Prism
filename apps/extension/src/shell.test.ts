@@ -36,7 +36,11 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
       matches: string[];
       run_at: string;
     }>;
-    action: { default_popup: string };
+    action: {
+      default_popup: string;
+      default_icon: Record<string, string>;
+    };
+    options_ui: { page: string; open_in_tab: boolean };
     permissions: string[];
     host_permissions?: string[];
     optional_host_permissions?: string[];
@@ -57,6 +61,16 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
     run_at: "document_start",
   });
   expect(manifest.action.default_popup).toBe("popup.html");
+  expect(manifest.action.default_icon).toEqual({
+    16: "icons/icon16.png",
+    32: "icons/icon32.png",
+    48: "icons/icon48.png",
+    128: "icons/icon128.png",
+  });
+  expect(manifest.options_ui).toEqual({
+    page: "options.html",
+    open_in_tab: true,
+  });
   expect(manifest.permissions).toContain("declarativeNetRequest");
   expect(manifest.permissions).toContain("contextMenus");
   expect(manifest.permissions).toContain("webNavigation");
@@ -74,7 +88,7 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
   });
 });
 
-test("popup ships controls for mods, optional grants, and undo", () => {
+test("popup ships a slim current-tab view", () => {
   const popupPath = join(chromeRoot, "popup.html");
   expect(existsSync(popupPath)).toBe(true);
   if (!existsSync(popupPath)) {
@@ -84,13 +98,15 @@ test("popup ships controls for mods, optional grants, and undo", () => {
   const popup = readFileSync(popupPath, "utf8");
   expect(popup).toContain('id="mods"');
   expect(popup).toContain('id="page-activity"');
-  expect(popup).toContain('id="activity"');
   expect(popup).toContain('id="undo"');
-    expect(popup).toContain('id="page-origin"');
+  expect(popup).toContain('id="page-origin"');
   expect(popup).toContain('id="find-mods"');
-  expect(popup).toContain('id="pin-hint"');
+  expect(popup).toContain('id="open-options"');
   expect(popup).toContain("Mods for this site");
   expect(popup).toContain('src="dist/popup.js"');
+  expect(popup).not.toContain('id="activity"');
+  expect(popup).not.toContain('id="import-mod"');
+  expect(popup).not.toContain('id="pin-hint"');
 });
 
 test("bundled mod generation skips directories without prism.yaml", () => {

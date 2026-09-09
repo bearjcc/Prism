@@ -49,12 +49,12 @@ export async function assertKittenTracerOnFixture(
   ).toHaveCount(1);
 
   if (session.canNavigateExtensionPages) {
-    const popup = await session.context.newPage();
-    await popup.goto(session.extensionUrl("popup.html"));
-    await expect(popup.locator("#activity")).toContainText(
+    const options = await session.context.newPage();
+    await options.goto(session.extensionUrl("options.html"));
+    await expect(options.locator("#activity")).toContainText(
       "prism.kitten-ad-replace visual.ad-slot.replace allowed",
     );
-    await popup.close();
+    await options.close();
   }
 }
 

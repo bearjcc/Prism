@@ -26,7 +26,7 @@ import {
   updateRuntimePausedOrigins,
 } from "./origin-runtime-pause.js";
 import { describePinHint, partitionModsForPage } from "./popup-mods.js";
-import { mountPopup } from "./popup.js";
+import { mountOptions, mountPopup } from "./popup.js";
 import {
   isInjectablePageUrl,
   toolbarBadgeText,
@@ -217,18 +217,14 @@ describe("Phase Z popup chrome", () => {
         },
       ];
     });
-    const dom = new JSDOM(`<!doctype html>
+    const popupDom = new JSDOM(`<!doctype html>
       <p id="page-origin"></p>
-      <div id="pin-hint"></div>
       <div id="origin-pause"></div>
       <p id="find-mods"></p>
       <ol id="page-activity"></ol>
-      <section id="global-policies"></section>
       <main id="mods"></main>
-      <section id="other-mods"></section>
-      <ol id="activity"></ol>
       <button id="undo" type="button">Undo</button>
-      <input id="import-mod" type="file">`);
+      <button id="open-options" type="button">Open settings</button>`);
     await mountPopup(
       {
         runtime: { sendMessage },
@@ -240,25 +236,46 @@ describe("Phase Z popup chrome", () => {
           create: vi.fn(),
         },
       },
-      dom.window.document,
-    );
-    expect(dom.window.document.getElementById("mods")?.textContent).toContain(
-      "prism.youtube-home-videos",
-    );
-    expect(dom.window.document.getElementById("mods")?.textContent).not.toContain(
-      "prism.youtube-reddit-comments",
-    );
-    expect(dom.window.document.getElementById("other-mods")?.textContent).toContain(
-      "prism.youtube-reddit-comments",
-    );
-    expect(dom.window.document.getElementById("find-mods")?.textContent).toContain(
-      "Find mods for youtube.com",
-    );
-    expect(dom.window.document.getElementById("pin-hint")?.textContent).toContain(
-      "Pin Prism",
+      popupDom.window.document,
     );
     expect(
-      dom.window.document.getElementById("origin-pause")?.textContent,
+      popupDom.window.document.getElementById("mods")?.textContent,
+    ).toContain("prism.youtube-home-videos");
+    expect(
+      popupDom.window.document.getElementById("mods")?.textContent,
+    ).not.toContain("prism.youtube-reddit-comments");
+    expect(
+      popupDom.window.document.getElementById("find-mods")?.textContent,
+    ).toContain("Find mods for youtube.com");
+    expect(
+      popupDom.window.document.getElementById("origin-pause")?.textContent,
     ).toContain("Pause Prism on this site");
+
+    const optionsDom = new JSDOM(`<!doctype html>
+      <div id="pin-hint"></div>
+      <main id="mods"></main>
+      <section id="other-mods"></section>
+      <section id="global-policies"></section>
+      <ol id="activity"></ol>
+      <input id="import-mod" type="file">`);
+    await mountOptions(
+      {
+        runtime: { sendMessage },
+        permissions: { request: vi.fn(), remove: vi.fn() },
+        tabs: {
+          query: vi.fn().mockResolvedValue([
+            { id: 4, url: "https://www.youtube.com/" },
+          ]),
+          create: vi.fn(),
+        },
+      },
+      optionsDom.window.document,
+    );
+    expect(
+      optionsDom.window.document.getElementById("other-mods")?.textContent,
+    ).toContain("prism.youtube-reddit-comments");
+    expect(
+      optionsDom.window.document.getElementById("pin-hint")?.textContent,
+    ).toContain("Pin Prism");
   });
 });
