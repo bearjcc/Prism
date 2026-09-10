@@ -14,6 +14,11 @@ export const linkedinFeedFixture = readFileSync(
   "utf8",
 );
 
+export const facebookFeedFixture = readFileSync(
+  join(repoRoot, "mods", "facebook-home-friends", "fixtures", "feed.html"),
+  "utf8",
+);
+
 export const watchFixture = readFileSync(
   join(
     repoRoot,

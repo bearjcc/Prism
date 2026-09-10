@@ -12,6 +12,7 @@ const HOMEgrown = new Set([
   "youtube-home-videos",
   "youtube-reddit-comments",
   "linkedin-home-first-degree",
+  "facebook-home-friends",
 ]);
 
 mkdirSync(outputRoot, { recursive: true });

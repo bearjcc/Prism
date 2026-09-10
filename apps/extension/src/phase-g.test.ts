@@ -11,6 +11,7 @@ import { describe, expect, test, vi } from "vitest";
 import { extractAdSlots } from "./extractors/ad-slot.js";
 import { parseRedditComments } from "./extractors/reddit-comments.js";
 import { parseSponsorSegments } from "./extractors/sponsor-segments.js";
+import { extractFacebookHome } from "./extractors/facebook-home.js";
 import { extractLinkedinHome } from "./extractors/linkedin-home.js";
 import { extractYoutubeHome } from "./extractors/youtube-home.js";
 import { extractYoutubeWatch, extractYoutubeIdlePrompt, constrainYoutubeAutoplay } from "./extractors/youtube-watch.js";
@@ -39,6 +40,7 @@ const TRACER_MODS = [
   "youtube-home-videos",
   "youtube-reddit-comments",
   "linkedin-home-first-degree",
+  "facebook-home-friends",
 ] as const;
 const FORBIDDEN_MOD_PRIMITIVES = /\b(?:eval|fetch)\b|innerHTML/u;
 
@@ -116,6 +118,13 @@ describe("Phase G hardening", () => {
       ),
       { url: "https://www.linkedin.com/feed" },
     );
+    const facebookDom = new JSDOM(
+      readFileSync(
+        join(modsRoot, "facebook-home-friends", "fixtures", "feed.html"),
+        "utf8",
+      ),
+      { url: "https://www.facebook.com/" },
+    );
     const redditHtml = readFileSync(
       join(
         modsRoot,
@@ -128,6 +137,7 @@ describe("Phase G hardening", () => {
     const adSlots = extractAdSlots(adDom.window.document);
     const home = extractYoutubeHome(homeDom.window.document);
     const linkedinHome = extractLinkedinHome(linkedinDom.window.document);
+    const facebookHome = extractFacebookHome(facebookDom.window.document);
     const watch = extractYoutubeWatch(
       "https://www.youtube.com/watch?v=fixture-video-id",
     );
@@ -161,6 +171,7 @@ describe("Phase G hardening", () => {
     jsonLeavesHaveNoHtml(adSlots);
     jsonLeavesHaveNoHtml(home);
     jsonLeavesHaveNoHtml(linkedinHome);
+    jsonLeavesHaveNoHtml(facebookHome);
     jsonLeavesHaveNoHtml(watch);
     jsonLeavesHaveNoHtml(comments);
     jsonLeavesHaveNoHtml(idle);
@@ -402,6 +413,7 @@ describe("Phase G docs", () => {
     expect(readme).toContain("kitten-ad-replace");
     expect(readme).toContain("youtube-home-videos");
     expect(readme).toContain("linkedin-home-first-degree");
+    expect(readme).toContain("facebook-home-friends");
     expect(readme).toContain("youtube-reddit-comments");
     expect(readme).toMatch(/this site|this origin/iu);
     expect(readme).toMatch(/Allow User Scripts/u);

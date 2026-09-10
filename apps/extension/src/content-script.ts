@@ -27,6 +27,13 @@ import {
   type YoutubeHomeVideo,
 } from "./extractors/youtube-home.js";
 import {
+  classifyFacebookHomeItem,
+  extractFacebookHome,
+  findFacebookHomeFeed,
+  facebookHomeFeedChildren,
+  facebookHomeFeedHasUnlabelledPosts,
+} from "./extractors/facebook-home.js";
+import {
   classifyLinkedinHomeItem,
   extractLinkedinHome,
   findLinkedinHomeFeed,
@@ -140,6 +147,7 @@ export interface ActivateContentModsOptions {
   readonly adSlotWaitMs?: number;
   readonly youtubeHomeWaitMs?: number;
   readonly linkedinHomeWaitMs?: number;
+  readonly facebookHomeWaitMs?: number;
   readonly youtubeWatchWaitMs?: number;
   readonly redditFeedWaitMs?: number;
   readonly signal?: AbortSignal;
@@ -156,13 +164,16 @@ export interface ActivateContentModsOptions {
 export const DEFAULT_AD_SLOT_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_HOME_WAIT_MS = 2_000;
 export const DEFAULT_LINKEDIN_HOME_WAIT_MS = 2_000;
+export const DEFAULT_FACEBOOK_HOME_WAIT_MS = 2_000;
 export const DEFAULT_YOUTUBE_WATCH_WAIT_MS = 8_000;
 export const DEFAULT_REDDIT_FEED_WAIT_MS = 2_000;
 /** Live Home feeds are too volatile to restore from a full childNodes snapshot. */
 export const MAX_YOUTUBE_HOME_UNDO_CHILDREN = 24;
 export const MAX_LINKEDIN_HOME_UNDO_CHILDREN = 24;
+export const MAX_FACEBOOK_HOME_UNDO_CHILDREN = 24;
 const MAX_YOUTUBE_HOME_ALLOWLIST_PASSES = 200;
 const MAX_LINKEDIN_HOME_ALLOWLIST_PASSES = 200;
+const MAX_FACEBOOK_HOME_ALLOWLIST_PASSES = 200;
 const YOUTUBE_HOME_TILE_STYLE_ID = "prism-youtube-home-tiles";
 const YOUTUBE_HOME_TILE_CSS = `
 [data-prism-youtube-home-grid] {
@@ -296,6 +307,17 @@ export async function activateContentMods(
               waitForLinkedinHomeFeed(
                 options.contentDocument,
                 options.linkedinHomeWaitMs ?? DEFAULT_LINKEDIN_HOME_WAIT_MS,
+                options.signal,
+              ),
+            );
+          }
+          if (
+            manifest.capabilities.required.includes("facebook.home.allowlist")
+          ) {
+            waits.push(
+              waitForFacebookHomeFeed(
+                options.contentDocument,
+                options.facebookHomeWaitMs ?? DEFAULT_FACEBOOK_HOME_WAIT_MS,
                 options.signal,
               ),
             );
@@ -633,6 +655,9 @@ export function createContentHandlers(
       if (capability === "linkedin.home.allowlist") {
         return extractLinkedinHome(contentDocument);
       }
+      if (capability === "facebook.home.allowlist") {
+        return extractFacebookHome(contentDocument);
+      }
       if (capability === "reddit.comments.search") {
         const query = input?.query;
         if (
@@ -716,6 +741,47 @@ export function createContentHandlers(
     },
     allowlist(surface, itemType): void | (() => void) {
       try {
+        if (surface === "facebook.home" && itemType === "post") {
+          const feed = findFacebookHomeFeed(contentDocument);
+          if (feed === undefined || !feed.isConnected) {
+            recordFacebookHomeDegradation(
+              "facebook.home.allowlist degraded: feed not found",
+            );
+            return () => {};
+          }
+
+          let previousChildren: readonly ChildNode[] | undefined;
+          try {
+            const firstConversion =
+              feed.querySelector('[data-prism-owned="facebook-home-kept"]') ===
+              null;
+            if (firstConversion) {
+              const childCount = feed.childNodes.length;
+              if (childCount <= MAX_FACEBOOK_HOME_UNDO_CHILDREN) {
+                previousChildren = Array.from(feed.childNodes);
+              }
+            }
+          } catch {
+            previousChildren = undefined;
+          }
+
+          applyFacebookHomeAllowlist(feed);
+
+          if (previousChildren === undefined) {
+            return undefined;
+          }
+          const saved = previousChildren;
+          return () => {
+            try {
+              if (!feed.isConnected) {
+                return;
+              }
+              feed.replaceChildren(...saved);
+            } catch {
+              // Undo is best-effort on live hosts.
+            }
+          };
+        }
         if (surface === "linkedin.home" && itemType === "post") {
           const feed = findLinkedinHomeFeed(contentDocument);
           if (feed === undefined || !feed.isConnected) {
@@ -837,6 +903,14 @@ export function pageNeedsSurfaceRefresh(contentDocument: Document): boolean {
     return true;
   }
 
+  const facebookFeed = findFacebookHomeFeed(contentDocument);
+  if (
+    facebookFeed !== undefined &&
+    facebookHomeFeedHasUnlabelledPosts(facebookFeed)
+  ) {
+    return true;
+  }
+
   if (watchPageNeedsCommentsMount(contentDocument, contentDocument.location.href)) {
     return true;
   }
@@ -938,6 +1012,19 @@ export function waitForLinkedinHomeFeed(
 ): Promise<void> {
   return waitForFeedRoot(
     () => findLinkedinHomeFeed(contentDocument),
+    contentDocument,
+    timeoutMs,
+    signal,
+  );
+}
+
+export function waitForFacebookHomeFeed(
+  contentDocument: Document,
+  timeoutMs: number = DEFAULT_FACEBOOK_HOME_WAIT_MS,
+  signal?: AbortSignal,
+): Promise<void> {
+  return waitForFeedRoot(
+    () => findFacebookHomeFeed(contentDocument),
     contentDocument,
     timeoutMs,
     signal,
@@ -1266,7 +1353,10 @@ function isYoutubeHomeFeedChildOwned(child: Element): boolean {
 
 function safeRemoveFeedChild(
   child: Element,
-  hiddenMarker: "youtube-home-hidden" | "linkedin-home-hidden" = "youtube-home-hidden",
+  hiddenMarker:
+    | "youtube-home-hidden"
+    | "linkedin-home-hidden"
+    | "facebook-home-hidden" = "youtube-home-hidden",
 ): void {
   try {
     child.remove();
@@ -1339,6 +1429,66 @@ function nextUnownedLinkedinHomeFeedChild(feed: Element): Element | undefined {
       continue;
     }
     if (!isLinkedinHomeFeedChildOwned(child)) {
+      return child;
+    }
+  }
+  return undefined;
+}
+
+let lastFacebookHomeDegradation: string | undefined;
+
+export function readFacebookHomeDegradation(): string | undefined {
+  return lastFacebookHomeDegradation;
+}
+
+export function resetFacebookHomeDegradationForTests(): void {
+  lastFacebookHomeDegradation = undefined;
+}
+
+function recordFacebookHomeDegradation(message: string): void {
+  lastFacebookHomeDegradation = message;
+}
+
+function isFacebookHomeFeedChildOwned(child: Element): boolean {
+  const owned = child.getAttribute("data-prism-owned");
+  return owned === "facebook-home-kept" || owned === "facebook-home-hidden";
+}
+
+function applyFacebookHomeAllowlist(feed: Element): void {
+  let passes = 0;
+  while (passes < MAX_FACEBOOK_HOME_ALLOWLIST_PASSES) {
+    passes += 1;
+    const child = nextUnownedFacebookHomeFeedChild(feed);
+    if (child === undefined) {
+      break;
+    }
+    if (!child.isConnected) {
+      continue;
+    }
+    try {
+      const item = classifyFacebookHomeItem(child);
+      if (!child.isConnected) {
+        continue;
+      }
+      if (item.allowlisted) {
+        child.setAttribute("data-prism-owned", "facebook-home-kept");
+        continue;
+      }
+      safeRemoveFeedChild(child, "facebook-home-hidden");
+    } catch {
+      if (child.isConnected) {
+        safeRemoveFeedChild(child, "facebook-home-hidden");
+      }
+    }
+  }
+}
+
+function nextUnownedFacebookHomeFeedChild(feed: Element): Element | undefined {
+  for (const child of facebookHomeFeedChildren(feed)) {
+    if (!child.isConnected) {
+      continue;
+    }
+    if (!isFacebookHomeFeedChildOwned(child)) {
       return child;
     }
   }

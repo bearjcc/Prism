@@ -13,6 +13,7 @@ describe("capability registry", () => {
       "network.egress",
       "youtube.home.allowlist",
       "linkedin.home.allowlist",
+      "facebook.home.allowlist",
       "youtube.watch.videoId",
       "reddit.comments.search",
       "youtube.watch.dismissIdle",
@@ -29,6 +30,18 @@ describe("capability registry", () => {
     expect(CAPABILITY_REGISTRY["youtube.home.allowlist"].resultSchema).toBeDefined();
     expect(
       CAPABILITY_REGISTRY["linkedin.home.allowlist"].resultSchema,
+    ).toMatchObject({
+      required: ["items"],
+      properties: {
+        items: {
+          items: {
+            required: ["id", "allowlisted", "reason"],
+          },
+        },
+      },
+    });
+    expect(
+      CAPABILITY_REGISTRY["facebook.home.allowlist"].resultSchema,
     ).toMatchObject({
       required: ["items"],
       properties: {

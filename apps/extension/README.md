@@ -75,6 +75,7 @@ If a native mod's `activate` throws three times in a row on one origin (`MOD_FAI
 
 - **YouTube DOM drift** is an adapter bug in the extension extractors (`youtube-home.ts`, `youtube-watch.ts`, ad-slot heuristics). It is not a reason to give a mod `querySelector`.
 - **LinkedIn Home DOM drift** is handled the same way via `linkedin-home.ts` and `linkedin.home.allowlist`. Allowlisted posts remain native DOM; non-allowlisted feed children are hidden or removed in the extension.
+- **Facebook Home DOM drift** is handled the same way via `facebook-home.ts` and `facebook.home.allowlist`. Friend posts remain native DOM; non-allowlisted feed children are hidden or removed in the extension.
 - **SPA navigations** (YouTube `history.pushState` / `yt-navigate-finish`) abort the previous activation and run again for the new URL. Home vs watch scopes still apply.
 - **YouTube autonav:** `youtube.watch.constrainAutoplay` clicks `.ytp-autonav-toggle-button` when `aria-checked="true"` and drops `autoplay` on `video.html5-main-video`. The mod receives `{ constrained, kind }` JSON, never the player element. The corpus transcode is `prism.corpus.youtube-autoplay-off`.
 - **YouTube end screens:** `youtube.watch.constrainEndScreens` hides `.ytp-endscreen-content`, `.ytp-ce-element`, and `.ytp-cards-teaser` (plus labelled `data-prism-endscreen` fixtures). The mod receives `{ constrained, kind }` JSON, never overlay HTML. The corpus transcode is `prism.corpus.youtube-endscreen-off`.
@@ -109,7 +110,7 @@ Package notes: `mods/kitten-ad-replace/README.md`.
 
 ## Traceability
 
-Four bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
+Five bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
 
 | Mod id                              | Directory                          | Spec section                                      |
 | ----------------------------------- | ---------------------------------- | ------------------------------------------------- |
@@ -117,6 +118,7 @@ Four bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-pa
 | `prism.youtube-home-videos`         | `mods/youtube-home-videos`         | Bundled mods / 2. YouTube Home videos only        |
 | `prism.youtube-reddit-comments`     | `mods/youtube-reddit-comments`     | Bundled mods / 3. Reddit comments on YouTube      |
 | `prism.linkedin-home-first-degree`  | `mods/linkedin-home-first-degree`  | Bundled mods / 4. LinkedIn Home first degree      |
+| `prism.facebook-home-friends`       | `mods/facebook-home-friends`       | Bundled mods / 5. Facebook Home friends only      |
 
 Architecture invariants in that spec still hold for these tracers:
 

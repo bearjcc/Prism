@@ -8,6 +8,7 @@ import { expect, test } from "@playwright/test";
 import { launchChromeExtensionContext } from "./extension.js";
 import { startFixtureServer } from "./fixture-server.js";
 import {
+  assertFacebookHomeTracer,
   assertKittenTracerOnFixture,
   assertLinkedinHomeTracer,
   assertYoutubeHomeTracer,
@@ -47,6 +48,16 @@ test("LinkedIn Home fixture keeps 1st-degree posts and strips the rest", async (
   try {
     const page = await session.context.newPage();
     await assertLinkedinHomeTracer(page);
+  } finally {
+    await session.close();
+  }
+});
+
+test("Facebook Home fixture keeps friend posts and strips the rest", async () => {
+  const session = await launchChromeExtensionContext();
+  try {
+    const page = await session.context.newPage();
+    await assertFacebookHomeTracer(page);
   } finally {
     await session.close();
   }
