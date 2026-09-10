@@ -24,5 +24,6 @@ Output is written to `apps/web/public/previews/*.webp` at 640x400 (16:10 cover c
 | `youtube-home-videos.webp` | YouTube Home, videos only | youtube.com home with shorts/ads hidden |
 | `youtube-reddit-comments.webp` | Reddit comments on YouTube | youtube.com/watch with Reddit thread panel |
 | `linkedin-home-first-degree.webp` | LinkedIn Home, first degree | Signed-in `/feed` capture when available |
+| `facebook-home-friends.webp` | Facebook Home, friends only | Signed-in Home capture when available |
 
 Paths are referenced from `apps/web/src/lib/catalogue.ts` as `previewSrc`.

@@ -111,6 +111,17 @@ Allowlist-style: signed-in Home (`/feed`) keeps first-degree and followed compan
 
 LinkedIn's DOM will drift. Soft extractor failures must not consume the per-origin mod failure budget.
 
+### 5. Facebook Home friends only (`mods/facebook-home-friends`)
+
+Allowlist-style: signed-in Home (`/` and equivalent routes) keeps original posts from Friends. Sponsored, suggested, Pages, Groups, Reels trays, PYMK, and non-Friend reshares are stripped in place.
+
+- Required: `facebook.home.allowlist`.
+- Extractor in the extension returns `{ items: FacebookHomeItem[] }` with `allowlisted` and `reason`. Allowlisted posts stay as native DOM nodes.
+- Fixtures: captured Home structure (sanitised); golden: only friend posts remain.
+- Implementation plan: `docs/superpowers/plans/2026-09-11-facebook-home-friends.md`.
+
+Facebook's DOM will drift. Soft extractor failures must not consume the per-origin mod failure budget.
+
 ### 3. Reddit comments on YouTube (`mods/youtube-reddit-comments`)
 
 Cross-site interaction without a public API key.

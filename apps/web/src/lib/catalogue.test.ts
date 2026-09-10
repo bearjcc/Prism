@@ -33,6 +33,9 @@ describe("filterCatalogue", () => {
 
     const linkedin = filterCatalogue(catalogue(), "", "popular", "linkedin.com");
     expect(linkedin.map((m) => m.id)).toEqual(["linkedin-home-first-degree"]);
+
+    const facebook = filterCatalogue(catalogue(), "", "popular", "facebook.com");
+    expect(facebook.map((m) => m.id)).toEqual(["facebook-home-friends"]);
   });
 
   it("matches name search", () => {
@@ -44,6 +47,7 @@ describe("filterCatalogue", () => {
     const list = filterCatalogue(catalogue(), "", "popular", null);
     expect(list.every((mod) => mod.installs === 0)).toBe(true);
     expect(list.map((m) => m.id)).toEqual([
+      "facebook-home-friends",
       "linkedin-home-first-degree",
       "youtube-reddit-comments",
       "youtube-home-videos",

@@ -40,7 +40,12 @@ export type CatalogueListing = {
 
 export type CatalogueMod = CatalogueListing & ListingStats;
 
-export const SITE_CHIPS = ["youtube.com", "linkedin.com", "any site"] as const;
+export const SITE_CHIPS = [
+  "youtube.com",
+  "linkedin.com",
+  "facebook.com",
+  "any site",
+] as const;
 
 /** First-party tracer mods shipped bundled in the Prism extension. */
 export const LISTINGS: CatalogueListing[] = [
@@ -176,6 +181,38 @@ export const LISTINGS: CatalogueListing[] = [
       {
         version: "1.0.0",
         released: "2026-09-08",
+        notes: "First public package.",
+      },
+    ],
+  },
+  {
+    id: "facebook-home-friends",
+    packageId: "prism.facebook-home-friends",
+    name: "Facebook Home, friends only",
+    author: "Prism",
+    site: "facebook.com",
+    siteHost: "facebook.com",
+    version: "1.0.0",
+    updated: "2026-09-11",
+    summary: "Home feed shows Friends' posts only.",
+    description:
+      "An allowlist filter over the signed-in Facebook Home feed. Sponsored posts, suggested content, Pages, Groups, Reels trays, and non-Friend reshares are stripped in place.",
+    runtime: "native",
+    scopes: ["https://www.facebook.com/*"],
+    bundledEntry: bundledEntryPath("prism.facebook-home-friends"),
+    previewSrc: "/previews/facebook-home-friends.webp",
+    previewAlt: "Facebook Home feed showing posts from Friends only",
+    capabilities: [
+      {
+        id: "facebook.home.allowlist",
+        summary: capabilitySummary("facebook.home.allowlist"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-09-11",
         notes: "First public package.",
       },
     ],

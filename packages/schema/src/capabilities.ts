@@ -5,6 +5,7 @@ export const CAPABILITY_IDS = [
   "network.egress",
   "youtube.home.allowlist",
   "linkedin.home.allowlist",
+  "facebook.home.allowlist",
   "youtube.watch.videoId",
   "reddit.comments.search",
   "youtube.watch.dismissIdle",
@@ -41,7 +42,7 @@ const videoItemSchema = {
   },
 } as const;
 
-const linkedinHomeItemSchema = {
+const homeAllowlistItemSchema = {
   type: "object",
   additionalProperties: false,
   required: ["id", "allowlisted", "reason"],
@@ -103,7 +104,21 @@ export const CAPABILITY_REGISTRY: Readonly<
       properties: {
         items: {
           type: "array",
-          items: linkedinHomeItemSchema,
+          items: homeAllowlistItemSchema,
+        },
+      },
+    },
+  },
+  "facebook.home.allowlist": {
+    id: "facebook.home.allowlist",
+    resultSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["items"],
+      properties: {
+        items: {
+          type: "array",
+          items: homeAllowlistItemSchema,
         },
       },
     },

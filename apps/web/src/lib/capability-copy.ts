@@ -10,6 +10,8 @@ export const CAPABILITY_SUMMARIES: Readonly<Record<string, string>> = {
     "Mount only video items from the YouTube Home extractor. Shorts, ads, and shelves stay out.",
   "linkedin.home.allowlist":
     "Filter the LinkedIn Home feed to first-degree connections and followed company or page posts.",
+  "facebook.home.allowlist":
+    "Filter the Facebook Home feed to original posts from Friends only.",
   "youtube.watch.videoId":
     "Read the watch video id from the page URL for cross-site extractors.",
   "reddit.comments.search":
