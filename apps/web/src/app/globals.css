@@ -387,11 +387,7 @@ button:disabled,
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .shot {
-    transition: box-shadow 180ms var(--ease-out), transform 180ms var(--ease-out);
-  }
-
-  .card:hover .shot {
-    transform: translateY(-2px);
+    transition: box-shadow 180ms var(--ease-out);
   }
 }
 
@@ -438,6 +434,19 @@ button:disabled,
   display: flex;
   flex-wrap: wrap;
   gap: 0.15rem 0.7rem;
+}
+
+.card-stats {
+  margin-top: 0.35rem;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--track-widest);
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.card-stat {
+  font-variant-numeric: tabular-nums;
 }
 
 .card-summary,

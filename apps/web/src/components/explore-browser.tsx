@@ -133,9 +133,9 @@ export function ExploreBrowser({ q, sort, site }: ExploreSearch) {
                 </p>
                 <p className="card-summary">{mod.summary}</p>
                 <p className="card-cap">{capabilityHint(mod.capabilities)}</p>
-                <p className="card-stats">
-                  <span>{formatInstalls(mod.installs)} installs</span>
-                  <span>{formatRating(mod)}</span>
+                <p className="card-stats" aria-label="Listing stats">
+                  <span className="card-stat">{formatInstalls(mod.installs)} installs</span>
+                  <span className="card-stat">{formatRating(mod)}</span>
                 </p>
               </div>
             </Link>

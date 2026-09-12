@@ -61,7 +61,6 @@ export function SiteNav({ current }: Props) {
           Explore
         </Link>
         <InstallControl className="ghost" labelInstall="Install" />
-        <Link href="/explore">Enable mods</Link>
         <Link href="/create" aria-current={current === "create" ? "page" : undefined}>
           Create
         </Link>

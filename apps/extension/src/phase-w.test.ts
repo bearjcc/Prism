@@ -60,7 +60,7 @@ describe("Phase W current-page activity panel", () => {
         {
           layer: "visual",
           source: "fixture.hide",
-          rule: "required visual.hide is in effect.",
+          rule: "visual.hide active (required).",
           attribution: "known",
         },
       ]),
@@ -102,7 +102,7 @@ describe("Phase W current-page activity panel", () => {
         {
           layer: "network",
           source: "fixture.kitten",
-          rule: "optional grant network.egress is in effect.",
+          rule: "network.egress active (granted).",
           attribution: "known",
         },
       ]),
@@ -283,7 +283,7 @@ describe("Phase W current-page activity panel", () => {
       {
         layer: "uncertain",
         source: "fixture.hide",
-        rule: "required reddit.comments.search is in effect.",
+        rule: "reddit.comments.search active (required).",
         attribution: "uncertain",
       },
     ]);
@@ -352,10 +352,10 @@ describe("Phase W current-page activity panel", () => {
       `This site: ${FIXTURE_ORIGIN}`,
     );
     expect(dom.window.document.getElementById("page-activity")?.textContent).toContain(
-      "visual: fixture.hide -- required visual.hide is in effect.",
+      "fixture.hide: visual.hide active (required).",
     );
     expect(dom.window.document.getElementById("page-activity")?.textContent).toContain(
-      "behavioural: Allow paste -- Active on this origin.",
+      "Allow paste: Active on this origin.",
     );
   });
 });

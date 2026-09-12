@@ -49,10 +49,9 @@ export default async function ModPage({ params }: Props) {
             <span>{mod.runtime} runtime</span>
           </p>
         </header>
-        <section className="mod-copy">
-          <p>{mod.summary}</p>
-          <p>{mod.description}</p>
-        </section>
+        <div className="shot-strip">
+          <ModShot {...modPreviewProps(mod)} />
+        </div>
         <ModInstallPanel mod={mod} />
         <section className="caps" aria-labelledby="caps-heading">
           <h2 id="caps-heading">Capabilities</h2>
@@ -76,9 +75,10 @@ export default async function ModPage({ params }: Props) {
             ))}
           </ul>
         </section>
-        <div className="shot-strip">
-          <ModShot {...modPreviewProps(mod)} />
-        </div>
+        <section className="mod-copy">
+          <p>{mod.summary}</p>
+          <p>{mod.description}</p>
+        </section>
         <section className="mod-versions">
           <h2>Versions</h2>
           <ul>

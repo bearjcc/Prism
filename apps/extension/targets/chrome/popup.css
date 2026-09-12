@@ -8,6 +8,12 @@
   --hover: rgb(20 20 24 / 0.05);
   --accent: #2f6feb;
   --radius: 6px;
+  --space-2xs: 6px;
+  --space-xs: 8px;
+  --space-sm: 10px;
+  --space-md: 12px;
+  --space-lg: 14px;
+  --space-xl: 16px;
   font:
     14px/1.45 system-ui,
     -apple-system,
@@ -33,22 +39,33 @@
 body {
   margin: 0;
   min-width: 320px;
-  padding: 14px 16px 16px;
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
   background: var(--bg);
   color: var(--text);
 }
 
 header,
-.mod-heading,
-label {
+.mod-heading {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: var(--space-xs);
   justify-content: space-between;
 }
 
+label {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: space-between;
+}
+
+label span {
+  flex: 1;
+  min-width: 0;
+}
+
 header {
-  padding-bottom: 10px;
+  padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--line);
 }
 
@@ -61,7 +78,7 @@ p {
 h1 {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-xs);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -80,6 +97,12 @@ h2 {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+#undo {
+  font-size: 12px;
+  padding: 0.25rem 0.5rem;
+  color: var(--muted);
 }
 
 button,
@@ -107,15 +130,15 @@ a:focus-visible {
 
 #page-origin {
   font-size: 12px;
-  margin-top: 10px;
+  margin-top: var(--space-sm);
   color: var(--muted);
 }
 
 #pin-hint,
 #origin-pause {
   display: grid;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
 }
 
 #find-mods {
@@ -133,34 +156,34 @@ a:focus-visible {
 .page-activity,
 .policies,
 .activity {
-  margin-top: 14px;
-  padding-top: 12px;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
   border-top: 1px solid var(--line);
 }
 
 .site-mods,
 .other-mods {
   display: grid;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .policies {
   display: grid;
-  gap: 8px;
+  gap: var(--space-xs);
 }
 
 #mods {
   display: grid;
-  gap: 10px;
-  margin-top: 8px;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
 }
 
 #page-activity,
 #activity {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2xs);
   font-size: 12px;
-  margin: 8px 0 0;
+  margin: var(--space-xs) 0 0;
   max-height: 16em;
   overflow: auto;
   padding-left: 1.2em;
@@ -169,6 +192,12 @@ a:focus-visible {
 
 #activity {
   max-height: 12em;
+}
+
+#page-activity .page-activity-empty {
+  list-style: none;
+  margin-left: -1.2em;
+  padding: 0;
 }
 
 .mod-kind {
@@ -216,14 +245,21 @@ a:focus-visible {
 .mod {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: var(--space-sm) var(--space-md);
   background: var(--card);
+}
+
+.mod-brief-cap {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: var(--space-xs) 0 0;
+  color: var(--muted);
 }
 
 .capabilities {
   display: grid;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
   font-size: 12px;
   color: var(--muted);
 }
@@ -243,15 +279,15 @@ a:focus-visible {
 .mod-paused {
   font-size: 12px;
   font-weight: 600;
-  margin: 8px 0 0;
+  margin: var(--space-xs) 0 0;
   color: var(--muted);
 }
 
 .import {
   display: grid;
-  gap: 6px;
-  margin-top: 14px;
-  padding-top: 12px;
+  gap: var(--space-2xs);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
   border-top: 1px solid var(--line);
   font-size: 12px;
   color: var(--muted);
@@ -260,6 +296,20 @@ a:focus-visible {
 #import-feedback {
   font-size: 12px;
   color: var(--muted);
+}
+
+#import-feedback[data-state="ok"] {
+  color: var(--text);
+}
+
+#import-feedback[data-state="err"] {
+  color: #9b2c2c;
+}
+
+@media (prefers-color-scheme: dark) {
+  #import-feedback[data-state="err"] {
+    color: #f0a0a0;
+  }
 }
 
 a {
@@ -272,7 +322,7 @@ a:hover {
 }
 
 .popup-footer {
-  margin-top: 16px;
+  margin-top: var(--space-xl);
 }
 
 .popup-footer button {
