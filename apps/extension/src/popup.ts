@@ -164,8 +164,8 @@ export function describeBriefCapabilities(manifest: PrismManifest): string {
   const optional = manifest.capabilities.optional?.length ?? 0;
   const optionalNote =
     optional > 0
-      ? ` · ${optional} optional in settings`
-      : " · full disclosure in settings";
+      ? ` - ${optional} optional in settings`
+      : " - full disclosure in settings";
   return `Required: ${listed}${optionalNote}`;
 }
 
