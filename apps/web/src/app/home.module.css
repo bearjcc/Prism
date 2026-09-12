@@ -25,9 +25,9 @@
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(
-    42% 38% at 0% 0%,
-    oklch(0.86 0.02 248 / 0.18),
-    transparent 62%
+    36% 32% at 0% 0%,
+    oklch(0.86 0.02 248 / 0.08),
+    transparent 58%
   );
 }
 
@@ -185,8 +185,17 @@
 }
 
 .narrative {
-  padding: var(--space-xl) 0 var(--space-lg);
+  padding: var(--space-lg) 0 var(--space-md);
   border-top: var(--hairline) solid oklch(0.32 0.01 268);
+}
+
+.narrative:first-of-type {
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-lg);
+}
+
+.narrative:last-of-type {
+  padding-bottom: var(--space-xl);
 }
 
 .narrative h2 {
@@ -287,7 +296,7 @@
 
 @media (min-width: 64rem) {
   .stage {
-    min-height: 85dvh;
+    min-height: 78dvh;
   }
 
   .hero {

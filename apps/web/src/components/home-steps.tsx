@@ -9,8 +9,8 @@ export function HomeSteps() {
       <Link className={`${styles.step} ${styles.stepSecondary}`} href="/explore">
         Enable a mod
       </Link>
-      <Link className={`${styles.step} ${styles.stepSecondary}`} href="/explore">
-        Explore
+      <Link className={`${styles.step} ${styles.stepSecondary}`} href="/create">
+        Create
       </Link>
     </nav>
   );

@@ -106,7 +106,7 @@ export function pageActivityRows(
 }
 
 export function formatPageActivityRow(row: PageActivityRow): string {
-  const body = `${row.layer}: ${row.source} -- ${row.rule}`;
+  const body = `${row.source}: ${row.rule}`;
   if (row.attribution === PAGE_ACTIVITY_UNCERTAIN) {
     return `${body} ${ATTRIBUTION_UNCERTAIN_NOTE}`;
   }
@@ -232,10 +232,11 @@ function rowForCapability(
   kind: "required" | "optional grant",
 ): PageActivityRow {
   const layer = layerForCapability(capability);
+  const grantLabel = kind === "required" ? "required" : "granted";
   return {
     layer,
     source: modId,
-    rule: `${kind} ${capability} is in effect.`,
+    rule: `${capability} active (${grantLabel}).`,
     attribution:
       layer === PAGE_ACTIVITY_UNCERTAIN ? PAGE_ACTIVITY_UNCERTAIN : "known",
   };

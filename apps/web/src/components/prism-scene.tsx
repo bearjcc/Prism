@@ -157,8 +157,8 @@ export function PrismScene() {
           </linearGradient>
 
           <radialGradient id={`${uid}-lamp`} cx="50%" cy="50%" r="50%">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.28" />
-            <stop offset="0.18" stopColor="#fff" stopOpacity="0.08" />
+            <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
+            <stop offset="0.18" stopColor="#fff" stopOpacity="0.04" />
             <stop offset="1" stopColor="#fff" stopOpacity="0" />
           </radialGradient>
 
@@ -193,8 +193,8 @@ export function PrismScene() {
           </linearGradient>
 
           <radialGradient id={`${uid}-flare`}>
-            <stop offset="0" stopColor="#fff" stopOpacity="0.65" />
-            <stop offset="0.35" stopColor="#fff" stopOpacity="0.16" />
+            <stop offset="0" stopColor="#fff" stopOpacity="0.38" />
+            <stop offset="0.35" stopColor="#fff" stopOpacity="0.1" />
             <stop offset="1" stopColor="#fff" stopOpacity="0" />
           </radialGradient>
 
@@ -216,10 +216,10 @@ export function PrismScene() {
           </linearGradient>
 
           <filter id={`${uid}-soft`} filterUnits="userSpaceOnUse" x="-240" y="-240" width={box.width + 480} height={box.height + 400}>
-            <feGaussianBlur stdDeviation="18" />
+            <feGaussianBlur stdDeviation="10" />
           </filter>
           <filter id={`${uid}-bloom`} filterUnits="userSpaceOnUse" x="-240" y="-240" width={box.width + 480} height={box.height + 400}>
-            <feGaussianBlur stdDeviation="42" />
+            <feGaussianBlur stdDeviation="22" />
           </filter>
           <clipPath id={`${uid}-glass`}>
             <polygon points={prism} />
@@ -235,22 +235,21 @@ export function PrismScene() {
         <circle
           cx={origin.x}
           cy={origin.y}
-          r={Math.max(box.width, box.height) * 0.42}
+          r={Math.max(box.width, box.height) * 0.38}
           fill={`url(#${uid}-lamp)`}
-          style={{ mixBlendMode: "screen" }}
         />
 
-        <g data-part="beam" style={{ mixBlendMode: "screen" }} clipPath={`url(#${uid}-air)`}>
+        <g data-part="beam" clipPath={`url(#${uid}-air)`}>
           <line
             x1={origin.x}
             y1={origin.y}
             x2={airEnd.x}
             y2={airEnd.y}
             stroke={`url(#${uid}-in)`}
-            strokeWidth="70"
+            strokeWidth="56"
             strokeLinecap="round"
             filter={`url(#${uid}-bloom)`}
-            opacity="0.18"
+            opacity="0.1"
           />
           <line
             x1={origin.x}
@@ -258,10 +257,10 @@ export function PrismScene() {
             x2={airEnd.x}
             y2={airEnd.y}
             stroke={`url(#${uid}-in)`}
-            strokeWidth="16"
+            strokeWidth="12"
             strokeLinecap="round"
             filter={`url(#${uid}-soft)`}
-            opacity="0.32"
+            opacity="0.22"
           />
           <line
             x1={origin.x}
@@ -289,21 +288,21 @@ export function PrismScene() {
             points={`${left.x},${left.y} ${right.x},${right.y} ${ridge.x},${ridge.y}`}
             fill={`url(#${uid}-facet-b)`}
           />
-          <g clipPath={`url(#${uid}-glass)`} style={{ mixBlendMode: "screen" }}>
+          <g clipPath={`url(#${uid}-glass)`}>
             <polygon
               points={pointsAttr(beamQuad(entry, exit, 2.4, 3.2))}
               fill="#fff"
-              opacity="0.55"
+              opacity="0.38"
             />
             <polygon
               points={pointsAttr(beamQuad(entry, { x: exit.x - 6, y: exit.y }, 1.6, 4))}
               fill="var(--spectrum-red)"
-              opacity="0.55"
+              opacity="0.42"
             />
             <polygon
               points={pointsAttr(beamQuad(entry, { x: exit.x + 6, y: exit.y }, 1.6, 4))}
               fill="var(--spectrum-magenta)"
-              opacity="0.5"
+              opacity="0.38"
             />
           </g>
           <polygon
@@ -326,8 +325,8 @@ export function PrismScene() {
           <polygon points={fan} fill={`url(#${uid}-fan)`} />
         </g>
 
-        <circle cx={entry.x} cy={entry.y} r="22" fill={`url(#${uid}-flare)`} opacity="0.38" />
-        <circle cx={exit.x} cy={exit.y} r="36" fill={`url(#${uid}-flare)`} opacity="0.55" />
+        <circle cx={entry.x} cy={entry.y} r="18" fill={`url(#${uid}-flare)`} opacity="0.24" />
+        <circle cx={exit.x} cy={exit.y} r="28" fill={`url(#${uid}-flare)`} opacity="0.32" />
         <circle cx={exit.x} cy={exit.y} r="3.2" fill="#fff" />
       </svg>
     </div>

@@ -354,14 +354,14 @@ describe("Phase Y allow once (session exception)", () => {
       },
       dom.window.document,
     );
-    expect(dom.window.document.body.textContent).toContain("Allow once this session");
+    expect(dom.window.document.body.textContent).toContain("Skip this session");
     expect(describeAllowOnce()).toContain("service worker");
 
     const labels = [
       ...dom.window.document.querySelectorAll("#mods label"),
     ];
     const allowOnce = labels.find((label) =>
-      label.textContent?.includes("Allow once this session"),
+      label.textContent?.includes("Skip this session"),
     );
     const input = allowOnce?.querySelector("input");
     expect(input).toBeTruthy();

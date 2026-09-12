@@ -152,7 +152,21 @@ export function describeModPause(): string {
 }
 
 export function describeAllowOnce(): string {
-  return "Allow once skips this mod or policy on this origin until the service worker restarts. Disable on this site lasts across restarts.";
+  return "Skip this session turns off this mod or policy on this origin until the service worker restarts. Disable on this site lasts across restarts.";
+}
+
+export function describeBriefCapabilities(manifest: PrismManifest): string {
+  const required = manifest.capabilities.required;
+  if (required.length === 0) {
+    return "No required capabilities.";
+  }
+  const listed = required.join(", ");
+  const optional = manifest.capabilities.optional?.length ?? 0;
+  const optionalNote =
+    optional > 0
+      ? ` - ${optional} optional in settings`
+      : " - full disclosure in settings";
+  return `Required: ${listed}${optionalNote}`;
 }
 
 export function describeUserscriptRequirement(): string {
@@ -288,6 +302,7 @@ export async function mountOptions(
       importInput.value = "";
       if (result.ok) {
         if (importFeedback !== null) {
+          importFeedback.dataset.state = "ok";
           importFeedback.textContent = `Imported ${result.id ?? "package"}. Reload the page to activate it.`;
         }
         return refreshOptions(
@@ -302,10 +317,11 @@ export async function mountOptions(
         );
       }
       if (importFeedback !== null) {
+        importFeedback.dataset.state = "err";
         importFeedback.textContent =
           result.error === undefined
-            ? "Package refused by policy inspection."
-            : `Package refused by policy inspection: ${result.error}`;
+            ? "Package refused: policy inspection failed."
+            : `Package refused: ${result.error}`;
       }
       return undefined;
     });
@@ -573,7 +589,7 @@ function appendPolicyControls(
     policiesRoot.append(
       checkbox(
         popupDocument,
-        "Allow once this session",
+        "Skip this session",
         options.state.sessionDeniedOnOrigin === true,
         async (excepted) => {
           const response = await api.runtime.sendMessage<{ ok?: boolean }>({
@@ -788,6 +804,13 @@ function renderMod(
   heading.append(name, badge, enabled);
   section.append(heading);
 
+  if (detail === "brief") {
+    const brief = popupDocument.createElement("p");
+    brief.className = "mod-brief-cap";
+    brief.textContent = describeBriefCapabilities(mod.manifest);
+    section.append(brief);
+  }
+
   if (mod.pausedOnOrigin === true && pageOrigin !== undefined) {
     const paused = popupDocument.createElement("p");
     paused.className = "mod-paused";
@@ -831,7 +854,7 @@ function renderMod(
       ),
       checkbox(
         popupDocument,
-        "Allow once this session",
+        "Skip this session",
         mod.sessionExceptedOnOrigin === true,
         async (excepted) => {
           await api.runtime.sendMessage({
@@ -923,6 +946,13 @@ async function renderPageActivity(
     pageOrigin,
   );
   pageActivityRoot.replaceChildren();
+  if (rows.length === 0) {
+    const empty = popupDocument.createElement("li");
+    empty.className = "page-activity-empty";
+    empty.textContent = "No mods active on this page.";
+    pageActivityRoot.append(empty);
+    return;
+  }
   for (const row of rows) {
     const item = popupDocument.createElement("li");
     item.textContent = formatPageActivityRow(row);

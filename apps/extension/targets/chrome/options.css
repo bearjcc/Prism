@@ -1,16 +1,16 @@
 body {
   margin: 0 auto;
   max-width: 42rem;
-  padding: 24px;
+  padding: var(--space-xl, 16px) var(--space-xl, 16px) 24px;
 }
 
 .options-header {
   display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--space-xs, 8px);
+  margin-bottom: var(--space-xl, 16px);
 }
 
 .options-origin {
   font-size: 13px;
-  opacity: 0.85;
+  color: var(--muted);
 }
