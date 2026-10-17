@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Date of birth age gate fixture</title>
+  </head>
+  <body style="overflow: hidden">
+    <div
+      id="gate"
+      data-prism-age-gate
+      role="dialog"
+      aria-modal="true"
+      style="position: fixed; inset: 0; background: #333; color: #fff"
+    >
+      <p>Age verification required.</p>
+      <label>
+        Date of birth
+        <input type="date" name="birthday" />
+      </label>
+      <button id="submit" type="button">Continue</button>
+    </div>
+    <main id="content">Fixture article body.</main>
+  </body>
+</html>

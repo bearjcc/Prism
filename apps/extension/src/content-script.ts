@@ -94,6 +94,10 @@ import { installScrollLockGuard } from "./scroll-lock.js";
 import { installOverlaySuppressGuard } from "./overlay-suppress.js";
 import { installConsentRejectGuard } from "./consent-reject.js";
 import { installAutoplayGuard } from "./autoplay-policy.js";
+import {
+  installAgeGateAutoConfirm,
+  preapplyAgeGateStorage,
+} from "./age-gate-auto-confirm.js";
 import { runNativeModInSandbox } from "./sandbox-runtime.js";
 import {
   bindWordReplacerActivityEmit,
@@ -275,6 +279,24 @@ export async function activateContentMods(
   const grantsByMod = Object.fromEntries(
     mods.map((mod) => [mod.manifest.id, mod.grants]),
   );
+  if (options.contentDocument !== undefined) {
+    for (const mod of mods) {
+      if (
+        !mod.manifest.capabilities.required.includes("site.ageGate.autoConfirm")
+      ) {
+        continue;
+      }
+      const grants = grantsByMod[mod.manifest.id] ?? [];
+      if (!grants.includes("site.ageGate.autoConfirm")) {
+        continue;
+      }
+      preapplyAgeGateStorage(
+        options.contentDocument,
+        options.url,
+        mod.files,
+      );
+    }
+  }
   const nativeMods: NativeMod[] = mods.map((mod) => {
     const { entry, manifest } = mod;
     if (entry === null || manifest.runtime === "userscript") {
@@ -625,6 +647,7 @@ export function createContentHandlers(
   registerImmichUi: () => Promise<void> = async () => {},
   requestWordReplacerSettings: () => Promise<unknown> = async () =>
     readCachedWordReplacerRules(),
+  emit?: (event: ActivityEvent) => void,
 ): PrismApiHandlers {
   return {
     async extract(capability, input, manifest): Promise<unknown> {
@@ -707,6 +730,21 @@ export function createContentHandlers(
         return rules;
       }
       throw new Error(`No extractor registered for ${capability}`);
+    },
+    autoConfirmAgeGate(manifest, modFiles) {
+      return installAgeGateAutoConfirm({
+        contentDocument,
+        pageUrl: contentDocument.location.href,
+        manifest,
+        modFiles,
+        ...(emit === undefined
+          ? {}
+          : {
+              emit: (event) => {
+                emit(event);
+              },
+            }),
+      });
     },
     replaceSlot(
       slot: AdSlotHandle,
@@ -1984,6 +2022,7 @@ export function createChromeContentHandlers(
   runtime: ContentRuntimeClient,
   importedAssets: Map<string, string> = new Map(),
   immichPageUi?: Readonly<{ refresh(): Promise<void> }>,
+  emit?: (event: ActivityEvent) => void,
 ): PrismApiHandlers {
   return createContentHandlers(
     contentDocument,
@@ -2001,6 +2040,7 @@ export function createChromeContentHandlers(
     },
     () =>
       runtime.sendMessage<unknown>({ type: "get-word-replacer-settings" }),
+    emit,
   );
 }
 
@@ -2069,6 +2109,8 @@ if (typeof chrome !== "undefined") {
       chrome.runtime,
       importedAssets,
       immichPageUi,
+      (event) =>
+        chrome.runtime.sendMessage({ type: "activity-event", event }),
     ),
     undo,
     contentDocument: document,

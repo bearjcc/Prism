@@ -84,7 +84,7 @@ export function isOverlayScrollTrap(element: HTMLElement): boolean {
   return overflowLocked(style);
 }
 
-function unlockRoot(element: HTMLElement | null): void {
+export function unlockRoot(element: HTMLElement | null): void {
   if (element === null) {
     return;
   }

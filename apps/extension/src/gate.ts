@@ -9,6 +9,13 @@ export type ActivityEvent =
       readonly outcome: "allowed" | "denied";
     }
   | {
+      readonly layer: "mod-action";
+      readonly modId: string;
+      readonly capability: CapabilityId;
+      readonly action: string;
+      readonly outcome: "applied" | "skipped" | "refused";
+    }
+  | {
       readonly layer: "userscript-runtime";
       readonly modId: string;
       readonly outcome: "allowed" | "denied";
@@ -62,6 +69,17 @@ function isImmichModAction(value: Record<string, unknown>): boolean {
   );
 }
 
+function isSiteAutoConfirmModAction(value: Record<string, unknown>): boolean {
+  return (
+    typeof value.capability === "string" &&
+    isCapabilityId(value.capability) &&
+    typeof value.action === "string" &&
+    (value.outcome === "applied" ||
+      value.outcome === "skipped" ||
+      value.outcome === "refused")
+  );
+}
+
 export function isActivityEvent(value: unknown): value is ActivityEvent {
   if (
     !isRecord(value) ||
@@ -74,7 +92,11 @@ export function isActivityEvent(value: unknown): value is ActivityEvent {
     return value.outcome === "failed" && typeof value.error === "string";
   }
   if (value.layer === "mod-action") {
-    return isImmichModAction(value) || isTextReplaceModAction(value);
+    return (
+      isImmichModAction(value) ||
+      isTextReplaceModAction(value) ||
+      isSiteAutoConfirmModAction(value)
+    );
   }
   if (
     value.outcome !== "allowed" &&

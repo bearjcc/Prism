@@ -20,6 +20,8 @@ export const CAPABILITY_SUMMARIES: Readonly<Record<string, string>> = {
     "Upload images to your Immich server via the extension context menu or touch chip. Requires Immich host permission when configured.",
   "page.text.replace":
     "Replace configured words and phrases in visible page text. Matching runs in the content script; replacement is plain text only.",
+  "site.ageGate.autoConfirm":
+    "Skip common age-entry gates using declared per-site rules and conservative heuristics. Sets first-party storage, clicks confirm controls, or hides overlays from the content script.",
 };
 
 export function capabilitySummary(id: string): string {

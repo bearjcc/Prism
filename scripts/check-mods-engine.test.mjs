@@ -17,6 +17,7 @@ const TRACER_IDS = [
   "prism.facebook-home-friends",
   "prism.immich-upload",
   "prism.word-replacer",
+  "prism.age-gate-auto-confirm",
 ];
 
 describe("checkModsEngine", () => {

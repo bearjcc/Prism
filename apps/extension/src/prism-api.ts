@@ -27,6 +27,10 @@ export interface PrismApiHandlers {
     surface: SurfaceId,
     itemType: ItemType,
   ) => void | Undo;
+  readonly autoConfirmAgeGate?: (
+    manifest: PrismManifest,
+    modFiles?: Readonly<Record<string, Uint8Array>>,
+  ) => void | Undo;
   readonly extract?: (
     capability: CapabilityId,
     input?: Readonly<Record<string, unknown>>,
@@ -48,6 +52,7 @@ export interface CreatePrismApiOptions {
   readonly tabId: number;
   readonly handlers: PrismApiHandlers;
   readonly pageUrl?: string;
+  readonly modFiles?: Readonly<Record<string, Uint8Array>>;
   readonly undo?: TabUndoStack;
   readonly emit?: (event: ActivityEvent) => void | Promise<void>;
 }
@@ -136,6 +141,17 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
           return;
         }
         record(options.handlers.allowlist?.(surface, itemType));
+      },
+      autoConfirmAgeGate(): void {
+        if (!gate.assert("site.ageGate.autoConfirm")) {
+          return;
+        }
+        record(
+          options.handlers.autoConfirmAgeGate?.(
+            options.manifest,
+            options.modFiles,
+          ),
+        );
       },
     },
     async extract(capability, input): Promise<unknown> {

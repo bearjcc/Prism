@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Storage age gate fixture</title>
+  </head>
+  <body style="overflow: hidden">
+    <div
+      id="gate"
+      data-prism-age-gate
+      data-prism-age-gate-fixture="storage"
+      style="position: fixed; inset: 0; background: #111; color: #fff"
+    >
+      <p>You must be 18+ to enter this site.</p>
+    </div>
+    <main id="content" hidden>Fixture article body.</main>
+    <script>
+      function applyFixtureStorageGate() {
+        const gate = document.getElementById("gate");
+        const content = document.getElementById("content");
+        if (localStorage.getItem("fixtureAgeOk") === "yes") {
+          gate.remove();
+          content.hidden = false;
+          document.body.style.overflow = "";
+        }
+      }
+      applyFixtureStorageGate();
+      document.addEventListener("DOMContentLoaded", applyFixtureStorageGate);
+    </script>
+  </body>
+</html>

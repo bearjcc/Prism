@@ -7,6 +7,7 @@ interface SandboxRequest {
     | "replace"
     | "styles"
     | "allowlist"
+    | "autoConfirmAgeGate"
     | "extract"
     | "request"
     | "text";
@@ -108,6 +109,12 @@ export async function runNativeModInSandbox(
         } catch {
           // Allowlist is fail-soft on live hosts.
         }
+      } else if (message.operation === "autoConfirmAgeGate") {
+        try {
+          prism.ui.autoConfirmAgeGate();
+        } catch {
+          // Age-gate auto-confirm is fail-soft on live hosts.
+        }
       } else if (message.operation === "extract") {
         result = await prism.extract(
           message.args[0] as Parameters<PrismApi["extract"]>[0],
@@ -204,7 +211,10 @@ function sandboxSourceDoc(nonce: string): string {
   const prism = {
     slots: { replace: (slot, content) => void call("replace", [slot, content]) },
     styles: { apply: (css) => void call("styles", [css]) },
-    ui: { allowlist: (surface, itemType) => call("allowlist", [surface, itemType]) },
+    ui: {
+      allowlist: (surface, itemType) => call("allowlist", [surface, itemType]),
+      autoConfirmAgeGate: () => call("autoConfirmAgeGate", [])
+    },
     extract: (capability, input) => call("extract", [capability, input]),
     net: { request: (contractId) => call("request", [contractId]) },
     text: { replace: (rules) => void call("text", [rules]) }

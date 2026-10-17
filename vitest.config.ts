@@ -74,6 +74,10 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/egress.ts"),
       },
       {
+        find: "@prism/schema/age-gate-rules",
+        replacement: path.join(root, "packages/schema/src/age-gate-rules.ts"),
+      },
+      {
         find: /^@prism\/schema$/,
         replacement: path.join(root, "packages/schema/src/index.ts"),
       },

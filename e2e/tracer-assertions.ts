@@ -8,6 +8,26 @@ import {
   watchLiveFixture,
 } from "./tracer-fixtures.js";
 
+export async function assertAgeGateTracerOnFixture(
+  page: Page,
+  session: ExtensionSession,
+  origin: string,
+): Promise<void> {
+  await page.goto(`${origin}/age-gate/button-gate.html`);
+  await expect(page.locator("#gate")).toHaveCount(0);
+  await expect(page.locator("#content")).toBeVisible();
+
+  if (session.canNavigateExtensionPages) {
+    const options = await session.context.newPage();
+    await options.goto(session.extensionUrl("options.html"));
+    await expect(options.locator("#activity")).toContainText(
+      "prism.age-gate-auto-confirm",
+    );
+    await expect(options.locator("#activity")).toContainText("ageGate.genericConfirm");
+    await options.close();
+  }
+}
+
 export async function assertKittenTracerOnFixture(
   page: Page,
   session: ExtensionSession,

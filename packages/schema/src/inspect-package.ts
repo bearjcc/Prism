@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import type { PrismManifest } from "./manifest.js";
 import { inspectCssText } from "./inspect-css.js";
+import { inspectAgeGateRulesFile } from "./age-gate-rules.js";
 import { inspectBrowserFilterText } from "./inspect-filter.js";
 
 export type PackageFindingKind = "css" | "filter" | "javascript" | "path";
@@ -64,6 +65,21 @@ export function inspectPackage(
         line: 1,
         message: "path is not supported by the v1 extension",
       });
+      continue;
+    }
+    if (path === "rules/sites.json") {
+      const issues = inspectAgeGateRulesFile(
+        path,
+        TEXT_DECODER.decode(files[path]!),
+      );
+      for (const issue of issues) {
+        findings.push({
+          kind: "path",
+          file: path,
+          line: 1,
+          message: issue.message,
+        });
+      }
       continue;
     }
     if (path.startsWith("filters/browser/")) {

@@ -8,6 +8,7 @@ import { expect, test } from "@playwright/test";
 import { launchChromeExtensionContext } from "./extension.js";
 import { startFixtureServer } from "./fixture-server.js";
 import {
+  assertAgeGateTracerOnFixture,
   assertFacebookHomeTracer,
   assertKittenTracerOnFixture,
   assertLinkedinHomeTracer,
@@ -20,6 +21,18 @@ import {
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 test.describe.configure({ mode: "serial" });
+
+test("age gate fixture dismisses a generic button gate", async () => {
+  const server = await startFixtureServer();
+  const session = await launchChromeExtensionContext();
+  try {
+    const page = await session.context.newPage();
+    await assertAgeGateTracerOnFixture(page, session, server.origin);
+  } finally {
+    await session.close();
+    await server.close();
+  }
+});
 
 test("kitten fixture slots become bundled images", async () => {
   const server = await startFixtureServer();

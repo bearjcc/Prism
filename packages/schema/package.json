@@ -50,6 +50,10 @@
     "./page-text-replace": {
       "types": "./dist/page-text-replace.d.ts",
       "import": "./dist/page-text-replace.js"
+    },
+    "./age-gate-rules": {
+      "types": "./dist/age-gate-rules.d.ts",
+      "import": "./dist/age-gate-rules.js"
     }
   },
   "files": [

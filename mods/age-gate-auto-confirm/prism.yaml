@@ -1,0 +1,14 @@
+id: prism.age-gate-auto-confirm
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - site.ageGate.autoConfirm
+scopes:
+  - <all_urls>
+fixtures:
+  - fixtures/storage-gate.html
+  - fixtures/button-gate.html
+  - fixtures/overlay-gate.html
+  - fixtures/dob-gate.html
+  - fixtures/newsletter-modal.html

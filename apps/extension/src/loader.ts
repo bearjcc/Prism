@@ -117,12 +117,16 @@ export async function loadNativeMods(
           mod.manifest.runtime === "userscript" &&
           options.userscriptsAvailable !== true;
         const skipModEntry = mod.manifest.runtime === "userscript";
+        const loaded =
+          skipModEntry || mod.load === undefined ? mod : await mod.load();
+        const modFiles = loaded.files ?? mod.files;
         const prism = createPrismApi({
           manifest: mod.manifest,
           grants,
           tabId: options.tabId,
           pageUrl: options.url,
           handlers: options.handlers,
+          ...(modFiles === undefined ? {} : { modFiles }),
           ...(options.undo === undefined ? {} : { undo: options.undo }),
           ...(options.emit === undefined
             ? {}
@@ -132,8 +136,6 @@ export async function loadNativeMods(
                 },
               }),
         });
-        const loaded =
-          skipModEntry || mod.load === undefined ? mod : await mod.load();
         for (const cssText of resolveModStyles(mod, loaded)) {
           prism.styles.apply(cssText);
         }

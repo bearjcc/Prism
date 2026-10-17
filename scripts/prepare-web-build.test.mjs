@@ -14,6 +14,7 @@ const expected = [
   "facebook-home-friends.prism",
   "immich-upload.prism",
   "word-replacer.prism",
+  "age-gate-auto-confirm.prism",
 ];
 
 describe("prepare-web-build", () => {
