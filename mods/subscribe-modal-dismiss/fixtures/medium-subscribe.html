@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Medium subscribe fixture</title>
+    <link href="https://medium.com/assets/app.css" rel="stylesheet" />
+  </head>
+  <body style="overflow: hidden">
+    <article><p>Fixture article body stays in the DOM.</p></article>
+    <div data-prism-subscribe-backdrop style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5)"></div>
+    <div
+      id="medium-dialog"
+      role="dialog"
+      aria-modal="true"
+      data-prism-subscribe-modal
+      style="position: fixed; inset: 10% 20%; background: #fff"
+    >
+      <p>Subscribe to keep reading this story.</p>
+      <input type="email" name="email" placeholder="your@email.com" />
+      <button type="button">Subscribe</button>
+      <button id="medium-dismiss" type="button">No thanks</button>
+    </div>
+    <script>
+      document.getElementById("medium-dismiss").addEventListener("click", () => {
+        document.getElementById("medium-dialog").remove();
+        document.querySelector("[data-prism-subscribe-backdrop]")?.remove();
+        document.body.style.overflow = "";
+      });
+    </script>
+  </body>
+</html>

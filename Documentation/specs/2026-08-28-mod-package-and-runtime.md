@@ -65,6 +65,7 @@ v1 families used by tracers:
 | `media.immich.contextUpload` | Extension-owned Immich image upload (UI plus broker)              |
 | `page.text.replace`          | Declarative word and phrase replace in visible page text          |
 | `site.ageGate.autoConfirm` | Declarative age-gate bypass (storage, confirm click, overlay hide)   |
+| `site.subscribe.dismiss` | Declarative subscribe or newsletter modal dismiss (dismiss click, hide) |
 
 `reddit.comments.search` is **optional**. YouTube watch UI works without it.
 
@@ -166,6 +167,14 @@ Skip common "over 18 / enter site" gates when the user has chosen to proceed as 
 - Per-site data: `rules/sites.json` (origin match plus optional `localStorage`, `cookies`, `confirm`, and `overlay` selector strings). Pack-time schema validation; no script in rules.
 - Runtime order on a matching origin: set remembered first-party state from the content script at `document_start`, click the declared confirm selector if needed, then hide a declared overlay. Sites without a rule use conservative text heuristics only (no date-of-birth entry).
 - Fixtures: saved HTML for storage, button, overlay, date-of-birth, and non-age modal cases.
+
+### 9. Subscribe modal dismiss (`mods/subscribe-modal-dismiss`)
+
+Dismiss newsletter and "subscribe to keep reading" overlays. Does not fetch or reveal truncated member-only body text.
+
+- Required: `site.subscribe.dismiss`.
+- Per-site data: `rules/sites.json` (`match` or `markup`, plus `modal`, optional `backdrop` and `dismiss`). Shares the extension modal-dismiss core with age gates.
+- Fixtures: Medium-shaped, Substack-shaped, generic newsletter, and negative login, checkout, cookie, and nav cases.
 
 ## UserCSS import (not a tracer, but format-locked)
 

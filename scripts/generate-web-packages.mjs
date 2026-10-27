@@ -16,6 +16,7 @@ const HOMEgrown = new Set([
   "immich-upload",
   "word-replacer",
   "age-gate-auto-confirm",
+  "subscribe-modal-dismiss",
 ]);
 
 mkdirSync(outputRoot, { recursive: true });

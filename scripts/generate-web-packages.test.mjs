@@ -30,6 +30,7 @@ describe("generate-web-packages", () => {
       "immich-upload.prism",
       "word-replacer.prism",
       "age-gate-auto-confirm.prism",
+      "subscribe-modal-dismiss.prism",
     ];
     for (const name of expected) {
       expect(existsSync(join(packagesRoot, name))).toBe(true);

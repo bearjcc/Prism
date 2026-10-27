@@ -78,6 +78,10 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/age-gate-rules.ts"),
       },
       {
+        find: "@prism/schema/subscribe-dismiss-rules",
+        replacement: path.join(root, "packages/schema/src/subscribe-dismiss-rules.ts"),
+      },
+      {
         find: /^@prism\/schema$/,
         replacement: path.join(root, "packages/schema/src/index.ts"),
       },

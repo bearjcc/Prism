@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import type { PrismManifest } from "./manifest.js";
 import { inspectCssText } from "./inspect-css.js";
 import { inspectAgeGateRulesFile } from "./age-gate-rules.js";
+import { inspectSubscribeDismissRulesFile } from "./subscribe-dismiss-rules.js";
 import { inspectBrowserFilterText } from "./inspect-filter.js";
 
 export type PackageFindingKind = "css" | "filter" | "javascript" | "path";
@@ -68,10 +69,13 @@ export function inspectPackage(
       continue;
     }
     if (path === "rules/sites.json") {
-      const issues = inspectAgeGateRulesFile(
-        path,
-        TEXT_DECODER.decode(files[path]!),
-      );
+      const source = TEXT_DECODER.decode(files[path]!);
+      const required = manifest.capabilities.required;
+      const issues = required.includes("site.subscribe.dismiss")
+        ? inspectSubscribeDismissRulesFile(path, source)
+        : required.includes("site.ageGate.autoConfirm")
+          ? inspectAgeGateRulesFile(path, source)
+          : [];
       for (const issue of issues) {
         findings.push({
           kind: "path",

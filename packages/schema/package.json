@@ -54,6 +54,10 @@
     "./age-gate-rules": {
       "types": "./dist/age-gate-rules.d.ts",
       "import": "./dist/age-gate-rules.js"
+    },
+    "./subscribe-dismiss-rules": {
+      "types": "./dist/subscribe-dismiss-rules.d.ts",
+      "import": "./dist/subscribe-dismiss-rules.js"
     }
   },
   "files": [

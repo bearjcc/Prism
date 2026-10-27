@@ -8,6 +8,15 @@ import {
   watchLiveFixture,
 } from "./tracer-fixtures.js";
 
+export async function assertSubscribeModalTracerOnFixture(
+  page: Page,
+  origin: string,
+): Promise<void> {
+  await page.goto(`${origin}/subscribe/medium-subscribe.html`);
+  await expect(page.locator("#medium-dialog")).toHaveCount(0);
+  await expect(page.getByText("Fixture article body stays in the DOM.")).toBeVisible();
+}
+
 export async function assertAgeGateTracerOnFixture(
   page: Page,
   session: ExtensionSession,

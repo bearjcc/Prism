@@ -29,7 +29,11 @@ describe("Phase AA age gate tracer", () => {
     const prism: PrismApi = {
       slots: { replace: vi.fn() },
       styles: { apply: vi.fn() },
-      ui: { allowlist: vi.fn(), autoConfirmAgeGate },
+      ui: {
+        allowlist: vi.fn(),
+        autoConfirmAgeGate,
+        dismissSubscribeModals: vi.fn(),
+      },
       extract: vi.fn(),
       net: { request: vi.fn() },
     };

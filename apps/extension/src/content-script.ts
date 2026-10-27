@@ -98,6 +98,7 @@ import {
   installAgeGateAutoConfirm,
   preapplyAgeGateStorage,
 } from "./age-gate-auto-confirm.js";
+import { installSubscribeDismiss } from "./subscribe-dismiss.js";
 import { runNativeModInSandbox } from "./sandbox-runtime.js";
 import {
   bindWordReplacerActivityEmit,
@@ -733,6 +734,21 @@ export function createContentHandlers(
     },
     autoConfirmAgeGate(manifest, modFiles) {
       return installAgeGateAutoConfirm({
+        contentDocument,
+        pageUrl: contentDocument.location.href,
+        manifest,
+        modFiles,
+        ...(emit === undefined
+          ? {}
+          : {
+              emit: (event) => {
+                emit(event);
+              },
+            }),
+      });
+    },
+    dismissSubscribeModals(manifest, modFiles) {
+      return installSubscribeDismiss({
         contentDocument,
         pageUrl: contentDocument.location.href,
         manifest,

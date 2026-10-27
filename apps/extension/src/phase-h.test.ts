@@ -37,7 +37,11 @@ describe("Phase H Facebook Home tracer", () => {
     const prism: PrismApi = {
       slots: { replace: vi.fn() },
       styles: { apply: vi.fn() },
-      ui: { allowlist, autoConfirmAgeGate: vi.fn() },
+      ui: {
+        allowlist,
+        autoConfirmAgeGate: vi.fn(),
+        dismissSubscribeModals: vi.fn(),
+      },
       extract: vi.fn(),
       net: { request: vi.fn() },
       text: { replace: vi.fn() },

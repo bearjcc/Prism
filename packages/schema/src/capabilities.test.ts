@@ -26,6 +26,7 @@ describe("capability registry", () => {
       "youtube.watch.constrainMiniplayer",
       "media.immich.contextUpload",
       "site.ageGate.autoConfirm",
+      "site.subscribe.dismiss",
     ]);
   });
 

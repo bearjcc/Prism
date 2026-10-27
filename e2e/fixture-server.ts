@@ -14,6 +14,13 @@ const ROUTES: Readonly<Record<string, string>> = {
     "fixtures",
     "ads.html",
   ),
+  "/subscribe/medium-subscribe.html": join(
+    repoRoot,
+    "mods",
+    "subscribe-modal-dismiss",
+    "fixtures",
+    "medium-subscribe.html",
+  ),
   "/age-gate/button-gate.html": join(
     repoRoot,
     "mods",

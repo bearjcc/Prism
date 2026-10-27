@@ -8,6 +8,7 @@ import { expect, test } from "@playwright/test";
 import { launchChromeExtensionContext } from "./extension.js";
 import { startFixtureServer } from "./fixture-server.js";
 import {
+  assertSubscribeModalTracerOnFixture,
   assertAgeGateTracerOnFixture,
   assertFacebookHomeTracer,
   assertKittenTracerOnFixture,
@@ -21,6 +22,18 @@ import {
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 test.describe.configure({ mode: "serial" });
+
+test("subscribe fixture dismisses a Medium-shaped modal", async () => {
+  const server = await startFixtureServer();
+  const session = await launchChromeExtensionContext();
+  try {
+    const page = await session.context.newPage();
+    await assertSubscribeModalTracerOnFixture(page, server.origin);
+  } finally {
+    await session.close();
+    await server.close();
+  }
+});
 
 test("age gate fixture dismisses a generic button gate", async () => {
   const server = await startFixtureServer();
