@@ -257,9 +257,8 @@ export const LISTINGS: CatalogueListing[] = [
     siteHost: "any site",
     version: "1.0.0",
     updated: "2026-10-28",
-    summary: "Swap configured words and phrases in page text.",
-    description:
-      "Declarative find and replace rules with optional Prism-owned styling. The mod never touches the DOM; the content script inserts plain text only.",
+    summary: "Word and phrase replace on pages.",
+    description: "Plain-text find/replace via the content script.",
     runtime: "native",
     scopes: ["<all_urls>"],
     bundledEntry: bundledEntryPath("prism.word-replacer"),

@@ -1994,6 +1994,7 @@ export function createChromeContentHandlers(
       ),
     (message) => runtime.sendMessage<BrokeredResponse>(message),
     (message) => runtime.sendMessage<unknown>(message),
+    (message) => runtime.sendMessage<unknown>(message),
     async () => {
       await runtime.sendMessage({ type: "immich-register-ui" });
       await immichPageUi?.refresh();
