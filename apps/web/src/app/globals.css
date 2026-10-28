@@ -412,6 +412,15 @@ button:disabled,
   object-fit: cover;
 }
 
+.shot-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: 1rem;
+}
+
 .card-meta {
   padding: 0.7rem 0.05rem 0;
 }

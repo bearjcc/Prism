@@ -232,8 +232,7 @@ export const LISTINGS: CatalogueListing[] = [
     runtime: "native",
     scopes: ["<all_urls>"],
     bundledEntry: bundledEntryPath("prism.immich-upload"),
-    previewSrc: "/previews/immich-upload.webp",
-    previewAlt: "Context menu Upload to Immich under the Prism submenu on an image",
+    previewAlt: "Upload to Immich extension setup in Prism settings",
     capabilities: [
       {
         id: "media.immich.contextUpload",
@@ -251,9 +250,15 @@ export const LISTINGS: CatalogueListing[] = [
   },
 ];
 
-export function modPreviewProps(mod: CatalogueListing): { src: string; alt: string } {
+export function modPreviewProps(mod: CatalogueListing): {
+  src?: string;
+  alt: string;
+} {
+  if (mod.previewSrc === undefined) {
+    return { alt: mod.previewAlt ?? mod.name };
+  }
   return {
-    src: mod.previewSrc ?? `/previews/${mod.id}.webp`,
+    src: mod.previewSrc,
     alt: mod.previewAlt ?? mod.name,
   };
 }
