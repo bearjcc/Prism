@@ -14,3 +14,55 @@ body {
   font-size: 13px;
   color: var(--muted);
 }
+
+.word-replacer-settings {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #ddd);
+}
+
+.word-replacer-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.word-replacer-pair {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border, #ddd);
+}
+
+.word-replacer-styles {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.word-replacer-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.word-replacer-preview-host {
+  padding: 8px;
+  border: 1px dashed var(--border, #ddd);
+}
+
+.word-replacer-preview-bold { font-weight: 700; }
+.word-replacer-preview-italic { font-style: italic; }
+.word-replacer-preview-underline { text-decoration: underline; }
+.word-replacer-preview-strikethrough { text-decoration: line-through; }
+.word-replacer-preview-allCaps { text-transform: uppercase; }
+.word-replacer-preview-smallCaps { font-variant: small-caps; }
+.word-replacer-preview-highlight { background: rgb(255, 240, 120); }

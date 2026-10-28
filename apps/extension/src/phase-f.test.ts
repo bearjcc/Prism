@@ -454,6 +454,7 @@ describe("Phase F Reddit comments on YouTube", () => {
           ],
         }),
       net: { request: vi.fn() },
+      text: { replace: vi.fn() },
     };
 
     await activateYoutubeRedditMod(prism);

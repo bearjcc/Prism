@@ -1,0 +1,10 @@
+id: prism.word-replacer
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - page.text.replace
+scopes:
+  - <all_urls>
+fixtures:
+  - fixtures/page.html

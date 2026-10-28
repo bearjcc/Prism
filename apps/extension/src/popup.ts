@@ -21,6 +21,8 @@ import {
   partitionModsForPage,
 } from "./popup-mods.js";
 import { describeOriginRuntimePause } from "./origin-runtime-pause.js";
+import { mountWordReplacerSettings } from "./word-replacer-settings-ui.js";
+import { WORD_REPLACER_MOD_ID } from "./word-replacer-settings.js";
 
 interface PopupMod {
   readonly manifest: PrismManifest;
@@ -133,13 +135,16 @@ export function describeActivityEvent(event: StoredActivityEvent): string {
   if (event.layer === "mod-activate") {
     return `${event.modId} activate failed: ${event.error}`;
   }
+  if (event.layer === "mod-action") {
+    if ("action" in event) {
+      const where =
+        event.pageOrigin === undefined ? "" : ` on ${event.pageOrigin}`;
+      return `${event.modId} ${event.action} ${event.outcome}${where}`;
+    }
+    return `${event.modId} ${event.capability} applied ${event.count} replacement(s)`;
+  }
   if (event.layer === "userscript-runtime") {
     return `${event.modId} userscript ${event.outcome}`;
-  }
-  if (event.layer === "mod-action") {
-    const where =
-      event.pageOrigin === undefined ? "" : ` on ${event.pageOrigin}`;
-    return `${event.modId} ${event.action} ${event.outcome}${where}`;
   }
   if (event.layer === "capability-gate") {
     return `${event.modId} ${event.capability} ${event.outcome}`;
@@ -1019,6 +1024,9 @@ function renderMod(
       }
     }
     section.append(capabilities);
+    if (mod.manifest.id === WORD_REPLACER_MOD_ID) {
+      section.append(mountWordReplacerSettings(api, popupDocument));
+    }
   }
   return section;
 }

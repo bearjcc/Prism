@@ -1,4 +1,5 @@
 export const CAPABILITY_IDS = [
+  "page.text.replace",
   "visual.ad-slot.replace",
   "visual.hide",
   "network.browser.block",
@@ -70,6 +71,20 @@ const commentSchema = {
 export const CAPABILITY_REGISTRY: Readonly<
   Record<CapabilityId, CapabilityDefinition>
 > = {
+  "page.text.replace": {
+    id: "page.text.replace",
+    resultSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["pairs"],
+      properties: {
+        pairs: {
+          type: "array",
+          items: { type: "object" },
+        },
+      },
+    },
+  },
   "visual.ad-slot.replace": {
     id: "visual.ad-slot.replace",
   },

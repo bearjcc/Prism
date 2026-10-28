@@ -271,7 +271,10 @@ function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow
   } else if (event.layer === "userscript-runtime") {
     detail = `userscript ${event.outcome}`;
   } else if (event.layer === "mod-action") {
-    detail = `${event.action} ${event.outcome}`;
+    detail =
+      "action" in event
+        ? `${event.action} ${event.outcome}`
+        : `${event.capability} count ${event.count}`;
   } else {
     detail = `${event.capability} ${event.outcome}`;
   }
@@ -284,7 +287,7 @@ function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow
 }
 
 export function layerForCapability(capability: string): PageActivityLayer {
-  if (capability.startsWith("visual.")) {
+  if (capability === "page.text.replace" || capability.startsWith("visual.")) {
     return "visual";
   }
   if (capability.startsWith("network.")) {

@@ -48,6 +48,7 @@ describe("filterCatalogue", () => {
     expect(list.every((mod) => mod.installs === 0)).toBe(true);
     expect(list.map((m) => m.id)).toEqual([
       "immich-upload",
+      "word-replacer",
       "facebook-home-friends",
       "linkedin-home-first-degree",
       "youtube-reddit-comments",

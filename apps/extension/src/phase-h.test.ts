@@ -40,6 +40,7 @@ describe("Phase H Facebook Home tracer", () => {
       ui: { allowlist },
       extract: vi.fn(),
       net: { request: vi.fn() },
+      text: { replace: vi.fn() },
     };
 
     await activateFacebookHomeMod(prism);

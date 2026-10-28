@@ -110,7 +110,7 @@ Package notes: `mods/kitten-ad-replace/README.md`.
 
 ## Traceability
 
-Six bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
+Seven bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
 
 | Mod id                              | Directory                          | Spec section                                      |
 | ----------------------------------- | ---------------------------------- | ------------------------------------------------- |
@@ -120,6 +120,7 @@ Six bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-pac
 | `prism.linkedin-home-first-degree`  | `mods/linkedin-home-first-degree`  | Bundled mods / 4. LinkedIn Home first degree      |
 | `prism.facebook-home-friends`       | `mods/facebook-home-friends`       | Bundled mods / 5. Facebook Home friends only      |
 | `prism.immich-upload`               | `mods/immich-upload`               | Bundled mods / 6. Upload to Immich                |
+| `prism.word-replacer`               | `mods/word-replacer`               | Bundled mods / 7. Word replacer (page text)       |
 
 Architecture invariants in that spec still hold for these tracers:
 

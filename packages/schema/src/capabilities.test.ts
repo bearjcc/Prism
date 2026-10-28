@@ -7,6 +7,7 @@ import {
 describe("capability registry", () => {
   test("contains the v1 tracers plus corpus extractor ids", () => {
     expect(CAPABILITY_IDS).toEqual([
+      "page.text.replace",
       "visual.ad-slot.replace",
       "visual.hide",
       "network.browser.block",

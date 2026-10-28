@@ -248,6 +248,36 @@ export const LISTINGS: CatalogueListing[] = [
       },
     ],
   },
+  {
+    id: "word-replacer",
+    packageId: "prism.word-replacer",
+    name: "Word replacer",
+    author: "Prism",
+    site: "Any site",
+    siteHost: "any site",
+    version: "1.0.0",
+    updated: "2026-10-28",
+    summary: "Swap configured words and phrases in page text.",
+    description:
+      "Declarative find and replace rules with optional Prism-owned styling. The mod never touches the DOM; the content script inserts plain text only.",
+    runtime: "native",
+    scopes: ["<all_urls>"],
+    bundledEntry: bundledEntryPath("prism.word-replacer"),
+    capabilities: [
+      {
+        id: "page.text.replace",
+        summary: capabilitySummary("page.text.replace"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-10-28",
+        notes: "First public package.",
+      },
+    ],
+  },
 ];
 
 export function modPreviewProps(mod: CatalogueListing): {

@@ -8,7 +8,8 @@ interface SandboxRequest {
     | "styles"
     | "allowlist"
     | "extract"
-    | "request";
+    | "request"
+    | "text";
   readonly args: readonly unknown[];
 }
 
@@ -112,6 +113,10 @@ export async function runNativeModInSandbox(
           message.args[0] as Parameters<PrismApi["extract"]>[0],
           message.args[1] as Parameters<PrismApi["extract"]>[1],
         );
+      } else if (message.operation === "text") {
+        prism.text.replace(
+          message.args[0] as Parameters<PrismApi["text"]["replace"]>[0],
+        );
       } else {
         result = await prism.net.request(String(message.args[0] ?? ""));
       }
@@ -201,7 +206,8 @@ function sandboxSourceDoc(nonce: string): string {
     styles: { apply: (css) => void call("styles", [css]) },
     ui: { allowlist: (surface, itemType) => call("allowlist", [surface, itemType]) },
     extract: (capability, input) => call("extract", [capability, input]),
-    net: { request: (contractId) => call("request", [contractId]) }
+    net: { request: (contractId) => call("request", [contractId]) },
+    text: { replace: (rules) => void call("text", [rules]) }
   };
   addEventListener("message", async (event) => {
     if (event.source !== parent || event.data?.kind !== "sandbox-init") return;

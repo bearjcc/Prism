@@ -16,6 +16,7 @@ const TRACER_IDS = [
   "prism.linkedin-home-first-degree",
   "prism.facebook-home-friends",
   "prism.immich-upload",
+  "prism.word-replacer",
 ];
 
 describe("checkModsEngine", () => {
