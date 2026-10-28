@@ -73,6 +73,7 @@ test("Chrome manifest declares an MV3 document_start shell", () => {
   });
   expect(manifest.permissions).toContain("declarativeNetRequest");
   expect(manifest.permissions).toContain("contextMenus");
+  expect(manifest.permissions).toContain("notifications");
   expect(manifest.permissions).toContain("webNavigation");
   expect(manifest.permissions).toContain("userScripts");
   expect(manifest.host_permissions).toBeUndefined();

@@ -18,6 +18,14 @@ export type ActivityEvent =
       readonly modId: string;
       readonly outcome: "failed";
       readonly error: string;
+    }
+  | {
+      readonly layer: "mod-action";
+      readonly modId: string;
+      readonly action: string;
+      readonly outcome: "success" | "duplicate" | "failed";
+      readonly pageOrigin?: string;
+      readonly detail?: string;
     };
 
 export type StoredActivityEvent = ActivityEvent & {
@@ -36,6 +44,18 @@ export function isActivityEvent(value: unknown): value is ActivityEvent {
   }
   if (value.layer === "mod-activate") {
     return value.outcome === "failed" && typeof value.error === "string";
+  }
+  if (value.layer === "mod-action") {
+    return (
+      typeof value.action === "string" &&
+      value.action !== "" &&
+      (value.outcome === "success" ||
+        value.outcome === "duplicate" ||
+        value.outcome === "failed") &&
+      (value.pageOrigin === undefined ||
+        typeof value.pageOrigin === "string") &&
+      (value.detail === undefined || typeof value.detail === "string")
+    );
   }
   if (
     value.outcome !== "allowed" &&

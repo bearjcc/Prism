@@ -1,0 +1,9 @@
+id: prism.immich-upload
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - media.immich.contextUpload
+scopes:
+  - <all_urls>
+fixtures: []

@@ -12,6 +12,7 @@ const expected = [
   "youtube-reddit-comments.prism",
   "linkedin-home-first-degree.prism",
   "facebook-home-friends.prism",
+  "immich-upload.prism",
 ];
 
 describe("prepare-web-build", () => {

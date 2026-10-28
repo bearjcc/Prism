@@ -77,10 +77,11 @@ import {
   type SessionExceptionStore,
 } from "./session-exception.js";
 import {
+  CONTEXT_MENU_IMMICH_UPLOAD,
   CONTEXT_MENU_HIDE_SESSION,
   CONTEXT_MENU_HIDE_SITE,
-  CONTEXT_MENU_ITEMS,
   CONTEXT_MENU_PAUSE_SITE,
+  rebuildPrismContextMenuTree,
 } from "./context-menu.js";
 import {
   hideRuleCss,
@@ -104,6 +105,26 @@ import {
   createSponsorSkipSegmentsUrl,
   parseSponsorSegments,
 } from "./extractors/sponsor-segments.js";
+import {
+  IMMICH_OPTIONS_HASH,
+  buildImmichPageUiResponse,
+  createImmichUploadDependencies,
+  handleImmichConfigMessage,
+  handleImmichTestConnection,
+  immichPublicConfigView,
+  immichStorageKeys,
+  readContextMenusApi,
+  refreshImmichContextMenu,
+} from "./immich-service-worker.js";
+import { performImmichUploadWithFeedback } from "./immich-upload-handler.js";
+import { detectTouchCapable } from "./immich-mobile-chip.js";
+
+function extensionContextMenus(): ReturnType<typeof readContextMenusApi> {
+  if (typeof chrome === "undefined") {
+    return undefined;
+  }
+  return extensionContextMenus();
+}
 
 interface RuntimeMessage {
   readonly type: string;
@@ -127,6 +148,11 @@ interface RuntimeMessage {
   readonly default?: boolean;
   readonly policy?: string;
   readonly reason?: string;
+  readonly srcUrl?: string;
+  readonly touchCapable?: boolean;
+  readonly serverUrl?: string;
+  readonly apiKey?: string;
+  readonly mobileChip?: boolean;
 }
 
 export interface RuntimeMessageSender {
@@ -152,6 +178,8 @@ export type StoredState = {
   pinHintDismissed?: boolean;
   modFailureBudget?: ModFailureBudgetState;
   modLastFailure?: ModLastFailureState;
+  immichUploadConfig?: { serverUrl: string; apiKey: string };
+  immichUploadUi?: { mobileChip?: boolean };
 } & Partial<Record<BehaviourPolicyStorageKey, OriginDenyPolicyState>>;
 
 interface ChromeApi {
@@ -226,6 +254,11 @@ export interface ServiceWorkerDependencies {
     contract: EgressContract,
   ) => Promise<BrokeredResponse>;
   readonly userScripts?: UserScriptsApi;
+  readonly requestHostPermission?: (
+    originPattern: string,
+  ) => Promise<boolean>;
+  readonly showNotification?: (title: string, message: string) => void;
+  readonly openOptionsPage?: (hash: string) => void;
 }
 
 export async function loadBundledModIndex(
@@ -412,16 +445,43 @@ if (typeof chrome !== "undefined") {
     }
   );
   menus.runtime.onInstalled.addListener(() => {
-    for (const item of CONTEXT_MENU_ITEMS) {
-      menus.contextMenus?.create({
-        id: item.id,
-        title: item.title,
-        contexts: ["all"],
-      });
+    const contextMenus = extensionContextMenus();
+    if (contextMenus === undefined) {
+      return;
     }
+    void rebuildPrismContextMenuTree(contextMenus).then(() =>
+      dependencies.getState().then((state) =>
+        refreshImmichContextMenu(
+          contextMenus,
+          state,
+          state.enabled ?? {},
+          state.grants ?? {},
+          navigator.userAgent,
+        ),
+      ),
+    );
   });
   menus.contextMenus?.onClicked.addListener((info, tab) => {
     if (tab?.id === undefined) {
+      return;
+    }
+    if (info.menuItemId === CONTEXT_MENU_IMMICH_UPLOAD) {
+      const srcUrl = (info as { srcUrl?: string }).srcUrl;
+      if (srcUrl === undefined || tab.url === undefined) {
+        return;
+      }
+      const origin = pageOrigin(tab.url);
+      if (origin === undefined) {
+        return;
+      }
+      void runImmichUploadFromServiceWorker(
+        dependencies,
+        {
+          srcUrl,
+          pageOrigin: origin,
+          tabId: tab.id,
+        },
+      );
       return;
     }
     if (info.menuItemId === CONTEXT_MENU_PAUSE_SITE) {
@@ -1019,7 +1079,110 @@ export async function handleRuntimeMessage(
       requestedTabId,
     );
   }
+  if (message.type === "get-immich-config") {
+    return immichPublicConfigView(state);
+  }
+  if (message.type === "set-immich-config") {
+    const response = await handleImmichConfigMessage(
+      message,
+      state,
+      dependencies.setState,
+      dependencies.requestHostPermission,
+    );
+    if (isRecord(response) && response.ok === true) {
+      const next = await dependencies.getState();
+      await refreshImmichContextMenu(
+        extensionContextMenus(),
+        next,
+        next.enabled ?? enabled,
+        next.grants ?? grants,
+        navigator.userAgent,
+      );
+    }
+    return response;
+  }
+  if (message.type === "test-immich-connection") {
+    return handleImmichTestConnection(
+      message,
+      state,
+      dependencies.requestHostPermission,
+    );
+  }
+  if (message.type === "get-immich-page-ui") {
+    const touchCapable =
+      message.touchCapable === true ||
+      detectTouchCapable(globalThis) ||
+      /Android/i.test(navigator.userAgent);
+    return buildImmichPageUiResponse(
+      state,
+      enabled,
+      grants,
+      navigator.userAgent,
+      touchCapable,
+      extensionContextMenus() !== undefined,
+    );
+  }
+  if (
+    message.type === "immich-sync-context-menu" ||
+    message.type === "immich-register-ui"
+  ) {
+    await refreshImmichContextMenu(
+      extensionContextMenus(),
+      state,
+      enabled,
+      grants,
+      navigator.userAgent,
+    );
+    return { ok: true };
+  }
+  if (
+    message.type === "immich-upload-image" &&
+    message.srcUrl !== undefined &&
+    sender.tab?.id !== undefined
+  ) {
+    const pageOriginValue =
+      message.origin ??
+      (sender.url === undefined ? undefined : pageOrigin(sender.url));
+    if (pageOriginValue === undefined) {
+      return { ok: false };
+    }
+    void runImmichUploadFromServiceWorker(dependencies, {
+      srcUrl: message.srcUrl,
+      pageOrigin: pageOriginValue,
+      tabId: sender.tab.id,
+    });
+    return { ok: true };
+  }
   return { ok: false };
+}
+
+async function runImmichUploadFromServiceWorker(
+  dependencies: ServiceWorkerDependencies,
+  request: Readonly<{
+    srcUrl: string;
+    pageOrigin: string;
+    tabId: number;
+  }>,
+): Promise<void> {
+  await performImmichUploadWithFeedback(
+    createImmichUploadDependencies({
+      getState: dependencies.getState,
+      setState: dependencies.setState,
+      sendToTab: dependencies.sendToTab,
+      requestHostPermission: dependencies.requestHostPermission,
+      showNotification: dependencies.showNotification,
+      openOptions: dependencies.openOptionsPage,
+    }),
+    request,
+  );
+  const next = await dependencies.getState();
+  await refreshImmichContextMenu(
+    extensionContextMenus(),
+    next,
+    next.enabled ?? {},
+    next.grants ?? {},
+    navigator.userAgent,
+  );
 }
 
 const EXTENSION_MESSAGE_TYPES = new Set([
@@ -1028,10 +1191,15 @@ const EXTENSION_MESSAGE_TYPES = new Set([
   "add-element-hide",
   "dismiss-pin-hint",
   "get-behaviour-policies",
+  "get-immich-config",
   "get-element-hides",
   "get-paste-policy",
   "get-popup-chrome",
   "import-mod",
+  "immich-register-ui",
+  "immich-sync-context-menu",
+  "immich-upload-image",
+  "get-immich-page-ui",
   "list-activity",
   "list-mods",
   "network-request",
@@ -1053,6 +1221,8 @@ const EXTENSION_MESSAGE_TYPES = new Set([
 const EXTENSION_UI_MESSAGE_TYPES = new Set([
   "dismiss-pin-hint",
   "import-mod",
+  "set-immich-config",
+  "test-immich-connection",
   "set-behaviour-policy",
   "set-capability",
   "set-enabled",
@@ -1303,6 +1473,7 @@ function createChromeDependencies(): ServiceWorkerDependencies {
         MOD_LAST_FAILURE_STORAGE_KEY,
         PASTE_POLICY_STORAGE_KEY,
         ...Object.values(BEHAVIOUR_POLICY_STORAGE_KEYS),
+        ...immichStorageKeys(),
       ]),
     setState: (state) => chrome.storage.local.set(state),
     sendToTab: (tabId, message) =>
@@ -1344,6 +1515,55 @@ function createChromeDependencies(): ServiceWorkerDependencies {
     fetchRedditHtml: fetchRedditCommentsHtml,
     fetchSponsorSegmentsJson: fetchSponsorSkipSegmentsJson,
     userScripts: chrome.userScripts,
+    fetchEgressContract: (contract) => fetchBrokeredEgressContract(contract),
+    requestHostPermission: async (originPattern) => {
+      const permissions = (
+        chrome as unknown as {
+          permissions?: {
+            request(details: { origins: string[] }): Promise<boolean>;
+          };
+        }
+      ).permissions;
+      if (permissions === undefined) {
+        return false;
+      }
+      return permissions.request({ origins: [originPattern] });
+    },
+    showNotification: (title, body) => {
+      const notifications = (
+        chrome as unknown as {
+          notifications?: {
+            create(
+              id: string,
+              details: {
+                type: "basic";
+                title: string;
+                message: string;
+                iconUrl: string;
+              },
+            ): void;
+          };
+        }
+      ).notifications;
+      notifications?.create(`prism-immich-${Date.now()}`, {
+        type: "basic",
+        title,
+        message: body,
+        iconUrl: chrome.runtime.getURL("icons/icon128.png"),
+      });
+    },
+    openOptionsPage: (hash) => {
+      const tabs = (
+        chrome as unknown as {
+          tabs?: { create(details: { url: string }): Promise<unknown> };
+        }
+      ).tabs;
+      void tabs?.create({
+        url: chrome.runtime.getURL(
+          `options.html#${hash || IMMICH_OPTIONS_HASH}`,
+        ),
+      });
+    },
   };
 }
 
@@ -1432,6 +1652,14 @@ async function syncModSideEffects(
 ): Promise<void> {
   await dependencies.syncBrowserRules(mods, enabled, grants, siteExceptions);
   await syncRegisteredUserScripts(mods, enabled, dependencies.userScripts);
+  const state = await dependencies.getState();
+  await refreshImmichContextMenu(
+    extensionContextMenus(),
+    state,
+    enabled,
+    grants,
+    navigator.userAgent,
+  );
 }
 
 async function syncInitialBrowserRules(

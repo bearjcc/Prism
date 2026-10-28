@@ -47,6 +47,7 @@ describe("filterCatalogue", () => {
     const list = filterCatalogue(catalogue(), "", "popular", null);
     expect(list.every((mod) => mod.installs === 0)).toBe(true);
     expect(list.map((m) => m.id)).toEqual([
+      "immich-upload",
       "facebook-home-friends",
       "linkedin-home-first-degree",
       "youtube-reddit-comments",
@@ -59,8 +60,12 @@ describe("filterCatalogue", () => {
 describe("catalogue listings", () => {
   it("exposes preview paths and honest empty stats in production", () => {
     for (const mod of catalogue()) {
-      expect(mod.previewSrc).toBe(`/previews/${mod.id}.webp`);
-      expect(mod.previewAlt.length).toBeGreaterThan(0);
+      if (mod.previewSrc !== undefined) {
+        expect(mod.previewSrc).toBe(`/previews/${mod.id}.webp`);
+      }
+      if (mod.previewAlt !== undefined) {
+        expect(mod.previewAlt.length).toBeGreaterThan(0);
+      }
       expect(mod.installs).toBe(0);
       expect(mod.rating).toBeNull();
       expect(mod.ratingCount).toBe(0);

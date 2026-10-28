@@ -21,7 +21,8 @@ test("exported schema package name matches package.json", () => {
 });
 
   test("schema entry point exports Phase B APIs", () => {
-    expect(CAPABILITY_IDS).toHaveLength(16);
+    expect(CAPABILITY_IDS).toHaveLength(17);
+    expect(CAPABILITY_IDS).toContain("media.immich.contextUpload");
     expect(CAPABILITY_IDS).toContain("linkedin.home.allowlist");
     expect(CAPABILITY_IDS).toContain("facebook.home.allowlist");
     expect(CAPABILITY_IDS).toContain("reddit.feed.posts");

@@ -141,6 +141,16 @@ describe("capability gate", () => {
         error: "Native mod sandbox timed out",
       }),
     ).toBe(true);
+    expect(
+      isActivityEvent({
+        layer: "mod-action",
+        modId: "prism.immich-upload",
+        action: "immich-upload",
+        outcome: "success",
+        pageOrigin: "https://example.com",
+        detail: "uploaded",
+      }),
+    ).toBe(true);
   });
 
   test("prepends activity events and drops the oldest past the limit", () => {

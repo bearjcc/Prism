@@ -217,11 +217,48 @@ export const LISTINGS: CatalogueListing[] = [
       },
     ],
   },
+  {
+    id: "immich-upload",
+    packageId: "prism.immich-upload",
+    name: "Upload to Immich",
+    author: "Prism",
+    site: "Any site",
+    siteHost: "any site",
+    version: "1.0.0",
+    updated: "2026-10-28",
+    summary: "Send images to your self-hosted Immich library.",
+    description:
+      "Right-click or long-press an image to upload through extension-owned Immich wiring. The mod declares media.immich.contextUpload only; your API key and image bytes stay in the extension.",
+    runtime: "native",
+    scopes: ["<all_urls>"],
+    bundledEntry: bundledEntryPath("prism.immich-upload"),
+    previewAlt: "Upload to Immich extension setup in Prism settings",
+    capabilities: [
+      {
+        id: "media.immich.contextUpload",
+        summary: capabilitySummary("media.immich.contextUpload"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-10-28",
+        notes: "First public package.",
+      },
+    ],
+  },
 ];
 
-export function modPreviewProps(mod: CatalogueListing): { src: string; alt: string } {
+export function modPreviewProps(mod: CatalogueListing): {
+  src?: string;
+  alt: string;
+} {
+  if (mod.previewSrc === undefined) {
+    return { alt: mod.previewAlt ?? mod.name };
+  }
   return {
-    src: mod.previewSrc ?? `/previews/${mod.id}.webp`,
+    src: mod.previewSrc,
     alt: mod.previewAlt ?? mod.name,
   };
 }

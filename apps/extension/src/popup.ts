@@ -79,6 +79,8 @@ const OPTIONAL_CAPABILITY_DISCLOSURE: Partial<
     "Remote kitten images stay off until granted. Requests go through the extension broker to https://cataas.com/cat (GET, image response). Bundled images remain the fallback when the grant is off or the broker fails.",
   "network.browser.block":
     "Browser network block (DNR) applies only to declared third-party advert hosts. First-party YouTube adverts still need slot replacement.",
+  "media.immich.contextUpload":
+    "Upload to Immich adds an image-only item under the Prism context menu on desktop, or a long-press chip on touch browsers. The extension reads image bytes and POSTs to your configured Immich server. The mod never sees your API key or image data. Chromium or Firefox prompts for your Immich origin when you save settings or test the connection.",
 };
 
 export function describeOptionalCapability(capability: CapabilityId): string {
@@ -134,7 +136,15 @@ export function describeActivityEvent(event: StoredActivityEvent): string {
   if (event.layer === "userscript-runtime") {
     return `${event.modId} userscript ${event.outcome}`;
   }
-  return `${event.modId} ${event.capability} ${event.outcome}`;
+  if (event.layer === "mod-action") {
+    const where =
+      event.pageOrigin === undefined ? "" : ` on ${event.pageOrigin}`;
+    return `${event.modId} ${event.action} ${event.outcome}${where}`;
+  }
+  if (event.layer === "capability-gate") {
+    return `${event.modId} ${event.capability} ${event.outcome}`;
+  }
+  return "Unknown activity event";
 }
 
 export function describeModKind(kind: ModTrustKind): string {
@@ -336,6 +346,103 @@ export async function mountOptions(
     otherModsRoot,
     optionsOriginRoot,
   );
+  await renderImmichSetup(api, optionsDocument);
+}
+
+async function renderImmichSetup(
+  api: PopupChromeApi,
+  optionsDocument: Document,
+): Promise<void> {
+  const root = optionsDocument.getElementById("immich-setup");
+  if (root === null) {
+    return;
+  }
+  const config = await api.runtime.sendMessage<{
+    readonly serverUrl?: string;
+    readonly hasApiKey?: boolean;
+    readonly configured?: boolean;
+    readonly mobileChip?: boolean;
+  }>({ type: "get-immich-config" });
+  root.replaceChildren();
+  const heading = optionsDocument.createElement("h2");
+  heading.textContent = "Immich server";
+  root.append(heading);
+  const intro = optionsDocument.createElement("p");
+  intro.textContent =
+    "Upload to Immich uses extension-owned storage on this device. Your API key is never logged or exported.";
+  root.append(intro);
+  const urlLabel = optionsDocument.createElement("label");
+  urlLabel.textContent = "Server URL";
+  const urlInput = optionsDocument.createElement("input");
+  urlInput.type = "url";
+  urlInput.name = "immich-server-url";
+  urlInput.autocomplete = "off";
+  urlInput.value = config.serverUrl ?? "";
+  urlLabel.append(urlInput);
+  root.append(urlLabel);
+  const keyLabel = optionsDocument.createElement("label");
+  keyLabel.textContent = "API key";
+  const keyInput = optionsDocument.createElement("input");
+  keyInput.type = "password";
+  keyInput.name = "immich-api-key";
+  keyInput.autocomplete = "off";
+  keyInput.placeholder =
+    config.hasApiKey === true ? "Saved key (enter to replace)" : "";
+  keyLabel.append(keyInput);
+  root.append(keyLabel);
+  const chipLabel = optionsDocument.createElement("label");
+  const chipToggle = optionsDocument.createElement("input");
+  chipToggle.type = "checkbox";
+  chipToggle.checked = config.mobileChip === true;
+  chipLabel.append(
+    chipToggle,
+    optionsDocument.createTextNode(
+      " Always use the touch upload chip (Firefox for Android and other touch browsers)",
+    ),
+  );
+  root.append(chipLabel);
+  const feedback = optionsDocument.createElement("p");
+  feedback.setAttribute("role", "status");
+  root.append(feedback);
+  const save = optionsDocument.createElement("button");
+  save.type = "button";
+  save.textContent = "Save Immich settings";
+  const test = optionsDocument.createElement("button");
+  test.type = "button";
+  test.textContent = "Test connection";
+  root.append(save, test);
+  save.addEventListener("click", () => {
+    void api.runtime
+      .sendMessage<{ ok?: boolean; error?: string }>({
+        type: "set-immich-config",
+        serverUrl: urlInput.value,
+        apiKey: keyInput.value,
+        mobileChip: chipToggle.checked,
+      })
+      .then((response) => {
+        feedback.textContent =
+          response.ok === true
+            ? "Immich settings saved."
+            : response.error ?? "Could not save Immich settings.";
+      });
+  });
+  test.addEventListener("click", () => {
+    void api.runtime
+      .sendMessage<{
+        ok?: boolean;
+        result?: { outcome: string; reason: string };
+      }>({
+        type: "test-immich-connection",
+        serverUrl: urlInput.value,
+        apiKey: keyInput.value,
+      })
+      .then((response) => {
+        feedback.textContent =
+          response.ok === true
+            ? "Connected to Immich."
+            : `Connection failed (${response.result?.reason ?? "unknown"}).`;
+      });
+  });
 }
 
 async function refreshPopup(

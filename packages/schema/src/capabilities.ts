@@ -15,6 +15,7 @@ export const CAPABILITY_IDS = [
   "youtube.watch.constrainAutoplay",
   "youtube.watch.constrainEndScreens",
   "youtube.watch.constrainMiniplayer",
+  "media.immich.contextUpload",
 ] as const;
 
 export type CapabilityId = (typeof CAPABILITY_IDS)[number];
@@ -262,6 +263,17 @@ export const CAPABILITY_REGISTRY: Readonly<
       properties: {
         constrained: { type: "boolean" },
         kind: { type: "string" },
+      },
+    },
+  },
+  "media.immich.contextUpload": {
+    id: "media.immich.contextUpload",
+    resultSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["registered"],
+      properties: {
+        registered: { type: "boolean" },
       },
     },
   },
