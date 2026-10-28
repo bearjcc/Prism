@@ -16,6 +16,8 @@ export const CAPABILITY_SUMMARIES: Readonly<Record<string, string>> = {
     "Read the watch video id from the page URL for cross-site extractors.",
   "reddit.comments.search":
     "Search Reddit for comments about this video. Requires Reddit host permission when granted.",
+  "media.immich.contextUpload":
+    "Upload images to your Immich server via the extension context menu or touch chip. Requires Immich host permission when configured.",
 };
 
 export function capabilitySummary(id: string): string {

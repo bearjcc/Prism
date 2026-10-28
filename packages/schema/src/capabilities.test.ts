@@ -23,6 +23,7 @@ describe("capability registry", () => {
       "youtube.watch.constrainAutoplay",
       "youtube.watch.constrainEndScreens",
       "youtube.watch.constrainMiniplayer",
+      "media.immich.contextUpload",
     ]);
   });
 

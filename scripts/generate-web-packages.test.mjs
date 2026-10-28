@@ -27,6 +27,7 @@ describe("generate-web-packages", () => {
       "youtube-reddit-comments.prism",
       "linkedin-home-first-degree.prism",
       "facebook-home-friends.prism",
+      "immich-upload.prism",
     ];
     for (const name of expected) {
       expect(existsSync(join(packagesRoot, name))).toBe(true);

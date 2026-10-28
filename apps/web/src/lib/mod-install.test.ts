@@ -14,6 +14,9 @@ describe("mod install helpers", () => {
     expect(bundledEntryPath("prism.facebook-home-friends")).toBe(
       "bundled-mods/prism.facebook-home-friends/src/index.js",
     );
+    expect(bundledEntryPath("prism.immich-upload")).toBe(
+      "bundled-mods/prism.immich-upload/src/index.js",
+    );
   });
 
   it("points downloads at public package files", () => {

@@ -12,15 +12,16 @@ import { listModManifestPaths } from "../../../../scripts/check-mods-engine.mjs"
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 describe("catalogue manifest sync", () => {
-  it("lists only the five homegrown tracer mods", () => {
+  it("lists only the six homegrown tracer mods", () => {
     expect(LISTINGS.map((listing) => listing.id)).toEqual([
       "kitten-ad-replace",
       "youtube-home-videos",
       "youtube-reddit-comments",
       "linkedin-home-first-degree",
       "facebook-home-friends",
+      "immich-upload",
     ]);
-    expect(catalogue()).toHaveLength(5);
+    expect(catalogue()).toHaveLength(6);
   });
 
   it("matches each listing to mods/*/prism.yaml", () => {

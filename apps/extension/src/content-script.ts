@@ -79,6 +79,8 @@ import {
   hideRuleCss,
   restoreSessionHide,
 } from "./element-hide.js";
+import { createImmichPageUiController } from "./immich-page-ui.js";
+import { resolveImageFromPage } from "./immich-upload.js";
 import {
   type PrismApiHandlers,
   TabUndoStack,
@@ -131,6 +133,7 @@ interface ContentMessage {
   readonly url?: string;
   readonly allow?: boolean;
   readonly persist?: boolean;
+  readonly srcUrl?: string;
 }
 
 interface ContentModModule {
@@ -606,6 +609,7 @@ export function createContentHandlers(
   }) => Promise<unknown> = async () => {
     throw new Error("SponsorBlock extractor unavailable");
   },
+  registerImmichUi: () => Promise<void> = async () => {},
 ): PrismApiHandlers {
   return {
     async extract(capability, input, manifest): Promise<unknown> {
@@ -657,6 +661,13 @@ export function createContentHandlers(
       }
       if (capability === "facebook.home.allowlist") {
         return extractFacebookHome(contentDocument);
+      }
+      if (capability === "media.immich.contextUpload") {
+        if (manifest === undefined) {
+          throw new Error("Immich upload requires a mod manifest");
+        }
+        await registerImmichUi();
+        return { registered: true };
       }
       if (capability === "reddit.comments.search") {
         const query = input?.query;
@@ -1948,6 +1959,7 @@ export function createChromeContentHandlers(
   contentDocument: Document,
   runtime: ContentRuntimeClient,
   importedAssets: Map<string, string> = new Map(),
+  immichPageUi?: Readonly<{ refresh(): Promise<void> }>,
 ): PrismApiHandlers {
   return createContentHandlers(
     contentDocument,
@@ -1959,6 +1971,10 @@ export function createChromeContentHandlers(
     (message) => runtime.sendMessage<BrokeredResponse>(message),
     (message) => runtime.sendMessage<unknown>(message),
     (message) => runtime.sendMessage<unknown>(message),
+    async () => {
+      await runtime.sendMessage({ type: "immich-register-ui" });
+      await immichPageUi?.refresh();
+    },
   );
 }
 
@@ -1976,6 +1992,7 @@ if (typeof chrome !== "undefined") {
   const consentRejectGuard = installConsentRejectGuard(document, true);
   const autoplayGuard = installAutoplayGuard(document, true);
   let lastContextElement: Element | null = null;
+  const immichPageUi = createImmichPageUiController(document, chrome.runtime);
   document.addEventListener(
     "contextmenu",
     (event) => {
@@ -2016,6 +2033,7 @@ if (typeof chrome !== "undefined") {
       document,
       chrome.runtime,
       importedAssets,
+      immichPageUi,
     ),
     undo,
     contentDocument: document,
@@ -2131,6 +2149,51 @@ if (typeof chrome !== "undefined") {
         () => sendResponse({ ok: false }),
       );
       void syncBehaviourPolicies(message.url);
+      void immichPageUi.refresh().catch(() => undefined);
+      return true;
+    }
+    if (
+      message.type === "immich-resolve-image" &&
+      typeof message.srcUrl === "string"
+    ) {
+      void (async () => {
+        let image = await resolveImageFromPage(
+          document,
+          message.srcUrl as string,
+          lastContextElement,
+          fetch.bind(globalThis),
+          "omit",
+        );
+        if (image === undefined) {
+          try {
+            const resolved = new URL(message.srcUrl as string, globalThis.location.href);
+            if (resolved.origin === globalThis.location.origin) {
+              image = await resolveImageFromPage(
+                document,
+                message.srcUrl as string,
+                lastContextElement,
+                fetch.bind(globalThis),
+                "include",
+              );
+            }
+          } catch {
+            // Ignore bad URLs.
+          }
+        }
+        if (image === undefined) {
+          sendResponse({ ok: false });
+          return;
+        }
+        sendResponse({
+          ok: true,
+          bytes: image.bytes.buffer.slice(
+            image.bytes.byteOffset,
+            image.bytes.byteOffset + image.bytes.byteLength,
+          ),
+          mimeType: image.mimeType,
+          filename: image.filename,
+        });
+      })();
       return true;
     }
     if (
@@ -2157,6 +2220,7 @@ if (typeof chrome !== "undefined") {
       void session.run(href).catch(() => undefined);
       void syncBehaviourPolicies(href).catch(() => undefined);
       void loadElementHides().catch(() => undefined);
+      void immichPageUi.refresh().catch(() => undefined);
     },
     history: globalThis.history,
     target: globalThis,
@@ -2164,7 +2228,9 @@ if (typeof chrome !== "undefined") {
   watchPageSurfaces(document, () => {
     void session.refresh(globalThis.location.href).catch(() => undefined);
   });
-  void session.run(globalThis.location.href).catch(() => undefined);
+  void session.run(globalThis.location.href).then(() =>
+    immichPageUi.refresh().catch(() => undefined),
+  );
   void syncBehaviourPolicies(globalThis.location.href);
   void loadElementHides().catch(() => undefined);
 }

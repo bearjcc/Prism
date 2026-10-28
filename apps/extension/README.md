@@ -44,7 +44,7 @@ Maintainers cut releases with `.github/workflows/release.yml` (`release` publish
 
 The popup can also import a packed `.prism` zip (vanilla ZIP). The archive is validated with the same `prism.yaml` schema as bundled mods, stored in extension storage, and run through the capability gate. An imported id cannot replace a bundled tracer.
 
-After install, pin Prism from the extensions menu. The toolbar badge is the count of enabled mods on the current tab (blank at zero). The popup lists mods that match this page first, including bundled mods that are still off. **Find mods for** this host opens the fixture Explore page (`http://localhost:3000/explore?q=`) with a search; Prism does not send the current site until that click. Right-click: Hide this element (this visit), Hide this element on this site (stored sanitised CSS), Pause Prism on this site. Mods cannot add context-menu items.
+After install, pin Prism from the extensions menu. The toolbar badge is the count of enabled mods on the current tab (blank at zero). The popup lists mods that match this page first, including bundled mods that are still off. **Find mods for** this host opens the fixture Explore page (`http://localhost:3000/explore?q=`) with a search; Prism does not send the current site until that click. Right-click: **Prism** submenu with hide/pause items; bundled **Upload to Immich** adds an image-only item when that mod is enabled. Mod package code cannot register its own context-menu entries.
 
 Mods with `runtime: native` (CSS, JSON/YAML, filter lists, and first-party `prism.*` JS shipped in this package) do **not** use `chrome.userScripts` and do **not** need Chromium's userscript toggle. Mods with `runtime: userscript` register only in the isolated `USER_SCRIPT` world, with `matches` equal to the package `scopes`. Remote `@require` / `http(s)` script URLs in the source are refused (fail closed; Prism does not fetch those bodies). If **Allow User Scripts** is off (Chrome 138+ extension details; older Chrome: Developer mode), that JavaScript is a no-op. CSS and DNR from the same package still apply when those capabilities are granted. The YAML flag is the Prism lock; omitting JS from the zip is optional packer convenience, not the security boundary. Unrestricted Tampermonkey-like MAIN-world execution is not shipped (historical Phase 9 review gate).
 
@@ -110,7 +110,7 @@ Package notes: `mods/kitten-ad-replace/README.md`.
 
 ## Traceability
 
-Five bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
+Six bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
 
 | Mod id                              | Directory                          | Spec section                                      |
 | ----------------------------------- | ---------------------------------- | ------------------------------------------------- |
@@ -119,6 +119,7 @@ Five bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-pa
 | `prism.youtube-reddit-comments`     | `mods/youtube-reddit-comments`     | Bundled mods / 3. Reddit comments on YouTube      |
 | `prism.linkedin-home-first-degree`  | `mods/linkedin-home-first-degree`  | Bundled mods / 4. LinkedIn Home first degree      |
 | `prism.facebook-home-friends`       | `mods/facebook-home-friends`       | Bundled mods / 5. Facebook Home friends only      |
+| `prism.immich-upload`               | `mods/immich-upload`               | Bundled mods / 6. Upload to Immich                |
 
 Architecture invariants in that spec still hold for these tracers:
 

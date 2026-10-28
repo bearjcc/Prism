@@ -265,12 +265,16 @@ function rowForBehaviourPolicy(
 }
 
 function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow {
-  const detail =
-    event.layer === "mod-activate"
-      ? `activate failed (${event.error})`
-      : event.layer === "userscript-runtime"
-        ? `userscript ${event.outcome}`
-        : `${event.capability} ${event.outcome}`;
+  let detail: string;
+  if (event.layer === "mod-activate") {
+    detail = `activate failed (${event.error})`;
+  } else if (event.layer === "userscript-runtime") {
+    detail = `userscript ${event.outcome}`;
+  } else if (event.layer === "mod-action") {
+    detail = `${event.action} ${event.outcome}`;
+  } else {
+    detail = `${event.capability} ${event.outcome}`;
+  }
   return {
     layer: PAGE_ACTIVITY_UNCERTAIN,
     source: event.modId,

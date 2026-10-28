@@ -6,6 +6,7 @@ import {
   CONTEXT_MENU_HIDE_SITE,
   CONTEXT_MENU_ITEMS,
   CONTEXT_MENU_PAUSE_SITE,
+  CONTEXT_MENU_PRISM_ROOT,
 } from "./context-menu.js";
 import {
   applyPersistedHideRules,
@@ -155,6 +156,7 @@ describe("Phase Z origin pause and context menu", () => {
       CONTEXT_MENU_HIDE_SITE,
       CONTEXT_MENU_PAUSE_SITE,
     ]);
+    expect(CONTEXT_MENU_PRISM_ROOT).toBe("prism-root");
   });
 });
 

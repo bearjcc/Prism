@@ -61,6 +61,7 @@ v1 families used by tracers:
 | `youtube.home.allowlist` | Home feed: only video items from the extractor                        |
 | `youtube.watch.videoId`  | Watch page video id                                                   |
 | `reddit.comments.search` | Cross-site comments JSON for a query                                  |
+| `media.immich.contextUpload` | Extension-owned Immich image upload (UI plus broker)              |
 
 `reddit.comments.search` is **optional**. YouTube watch UI works without it.
 
@@ -133,6 +134,16 @@ Cross-site interaction without a public API key.
 - Deny Reddit: YouTube comments slot shows a disabled/fallback state, watch page still works.
 
 Do not open a hidden window of the user's profile for this. `fetch` from the extension with `host_permissions` plus a first-party parser is the v1 path. If Reddit blocks that, record it as an engine issue; do not fall back to injecting a community userscript into reddit.com.
+
+### 6. Upload to Immich (`mods/immich-upload`)
+
+Extension-owned upload to a user-configured Immich server.
+
+- Required: `media.immich.contextUpload`.
+- Native mod calls `prism.extract("media.immich.contextUpload")` at activate. The extension registers UI (Prism submenu item on desktop; long-press chip on touch browsers without `contextMenus`, including Firefox for Android).
+- Immich server URL and API key live in extension local storage on the options page. Never passed to mod code, activity exports, or logs.
+- Upload uses Immich `POST /api/assets` with `x-api-key`, `credentials: "omit"`. Host permission for the Immich origin is requested on user gesture when saving or testing settings (`optional_host_permissions` plus `permissions.request`).
+- Mod-action activity events record page origin and outcome only.
 
 ## UserCSS import (not a tracer, but format-locked)
 
