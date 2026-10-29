@@ -54,6 +54,7 @@ v1 families used by tracers:
 
 | Id                       | Use                                                                   |
 | ------------------------ | --------------------------------------------------------------------- |
+| `page.text.replace`       | Word replacer: declarative find/replace in visible text nodes        |
 | `visual.ad-slot.replace` | Kitten: replace detected ad slots with bundled images                 |
 | `visual.hide`            | Hide matched semantic or selector-backed slots                        |
 | `network.browser.block`  | DNR block of declared hosts (optional for kitten)                     |
@@ -76,6 +77,7 @@ Exact exports live in `packages/schema` as TypeScript types and in the extension
 - `prism.ui.allowlist(surface: SurfaceId, itemType: ItemType): void`
 - `prism.extract(capabilityId: string, input?: object): Promise<unknown>` -- only ids granted; result is JSON matching the capability schema
 - `prism.net.request(contractId: string): Promise<BrokeredResponse>` -- only declared egress contracts
+- `prism.text.replace(rules: PageTextReplaceRules): void` -- only with `page.text.replace`; rules are validated declarative pairs executed by the content script
 
 Site adapters (YouTube Home, YouTube Watch, generic ad-slot) are **extension code**, versioned with the extension.
 
@@ -144,6 +146,15 @@ Extension-owned upload to a user-configured Immich server.
 - Immich server URL and API key live in extension local storage on the options page. Never passed to mod code, activity exports, or logs.
 - Upload uses Immich `POST /api/assets` with `x-api-key`, `credentials: "omit"`. Host permission for the Immich origin is requested on user gesture when saving or testing settings (`optional_host_permissions` plus `permissions.request`).
 - Mod-action activity events record page origin and outcome only.
+
+### 7. Word replacer (`mods/word-replacer`)
+
+Replace configured words and phrases in visible page text.
+
+- Required: `page.text.replace`.
+- Mod supplies declarative rules via `prism.extract("page.text.replace")` (settings stored in extension storage) and applies them with `prism.text.replace(rules)`.
+- Content script performs TreeWalker replacement, MutationObserver batching, and plain-text insertion only.
+- Fixtures: HTML with sample paragraph; golden: configured replacements in body text, inputs and code unchanged.
 
 ## UserCSS import (not a tracer, but format-locked)
 

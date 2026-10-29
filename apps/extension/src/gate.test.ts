@@ -151,6 +151,14 @@ describe("capability gate", () => {
         detail: "uploaded",
       }),
     ).toBe(true);
+    expect(
+      isActivityEvent({
+        layer: "mod-action",
+        modId: "prism.word-replacer",
+        capability: "page.text.replace",
+        count: 3,
+      }),
+    ).toBe(true);
   });
 
   test("prepends activity events and drops the oldest past the limit", () => {

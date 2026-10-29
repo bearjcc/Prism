@@ -13,12 +13,17 @@ const expected = [
   "linkedin-home-first-degree.prism",
   "facebook-home-friends.prism",
   "immich-upload.prism",
+  "word-replacer.prism",
 ];
 
 describe("prepare-web-build", () => {
   it("writes marketplace .prism downloads for Railway and workspace builds", () => {
-    for (const name of expected) {
-      rmSync(join(packagesRoot, name), { force: true });
+    if (existsSync(packagesRoot)) {
+      for (const name of readdirSync(packagesRoot).filter((entry) =>
+        entry.endsWith(".prism"),
+      )) {
+        rmSync(join(packagesRoot, name), { force: true });
+      }
     }
     execFileSync(process.execPath, ["scripts/prepare-web-build.mjs"], {
       cwd: repoRoot,

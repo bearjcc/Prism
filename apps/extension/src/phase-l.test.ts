@@ -40,6 +40,7 @@ describe("Phase L LinkedIn Home tracer", () => {
       ui: { allowlist },
       extract: vi.fn(),
       net: { request: vi.fn() },
+      text: { replace: vi.fn() },
     };
 
     await activateLinkedinHomeMod(prism);

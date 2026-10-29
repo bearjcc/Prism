@@ -95,6 +95,17 @@ import { installOverlaySuppressGuard } from "./overlay-suppress.js";
 import { installConsentRejectGuard } from "./consent-reject.js";
 import { installAutoplayGuard } from "./autoplay-policy.js";
 import { runNativeModInSandbox } from "./sandbox-runtime.js";
+import {
+  bindWordReplacerActivityEmit,
+  readCachedWordReplacerRules,
+  runWordReplacer,
+  setWordReplacerRules,
+  stopWordReplacerSession,
+} from "./page-text-replace-controller.js";
+import {
+  readWordReplacerSettings,
+  toPageTextReplaceRules,
+} from "./word-replacer-settings.js";
 
 export interface ContentRuntimeClient {
   getURL(path: string): string;
@@ -258,6 +269,7 @@ export async function activateContentMods(
   if (options.signal?.aborted) {
     return [];
   }
+  bindWordReplacerActivityEmit(options.emit);
   rememberImportedAssets(options.importedAssets, mods);
   options.onPendingModIds?.(mods.map((mod) => mod.manifest.id));
   const grantsByMod = Object.fromEntries(
@@ -514,6 +526,7 @@ export function createContentSession(
       controller = new AbortController();
       queuedRefreshUrl = undefined;
       options.undo.clear(CONTENT_TAB_STACK);
+      stopWordReplacerSession();
       activeModIds.clear();
       if (inflight !== undefined) {
         await inflight.catch(() => []);
@@ -610,6 +623,8 @@ export function createContentHandlers(
     throw new Error("SponsorBlock extractor unavailable");
   },
   registerImmichUi: () => Promise<void> = async () => {},
+  requestWordReplacerSettings: () => Promise<unknown> = async () =>
+    readCachedWordReplacerRules(),
 ): PrismApiHandlers {
   return {
     async extract(capability, input, manifest): Promise<unknown> {
@@ -684,6 +699,12 @@ export function createContentHandlers(
           query: query.trim(),
         });
         return readRedditCommentsExtraction(response);
+      }
+      if (capability === "page.text.replace") {
+        const stored = await requestWordReplacerSettings();
+        const rules = toPageTextReplaceRules(readWordReplacerSettings(stored));
+        setWordReplacerRules(rules);
+        return rules;
       }
       throw new Error(`No extractor registered for ${capability}`);
     },
@@ -881,6 +902,9 @@ export function createContentHandlers(
         modId: manifest.id,
         contractId,
       });
+    },
+    replaceText(rules, manifest) {
+      return runWordReplacer(contentDocument, rules, undefined, manifest.id);
     },
   };
 }
@@ -1975,6 +1999,8 @@ export function createChromeContentHandlers(
       await runtime.sendMessage({ type: "immich-register-ui" });
       await immichPageUi?.refresh();
     },
+    () =>
+      runtime.sendMessage<unknown>({ type: "get-word-replacer-settings" }),
   );
 }
 
@@ -2001,6 +2027,15 @@ if (typeof chrome !== "undefined") {
     },
     true,
   );
+
+  async function loadWordReplacerSettings(): Promise<void> {
+    const stored = await chrome.runtime.sendMessage<unknown>({
+      type: "get-word-replacer-settings",
+    });
+    setWordReplacerRules(
+      toPageTextReplaceRules(readWordReplacerSettings(stored)),
+    );
+  }
 
   async function loadElementHides(): Promise<void> {
     const response = await chrome.runtime.sendMessage<{
@@ -2093,6 +2128,13 @@ if (typeof chrome !== "undefined") {
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === "word-replacer-settings-changed") {
+      void loadWordReplacerSettings().then(
+        () => sendResponse({ ok: true }),
+        () => sendResponse({ ok: false }),
+      );
+      return true;
+    }
     if (message.type === "hide-element") {
       if (lastContextElement === null) {
         sendResponse({ ok: false });
@@ -2221,6 +2263,7 @@ if (typeof chrome !== "undefined") {
       void syncBehaviourPolicies(href).catch(() => undefined);
       void loadElementHides().catch(() => undefined);
       void immichPageUi.refresh().catch(() => undefined);
+      void loadWordReplacerSettings().catch(() => undefined);
     },
     history: globalThis.history,
     target: globalThis,
@@ -2233,4 +2276,5 @@ if (typeof chrome !== "undefined") {
   );
   void syncBehaviourPolicies(globalThis.location.href);
   void loadElementHides().catch(() => undefined);
+  void loadWordReplacerSettings().catch(() => undefined);
 }

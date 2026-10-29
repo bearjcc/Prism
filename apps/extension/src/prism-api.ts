@@ -3,6 +3,7 @@ import type {
   BrokeredResponse,
   CapabilityId,
   ItemType,
+  PageTextReplaceRules,
   PrismApi,
   PrismManifest,
   SurfaceId,
@@ -35,6 +36,10 @@ export interface PrismApiHandlers {
     contractId: string,
     manifest: PrismManifest,
   ) => Promise<BrokeredResponse>;
+  readonly replaceText?: (
+    rules: PageTextReplaceRules,
+    manifest: PrismManifest,
+  ) => void | Undo;
 }
 
 export interface CreatePrismApiOptions {
@@ -151,6 +156,14 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
           throw new Error(`No network broker registered for ${contractId}`);
         }
         return options.handlers.request(contractId, options.manifest);
+      },
+    },
+    text: {
+      replace(rules: PageTextReplaceRules): void {
+        if (!gate.assert("page.text.replace")) {
+          return;
+        }
+        record(options.handlers.replaceText?.(rules, options.manifest));
       },
     },
   };

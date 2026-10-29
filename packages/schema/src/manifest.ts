@@ -1,4 +1,5 @@
 import type { CapabilityId } from "./capabilities.js";
+import type { PageTextReplaceRules } from "./page-text-replace.js";
 
 export interface ManifestCapabilities {
   required: CapabilityId[];
@@ -89,6 +90,9 @@ export interface PrismApi {
   };
   readonly ui: {
     allowlist(surface: SurfaceId, itemType: ItemType): void;
+  };
+  readonly text: {
+    replace(rules: PageTextReplaceRules): void;
   };
   extract(
     capabilityId: CapabilityId,

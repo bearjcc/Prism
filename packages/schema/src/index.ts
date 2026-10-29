@@ -7,5 +7,6 @@ export * from "./css.js";
 export * from "./inspect-package.js";
 export * from "./manifest.js";
 export * from "./usercss-map.js";
+export * from "./page-text-replace.js";
 export * from "./pack.js";
 export * from "./validate.js";

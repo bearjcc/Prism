@@ -118,6 +118,11 @@ import {
 } from "./immich-service-worker.js";
 import { performImmichUploadWithFeedback } from "./immich-upload-handler.js";
 import { detectTouchCapable } from "./immich-mobile-chip.js";
+import {
+  readWordReplacerSettings,
+  WORD_REPLACER_SETTINGS_STORAGE_KEY,
+  type WordReplacerStoredSettings,
+} from "./word-replacer-settings.js";
 
 function extensionContextMenus(): ReturnType<typeof readContextMenusApi> {
   if (typeof chrome === "undefined") {
@@ -153,6 +158,7 @@ interface RuntimeMessage {
   readonly serverUrl?: string;
   readonly apiKey?: string;
   readonly mobileChip?: boolean;
+  readonly settings?: unknown;
 }
 
 export interface RuntimeMessageSender {
@@ -180,6 +186,7 @@ export type StoredState = {
   modLastFailure?: ModLastFailureState;
   immichUploadConfig?: { serverUrl: string; apiKey: string };
   immichUploadUi?: { mobileChip?: boolean };
+  wordReplacerSettings?: WordReplacerStoredSettings;
 } & Partial<Record<BehaviourPolicyStorageKey, OriginDenyPolicyState>>;
 
 interface ChromeApi {
@@ -640,6 +647,20 @@ export async function handleRuntimeMessage(
         : { modLastFailure }),
     });
     return { ok: true };
+  }
+  if (message.type === "get-word-replacer-settings") {
+    return readWordReplacerSettings(state.wordReplacerSettings);
+  }
+  if (
+    message.type === "set-word-replacer-settings" &&
+    message.settings !== undefined
+  ) {
+    const next = readWordReplacerSettings(message.settings);
+    await dependencies.setState({
+      wordReplacerSettings: next,
+    });
+    await broadcastWordReplacerSettings(dependencies);
+    return { ok: true, settings: next };
   }
   if (message.type === "active-mods" && message.url !== undefined) {
     const selected = selectActiveMods(
@@ -1186,6 +1207,8 @@ async function runImmichUploadFromServiceWorker(
 }
 
 const EXTENSION_MESSAGE_TYPES = new Set([
+  "get-word-replacer-settings",
+  "set-word-replacer-settings",
   "active-mods",
   "activity-event",
   "add-element-hide",
@@ -1299,6 +1322,26 @@ async function attachCosmeticHides(
       }),
     ),
   };
+}
+
+async function broadcastWordReplacerSettings(
+  dependencies: ServiceWorkerDependencies,
+): Promise<void> {
+  const tabs = await dependencies.queryTabs();
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (tab.id === undefined) {
+        return;
+      }
+      try {
+        await dependencies.sendToTab(tab.id, {
+          type: "word-replacer-settings-changed",
+        });
+      } catch {
+        // Tab may not have a content script.
+      }
+    }),
+  );
 }
 
 function policyChange(message: RuntimeMessage): {
@@ -1472,6 +1515,7 @@ function createChromeDependencies(): ServiceWorkerDependencies {
         MOD_FAILURE_BUDGET_STORAGE_KEY,
         MOD_LAST_FAILURE_STORAGE_KEY,
         PASTE_POLICY_STORAGE_KEY,
+        WORD_REPLACER_SETTINGS_STORAGE_KEY,
         ...Object.values(BEHAVIOUR_POLICY_STORAGE_KEYS),
         ...immichStorageKeys(),
       ]),

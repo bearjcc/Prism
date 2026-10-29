@@ -248,6 +248,35 @@ export const LISTINGS: CatalogueListing[] = [
       },
     ],
   },
+  {
+    id: "word-replacer",
+    packageId: "prism.word-replacer",
+    name: "Word replacer",
+    author: "Prism",
+    site: "Any site",
+    siteHost: "any site",
+    version: "1.0.0",
+    updated: "2026-10-28",
+    summary: "Word and phrase replace on pages.",
+    description: "Plain-text find/replace via the content script.",
+    runtime: "native",
+    scopes: ["<all_urls>"],
+    bundledEntry: bundledEntryPath("prism.word-replacer"),
+    capabilities: [
+      {
+        id: "page.text.replace",
+        summary: capabilitySummary("page.text.replace"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-10-28",
+        notes: "First public package.",
+      },
+    ],
+  },
 ];
 
 export function modPreviewProps(mod: CatalogueListing): {
