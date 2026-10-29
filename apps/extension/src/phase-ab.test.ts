@@ -57,6 +57,8 @@ describe("Phase AB subscribe modal tracer", () => {
         undefined,
         undefined,
         undefined,
+        undefined,
+        undefined,
         (event) => {
           events.push(event);
         },
