@@ -288,7 +288,7 @@ export const LISTINGS: CatalogueListing[] = [
     updated: "2026-10-17",
     summary: "Skip common over-18 entry gates.",
     description:
-      "Uses declared per-site storage keys and selectors where available, with conservative heuristics elsewhere. The mod stays data-only; the extension content script sets first-party state, clicks confirm controls, or hides overlays.",
+      "Declarative sites.json rules where available; conservative heuristics elsewhere. Storage, confirm click, and overlay hide run in the content script.",
     runtime: "native",
     scopes: ["<all_urls>"],
     bundledEntry: bundledEntryPath("prism.age-gate-auto-confirm"),

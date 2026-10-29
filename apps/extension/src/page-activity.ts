@@ -264,6 +264,7 @@ function rowForBehaviourPolicy(
   };
 }
 
+function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow {
   let detail: string;
   if (event.layer === "mod-activate") {
     detail = `activate failed (${event.error})`;

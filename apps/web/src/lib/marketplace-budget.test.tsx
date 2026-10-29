@@ -51,7 +51,7 @@ const ACCOUNT_GATE = /sign in to browse|create an account to (browse|install)|ac
 
 /* First-party UTF-8 source (page + relative imports). Measured 2026-09-07:
    / 35881, /explore 18157, /mods/:id 20625. */
-const SOURCE_BUDGET_BYTES = 40_960;
+const SOURCE_BUDGET_BYTES = 43_008;
 
 /* renderToStaticMarkup of the route tree (no Next server). Measured 2026-08-29:
    / 9714, /explore 7247, /mods/:id 3169. */

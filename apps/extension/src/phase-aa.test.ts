@@ -55,9 +55,18 @@ describe("Phase AA age gate tracer", () => {
       manifest,
       grants: ["site.ageGate.autoConfirm"],
       tabId: 3,
-      handlers: createContentHandlers(dom.window.document, undefined, undefined, undefined, undefined, (event) => {
-        events.push(event);
-      }),
+      handlers: createContentHandlers(
+        dom.window.document,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        (event) => {
+          events.push(event);
+        },
+      ),
     });
 
     await activateAgeGateMod(prism);
