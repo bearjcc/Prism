@@ -77,6 +77,7 @@ If a native mod's `activate` throws three times in a row on one origin (`MOD_FAI
 - **LinkedIn Home DOM drift** is handled the same way via `linkedin-home.ts` and `linkedin.home.allowlist`. Allowlisted posts remain native DOM; non-allowlisted feed children are hidden or removed in the extension.
 - **Facebook Home DOM drift** is handled the same way via `facebook-home.ts` and `facebook.home.allowlist`. Friend posts remain native DOM; non-allowlisted feed children are hidden or removed in the extension.
 - **Age gates:** `site.ageGate.autoConfirm` applies declarative per-site rules from `rules/sites.json` (first-party `localStorage` and cookies, then optional confirm and overlay selectors) and conservative generic heuristics when no rule matches. Date-of-birth forms are not filled in. Mods never receive the DOM or storage APIs.
+- **Subscribe modals:** `site.subscribe.dismiss` shares the modal-dismiss core with age gates (hide, scroll unlock, observer, undo, mod-action logging). Per-site rules prefer the site's own dismiss control, then hide modal and backdrop. Not a paywall bypass.
 - **SPA navigations** (YouTube `history.pushState` / `yt-navigate-finish`) abort the previous activation and run again for the new URL. Home vs watch scopes still apply.
 - **YouTube autonav:** `youtube.watch.constrainAutoplay` clicks `.ytp-autonav-toggle-button` when `aria-checked="true"` and drops `autoplay` on `video.html5-main-video`. The mod receives `{ constrained, kind }` JSON, never the player element. The corpus transcode is `prism.corpus.youtube-autoplay-off`.
 - **YouTube end screens:** `youtube.watch.constrainEndScreens` hides `.ytp-endscreen-content`, `.ytp-ce-element`, and `.ytp-cards-teaser` (plus labelled `data-prism-endscreen` fixtures). The mod receives `{ constrained, kind }` JSON, never overlay HTML. The corpus transcode is `prism.corpus.youtube-endscreen-off`.
@@ -111,7 +112,7 @@ Package notes: `mods/kitten-ad-replace/README.md`.
 
 ## Traceability
 
-Eight bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
+Nine bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-package-and-runtime.md`:
 
 | Mod id                              | Directory                          | Spec section                                      |
 | ----------------------------------- | ---------------------------------- | ------------------------------------------------- |
@@ -123,6 +124,7 @@ Eight bundled mods map to spec sections in `Documentation/specs/2026-08-28-mod-p
 | `prism.immich-upload`               | `mods/immich-upload`               | Bundled mods / 6. Upload to Immich                |
 | `prism.word-replacer`               | `mods/word-replacer`               | Bundled mods / 7. Word replacer (page text)       |
 | `prism.age-gate-auto-confirm`       | `mods/age-gate-auto-confirm`       | Bundled mods / 8. Age gate auto-confirm           |
+| `prism.subscribe-modal-dismiss`     | `mods/subscribe-modal-dismiss`     | Bundled mods / 9. Subscribe modal dismiss         |
 
 Architecture invariants in that spec still hold for these tracers:
 

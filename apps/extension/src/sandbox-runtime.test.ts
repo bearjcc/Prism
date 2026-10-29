@@ -10,7 +10,11 @@ describe("native mod sandbox", () => {
     const prism = {
       slots: { replace: () => undefined },
       styles: { apply: () => undefined },
-      ui: { allowlist: () => undefined, autoConfirmAgeGate: () => undefined },
+      ui: {
+        allowlist: () => undefined,
+        autoConfirmAgeGate: () => undefined,
+        dismissSubscribeModals: () => undefined,
+      },
       extract: async () => undefined,
       net: { request: async () => ({ status: 0, fields: {} }) },
     };
@@ -50,7 +54,11 @@ describe("native mod sandbox", () => {
     const prism = {
       slots: { replace: () => undefined },
       styles: { apply: () => undefined },
-      ui: { allowlist, autoConfirmAgeGate: () => undefined },
+      ui: {
+        allowlist,
+        autoConfirmAgeGate: () => undefined,
+        dismissSubscribeModals: () => undefined,
+      },
       extract: async () => undefined,
       net: { request: async () => ({ status: 0, fields: {} }) },
     };

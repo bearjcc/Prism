@@ -440,7 +440,11 @@ describe("Phase F Reddit comments on YouTube", () => {
         replace: (_slot, replacement) => replacements.push(replacement),
       },
       styles: { apply: vi.fn() },
-      ui: { allowlist: vi.fn(), autoConfirmAgeGate: vi.fn() },
+      ui: {
+        allowlist: vi.fn(),
+        autoConfirmAgeGate: vi.fn(),
+        dismissSubscribeModals: vi.fn(),
+      },
       extract: vi
         .fn()
         .mockResolvedValueOnce({ videoId: "fixture-video-id" })

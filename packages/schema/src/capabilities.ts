@@ -18,6 +18,7 @@ export const CAPABILITY_IDS = [
   "youtube.watch.constrainMiniplayer",
   "media.immich.contextUpload",
   "site.ageGate.autoConfirm",
+  "site.subscribe.dismiss",
 ] as const;
 
 export type CapabilityId = (typeof CAPABILITY_IDS)[number];
@@ -295,6 +296,9 @@ export const CAPABILITY_REGISTRY: Readonly<
   },
   "site.ageGate.autoConfirm": {
     id: "site.ageGate.autoConfirm",
+  },
+  "site.subscribe.dismiss": {
+    id: "site.subscribe.dismiss",
   },
 };
 

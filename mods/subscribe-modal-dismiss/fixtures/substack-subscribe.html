@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Substack subscribe fixture</title>
+    <script src="https://substackcdn.com/bundle/main.js"></script>
+  </head>
+  <body style="overflow: hidden">
+    <div class="substack-posts"><p>Fixture post body.</p></div>
+    <div
+      data-prism-subscribe-backdrop
+      class="subscribe-popup-backdrop"
+      style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6)"
+    ></div>
+    <div
+      id="subscribe-popup"
+      role="dialog"
+      aria-modal="true"
+      data-prism-subscribe-modal
+      style="position: fixed; top: 20%; left: 25%; width: 50%; background: #fff"
+    >
+      <p>Join to read the rest.</p>
+      <input type="email" name="email" />
+      <button type="button">Subscribe</button>
+      <button class="dismiss" type="button">Maybe later</button>
+    </div>
+    <script>
+      document.querySelector(".dismiss").addEventListener("click", () => {
+        document.getElementById("subscribe-popup").remove();
+        document.querySelector("[data-prism-subscribe-backdrop]")?.remove();
+        document.body.style.overflow = "";
+      });
+    </script>
+  </body>
+</html>

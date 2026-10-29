@@ -309,6 +309,38 @@ export const LISTINGS: CatalogueListing[] = [
       },
     ],
   },
+  {
+    id: "subscribe-modal-dismiss",
+    packageId: "prism.subscribe-modal-dismiss",
+    name: "Subscribe modal dismiss",
+    author: "Prism",
+    site: "Any site",
+    siteHost: "any site",
+    version: "1.0.0",
+    updated: "2026-10-27",
+    summary: "Close subscribe and newsletter overlays.",
+    description:
+      "Uses the shared modal-dismiss core with per-site rules for publishers such as Medium and Substack. Prefers the site's own dismiss control, then hides the modal and backdrop. Does not bypass paywalled article body text.",
+    runtime: "native",
+    scopes: ["<all_urls>"],
+    bundledEntry: bundledEntryPath("prism.subscribe-modal-dismiss"),
+    previewSrc: "/previews/subscribe-modal-dismiss.webp",
+    previewAlt: "Subscribe overlay hidden on a fixture article page",
+    capabilities: [
+      {
+        id: "site.subscribe.dismiss",
+        summary: capabilitySummary("site.subscribe.dismiss"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-10-27",
+        notes: "First public package.",
+      },
+    ],
+  },
 ];
 
 export function modPreviewProps(mod: CatalogueListing): {

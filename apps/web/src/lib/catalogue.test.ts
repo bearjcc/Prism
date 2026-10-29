@@ -49,6 +49,7 @@ describe("filterCatalogue", () => {
     expect(list.map((m) => m.id)).toEqual([
       "immich-upload",
       "word-replacer",
+      "subscribe-modal-dismiss",
       "age-gate-auto-confirm",
       "facebook-home-friends",
       "linkedin-home-first-degree",

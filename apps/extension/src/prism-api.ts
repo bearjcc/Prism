@@ -31,6 +31,10 @@ export interface PrismApiHandlers {
     manifest: PrismManifest,
     modFiles?: Readonly<Record<string, Uint8Array>>,
   ) => void | Undo;
+  readonly dismissSubscribeModals?: (
+    manifest: PrismManifest,
+    modFiles?: Readonly<Record<string, Uint8Array>>,
+  ) => void | Undo;
   readonly extract?: (
     capability: CapabilityId,
     input?: Readonly<Record<string, unknown>>,
@@ -148,6 +152,17 @@ export function createPrismApi(options: CreatePrismApiOptions): PrismApi {
         }
         record(
           options.handlers.autoConfirmAgeGate?.(
+            options.manifest,
+            options.modFiles,
+          ),
+        );
+      },
+      dismissSubscribeModals(): void {
+        if (!gate.assert("site.subscribe.dismiss")) {
+          return;
+        }
+        record(
+          options.handlers.dismissSubscribeModals?.(
             options.manifest,
             options.modFiles,
           ),

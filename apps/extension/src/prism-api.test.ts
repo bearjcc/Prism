@@ -122,3 +122,29 @@ describe("prism.ui.autoConfirmAgeGate capability gate", () => {
     expect(autoConfirmAgeGate).not.toHaveBeenCalled();
   });
 });
+
+describe("prism.ui.dismissSubscribeModals capability gate", () => {
+  const manifest: PrismManifest = {
+    id: "prism.subscribe-modal-dismiss",
+    version: "1.0.0",
+    runtime: "native",
+    capabilities: {
+      required: ["site.subscribe.dismiss"],
+    },
+    scopes: ["<all_urls>"],
+  };
+
+  test("records handler when site.subscribe.dismiss is granted", () => {
+    const dismissSubscribeModals = vi.fn();
+    const prism = createPrismApi({
+      manifest,
+      grants: ["site.subscribe.dismiss"],
+      tabId: 1,
+      handlers: { dismissSubscribeModals },
+    });
+
+    prism.ui.dismissSubscribeModals();
+
+    expect(dismissSubscribeModals).toHaveBeenCalledOnce();
+  });
+});

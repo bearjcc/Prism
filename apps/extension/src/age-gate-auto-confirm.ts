@@ -7,9 +7,21 @@ import {
   type AgeGateSiteRule,
 } from "@prism/schema/age-gate-rules";
 import type { ActivityEvent } from "./gate.js";
-import { unlockRoot } from "./scroll-lock.js";
+import {
+  MODAL_DISMISS_SUPPRESSED_MARK,
+  clickFirstMatchingSelector,
+  createModActionEmitter,
+  drainUndoStack,
+  hideElementWithUndo,
+  hideFirstMatchingSelector,
+  installModalDismissGuard,
+  isVisibleModalControl,
+  pushUndo,
+  readableModalText,
+  releaseDocumentScroll,
+} from "./site-modal-dismiss.js";
 
-export const AGE_GATE_SUPPRESSED_MARK = "data-prism-age-gate-suppressed";
+export const AGE_GATE_SUPPRESSED_MARK = MODAL_DISMISS_SUPPRESSED_MARK;
 
 const AGE_GATE_CAPABILITY: CapabilityId = "site.ageGate.autoConfirm";
 
@@ -70,50 +82,27 @@ export function installAgeGateAutoConfirm(
   const rules = readAgeGateRulesFromFiles(options.modFiles).sites;
   const siteRule = findAgeGateSiteRule(rules, options.pageUrl);
   const undoStack: Array<() => void> = [];
-  const view = options.contentDocument.defaultView;
-  const MutationObserverCtor = view?.MutationObserver;
-  let observer: MutationObserver | undefined;
-  let disconnected = false;
+  const emitAction = createModActionEmitter(
+    options.manifest.id,
+    AGE_GATE_CAPABILITY,
+    options.emit,
+  );
 
-  const emitAction = (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ): void => {
-    options.emit?.({
-      layer: "mod-action",
-      modId: options.manifest.id,
-      capability: AGE_GATE_CAPABILITY,
-      action,
-      outcome,
-    });
-  };
-
-  const runPass = (): void => {
-    if (disconnected) {
-      return;
-    }
-    if (siteRule !== undefined) {
-      runSiteRulePass(options.contentDocument, siteRule, emitAction, undoStack);
-      return;
-    }
-    runGenericHeuristicPass(
-      options.contentDocument,
-      emitAction,
-      undoStack,
-    );
-  };
-
-  if (MutationObserverCtor !== undefined) {
-    observer = new MutationObserverCtor(() => {
-      runPass();
-    });
-    observer.observe(options.contentDocument.documentElement, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ["style", "class", "hidden", "aria-hidden"],
-    });
-  }
+  const guard = installModalDismissGuard({
+    contentDocument: options.contentDocument,
+    runPass: () => {
+      if (siteRule !== undefined) {
+        runSiteRulePass(
+          options.contentDocument,
+          siteRule,
+          emitAction,
+          undoStack,
+        );
+        return;
+      }
+      runGenericHeuristicPass(options.contentDocument, emitAction, undoStack);
+    },
+  });
 
   preapplyAgeGateStorage(
     options.contentDocument,
@@ -121,19 +110,10 @@ export function installAgeGateAutoConfirm(
     options.modFiles,
     siteRule,
   );
-  runPass();
 
   const undo = (): void => {
-    while (undoStack.length > 0) {
-      const step = undoStack.pop();
-      try {
-        step?.();
-      } catch {
-        // Undo is best-effort on live hosts.
-      }
-    }
-    disconnected = true;
-    observer?.disconnect();
+    drainUndoStack(undoStack);
+    guard.disconnect();
   };
 
   return Object.assign(undo, {
@@ -146,47 +126,40 @@ export function installAgeGateAutoConfirm(
 function runSiteRulePass(
   contentDocument: Document,
   rule: AgeGateSiteRule,
-  emit: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
+  emit: ReturnType<typeof createModActionEmitter>,
   undoStack: Array<() => void>,
 ): void {
-  const storageUndo = applySiteStorage(contentDocument, rule, emit);
-  if (storageUndo !== undefined) {
-    undoStack.push(storageUndo);
-  }
+  pushUndo(undoStack, applySiteStorage(contentDocument, rule, emit));
   if (rule.confirm !== undefined && isSafeModSelector(rule.confirm)) {
-    const clicked = clickFirstVisible(
-      contentDocument,
-      rule.confirm,
-      emit,
-      "ageGate.confirmClick",
-    );
-    if (clicked) {
+    if (
+      clickFirstMatchingSelector(
+        contentDocument,
+        rule.confirm,
+        emit,
+        "ageGate.confirmClick",
+        isRefusedControl,
+      )
+    ) {
       undoStack.push(() => {});
     }
   }
   if (rule.overlay !== undefined && isSafeModSelector(rule.overlay)) {
-    const hidden = hideOverlay(
-      contentDocument,
-      rule.overlay,
-      emit,
-      "ageGate.overlayHide",
+    pushUndo(
+      undoStack,
+      hideFirstMatchingSelector(
+        contentDocument,
+        rule.overlay,
+        emit,
+        "ageGate.overlayHide",
+      ),
     );
-    if (hidden !== undefined) {
-      undoStack.push(hidden);
-    }
   }
   releaseDocumentScroll(contentDocument);
 }
 
 function runGenericHeuristicPass(
   contentDocument: Document,
-  emit: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
+  emit: ReturnType<typeof createModActionEmitter>,
   undoStack: Array<() => void>,
 ): void {
   const candidates = findHeuristicAgeGateRoots(contentDocument);
@@ -196,11 +169,11 @@ function runGenericHeuristicPass(
   for (const root of candidates) {
     if (rootHasDateOfBirthInputs(root)) {
       emit("ageGate.heuristicSkip", "skipped");
-      const hidden = hideElementIfSafe(root, emit, "ageGate.genericHide");
-      if (hidden !== undefined) {
-        undoStack.push(hidden);
-        releaseDocumentScroll(contentDocument);
-      }
+      pushUndo(
+        undoStack,
+        hideElementWithUndo(root, emit, "ageGate.genericHide"),
+      );
+      releaseDocumentScroll(contentDocument);
       continue;
     }
     const button = findAffirmativeButton(root);
@@ -223,10 +196,7 @@ function runGenericHeuristicPass(
 function applySiteStorage(
   contentDocument: Document,
   rule: AgeGateSiteRule,
-  emit?: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
+  emit?: ReturnType<typeof createModActionEmitter>,
 ): (() => void) | undefined {
   const view = contentDocument.defaultView;
   if (view === null) {
@@ -307,89 +277,6 @@ function clearFirstPartyCookie(contentDocument: Document, name: string): void {
   }
 }
 
-function clickFirstVisible(
-  contentDocument: Document,
-  selector: string,
-  emit: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
-  action: AgeGateActionId,
-): boolean {
-  const view = contentDocument.defaultView;
-  if (view === null) {
-    return false;
-  }
-  for (const node of Array.from(contentDocument.querySelectorAll(selector))) {
-    if (!(node instanceof view.HTMLElement)) {
-      continue;
-    }
-    if (!isVisibleControl(node, view)) {
-      continue;
-    }
-    if (isRefusedControl(node)) {
-      emit(action, "refused");
-      continue;
-    }
-    node.click();
-    emit(action, "applied");
-    return true;
-  }
-  return false;
-}
-
-function hideOverlay(
-  contentDocument: Document,
-  selector: string,
-  emit: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
-  action: AgeGateActionId,
-): (() => void) | undefined {
-  const view = contentDocument.defaultView;
-  if (view === null) {
-    return undefined;
-  }
-  for (const node of Array.from(contentDocument.querySelectorAll(selector))) {
-    if (!(node instanceof view.HTMLElement)) {
-      continue;
-    }
-    return hideElementIfSafe(node, emit, action);
-  }
-  return undefined;
-}
-
-function hideElementIfSafe(
-  element: HTMLElement,
-  emit: (
-    action: AgeGateActionId,
-    outcome: "applied" | "skipped" | "refused",
-  ) => void,
-  action: AgeGateActionId,
-): (() => void) | undefined {
-  if (element.hasAttribute(AGE_GATE_SUPPRESSED_MARK)) {
-    return undefined;
-  }
-  const previousDisplay = element.style.getPropertyValue("display");
-  const previousPriority = element.style.getPropertyPriority("display");
-  element.setAttribute(AGE_GATE_SUPPRESSED_MARK, "");
-  element.style.setProperty("display", "none", "important");
-  emit(action, "applied");
-  return () => {
-    element.removeAttribute(AGE_GATE_SUPPRESSED_MARK);
-    if (previousDisplay === "") {
-      element.style.removeProperty("display");
-    } else {
-      element.style.setProperty(
-        "display",
-        previousDisplay,
-        previousPriority || undefined,
-      );
-    }
-  };
-}
-
 function findHeuristicAgeGateRoots(contentDocument: Document): HTMLElement[] {
   const view = contentDocument.defaultView;
   if (view === null) {
@@ -404,10 +291,10 @@ function findHeuristicAgeGateRoots(contentDocument: Document): HTMLElement[] {
     if (!(node instanceof view.HTMLElement)) {
       continue;
     }
-    if (!isVisibleControl(node, view)) {
+    if (!isVisibleModalControl(node, view)) {
       continue;
     }
-    const text = readableText(node);
+    const text = readableModalText(node);
     if (!AGE_TEXT_PATTERN.test(text)) {
       continue;
     }
@@ -428,10 +315,10 @@ function findAffirmativeButton(root: HTMLElement): HTMLElement | undefined {
     if (!(node instanceof view.HTMLElement)) {
       continue;
     }
-    if (!isVisibleControl(node, view)) {
+    if (!isVisibleModalControl(node, view)) {
       continue;
     }
-    const label = readableText(node);
+    const label = readableModalText(node);
     if (REFUSED_BUTTON_PATTERN.test(label)) {
       continue;
     }
@@ -449,9 +336,12 @@ function rootHasDateOfBirthInputs(root: HTMLElement): boolean {
   for (const input of Array.from(
     root.querySelectorAll("input, select, textarea"),
   )) {
-    const label = readableText(input);
+    const label = readableModalText(input);
     const name =
-      input.getAttribute("name") ?? input.getAttribute("id") ?? input.getAttribute("placeholder") ?? "";
+      input.getAttribute("name") ??
+      input.getAttribute("id") ??
+      input.getAttribute("placeholder") ??
+      "";
     if (
       DATE_OF_BIRTH_FIELD_PATTERN.test(label) ||
       DATE_OF_BIRTH_FIELD_PATTERN.test(name)
@@ -463,27 +353,5 @@ function rootHasDateOfBirthInputs(root: HTMLElement): boolean {
 }
 
 function isRefusedControl(element: HTMLElement): boolean {
-  return REFUSED_BUTTON_PATTERN.test(readableText(element));
-}
-
-function isVisibleControl(element: HTMLElement, view: Window): boolean {
-  if (!element.isConnected) {
-    return false;
-  }
-  if (element.closest(`[${AGE_GATE_SUPPRESSED_MARK}]`) !== null) {
-    return false;
-  }
-  const style = view.getComputedStyle(element);
-  return style.display !== "none" && style.visibility !== "hidden";
-}
-
-function readableText(element: Element): string {
-  return (element.textContent ?? "").replace(/\s+/gu, " ").trim();
-}
-
-function releaseDocumentScroll(contentDocument: Document): void {
-  unlockRoot(contentDocument.documentElement);
-  if (contentDocument.body !== null) {
-    unlockRoot(contentDocument.body);
-  }
+  return REFUSED_BUTTON_PATTERN.test(readableModalText(element));
 }

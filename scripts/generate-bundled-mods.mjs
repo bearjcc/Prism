@@ -90,6 +90,7 @@ const schemaAlias = {
   "@prism/schema/egress": join(schemaSrc, "egress.ts"),
   "@prism/schema/page-text-replace": join(schemaSrc, "page-text-replace.ts"),
   "@prism/schema/age-gate-rules": join(schemaSrc, "age-gate-rules.ts"),
+  "@prism/schema/subscribe-dismiss-rules": join(schemaSrc, "subscribe-dismiss-rules.ts"),
 };
 
 async function buildDist(outputRoot) {

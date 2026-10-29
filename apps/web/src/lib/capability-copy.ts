@@ -22,6 +22,8 @@ export const CAPABILITY_SUMMARIES: Readonly<Record<string, string>> = {
     "Replace configured words and phrases in visible page text. Matching runs in the content script; replacement is plain text only.",
   "site.ageGate.autoConfirm":
     "Skip age-entry gates via per-site rules and heuristics. Content script sets storage, clicks confirm, or hides overlays.",
+  "site.subscribe.dismiss":
+    "Dismiss newsletter and subscribe-to-read overlays using declared per-site rules and conservative heuristics. Clicks site dismiss controls or hides modal and backdrop from the content script. Not a paywall bypass.",
 };
 
 export function capabilitySummary(id: string): string {

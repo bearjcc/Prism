@@ -1,0 +1,16 @@
+id: prism.subscribe-modal-dismiss
+version: 1.0.0
+runtime: native
+capabilities:
+  required:
+    - site.subscribe.dismiss
+scopes:
+  - <all_urls>
+fixtures:
+  - fixtures/medium-subscribe.html
+  - fixtures/substack-subscribe.html
+  - fixtures/generic-newsletter.html
+  - fixtures/login-modal.html
+  - fixtures/checkout-modal.html
+  - fixtures/cookie-banner.html
+  - fixtures/nav-drawer.html

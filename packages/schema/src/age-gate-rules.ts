@@ -1,12 +1,12 @@
+import { isSafeModSelector } from "./mod-selector.js";
+
 const TEXT_DECODER = new TextDecoder();
 
-const SAFE_MOD_SELECTOR =
-  /^(?:[a-zA-Z][\w-]*(?:[.#][\w-]+|\[[\w-]+(?:="[^"]*")?\])*(?:\s*(?:>|\+|~)\s*[a-zA-Z][\w-]*(?:[.#][\w-]+|\[[\w-]+(?:="[^"]*")?\])*)*|#[\w-]+(?:[.#][\w-]+|\[[\w-]+(?:="[^"]*")?\])*)$/u;
+export { isSafeModSelector } from "./mod-selector.js";
 
 const MAX_SITES = 500;
 const MAX_STORAGE_KEYS = 32;
 const MAX_COOKIE_ENTRIES = 8;
-const MAX_SELECTOR_LENGTH = 240;
 const MAX_STRING_VALUE_LENGTH = 512;
 const MAX_ORIGIN_LENGTH = 256;
 
@@ -31,15 +31,6 @@ export interface AgeGateRulesFile {
 export type AgeGateRulesIssue = Readonly<{
   readonly message: string;
 }>;
-
-export function isSafeModSelector(selector: string): boolean {
-  return (
-    selector.length > 0 &&
-    selector.length <= MAX_SELECTOR_LENGTH &&
-    SAFE_MOD_SELECTOR.test(selector) &&
-    !/url\s*\(|@|\/\*/iu.test(selector)
-  );
-}
 
 export function parseAgeGateRulesJson(
   source: string,

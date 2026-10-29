@@ -15,6 +15,7 @@ const expected = [
   "immich-upload.prism",
   "word-replacer.prism",
   "age-gate-auto-confirm.prism",
+  "subscribe-modal-dismiss.prism",
 ];
 
 describe("prepare-web-build", () => {
