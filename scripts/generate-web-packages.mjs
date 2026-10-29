@@ -15,6 +15,7 @@ const HOMEgrown = new Set([
   "facebook-home-friends",
   "immich-upload",
   "word-replacer",
+  "age-gate-auto-confirm",
 ]);
 
 mkdirSync(outputRoot, { recursive: true });

@@ -90,6 +90,7 @@ export interface PrismApi {
   };
   readonly ui: {
     allowlist(surface: SurfaceId, itemType: ItemType): void;
+    autoConfirmAgeGate(): void;
   };
   readonly text: {
     replace(rules: PageTextReplaceRules): void;

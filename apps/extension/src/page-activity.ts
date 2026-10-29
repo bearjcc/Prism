@@ -278,11 +278,23 @@ function rowForUnattributedActivity(event: StoredActivityEvent): PageActivityRow
   } else {
     detail = `${event.capability} ${event.outcome}`;
   }
+  const layer =
+    event.layer === "mod-action" && "capability" in event
+      ? layerForCapability(event.capability)
+      : PAGE_ACTIVITY_UNCERTAIN;
   return {
-    layer: PAGE_ACTIVITY_UNCERTAIN,
+    layer,
     source: event.modId,
-    rule: `Capability decision (${detail}) is not bound to this tab origin.`,
-    attribution: PAGE_ACTIVITY_UNCERTAIN,
+    rule:
+      event.layer === "mod-action" && "capability" in event
+        ? `${event.capability}: ${detail}.`
+        : event.layer === "mod-action"
+          ? `${detail}.`
+          : `Capability decision (${detail}) is not bound to this tab origin.`,
+    attribution:
+      event.layer === "mod-action" && "capability" in event
+        ? "known"
+        : PAGE_ACTIVITY_UNCERTAIN,
   };
 }
 
@@ -292,6 +304,9 @@ export function layerForCapability(capability: string): PageActivityLayer {
   }
   if (capability.startsWith("network.")) {
     return "network";
+  }
+  if (capability.startsWith("site.")) {
+    return "behavioural";
   }
   return PAGE_ACTIVITY_UNCERTAIN;
 }

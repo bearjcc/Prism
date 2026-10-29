@@ -81,3 +81,44 @@ describe("prism.ui.allowlist capability gate", () => {
     expect(allowlist).not.toHaveBeenCalled();
   });
 });
+
+describe("prism.ui.autoConfirmAgeGate capability gate", () => {
+  const manifest: PrismManifest = {
+    id: "prism.age-gate-auto-confirm",
+    version: "1.0.0",
+    runtime: "native",
+    capabilities: {
+      required: ["site.ageGate.autoConfirm"],
+    },
+    scopes: ["<all_urls>"],
+  };
+
+  test("records handler when site.ageGate.autoConfirm is granted", () => {
+    const autoConfirmAgeGate = vi.fn();
+    const prism = createPrismApi({
+      manifest,
+      grants: ["site.ageGate.autoConfirm"],
+      tabId: 1,
+      handlers: { autoConfirmAgeGate },
+    });
+
+    prism.ui.autoConfirmAgeGate();
+
+    expect(autoConfirmAgeGate).toHaveBeenCalledOnce();
+    expect(autoConfirmAgeGate).toHaveBeenCalledWith(manifest, undefined);
+  });
+
+  test("no-ops when site.ageGate.autoConfirm is not granted", () => {
+    const autoConfirmAgeGate = vi.fn();
+    const prism = createPrismApi({
+      manifest,
+      grants: [],
+      tabId: 1,
+      handlers: { autoConfirmAgeGate },
+    });
+
+    prism.ui.autoConfirmAgeGate();
+
+    expect(autoConfirmAgeGate).not.toHaveBeenCalled();
+  });
+});

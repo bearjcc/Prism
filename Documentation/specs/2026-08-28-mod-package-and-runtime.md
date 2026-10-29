@@ -63,6 +63,8 @@ v1 families used by tracers:
 | `youtube.watch.videoId`  | Watch page video id                                                   |
 | `reddit.comments.search` | Cross-site comments JSON for a query                                  |
 | `media.immich.contextUpload` | Extension-owned Immich image upload (UI plus broker)              |
+| `page.text.replace`          | Declarative word and phrase replace in visible page text          |
+| `site.ageGate.autoConfirm` | Declarative age-gate bypass (storage, confirm click, overlay hide)   |
 
 `reddit.comments.search` is **optional**. YouTube watch UI works without it.
 
@@ -155,6 +157,15 @@ Replace configured words and phrases in visible page text.
 - Mod supplies declarative rules via `prism.extract("page.text.replace")` (settings stored in extension storage) and applies them with `prism.text.replace(rules)`.
 - Content script performs TreeWalker replacement, MutationObserver batching, and plain-text insertion only.
 - Fixtures: HTML with sample paragraph; golden: configured replacements in body text, inputs and code unchanged.
+
+### 8. Age gate auto-confirm (`mods/age-gate-auto-confirm`)
+
+Skip common "over 18 / enter site" gates when the user has chosen to proceed as an adult.
+
+- Required: `site.ageGate.autoConfirm`.
+- Per-site data: `rules/sites.json` (origin match plus optional `localStorage`, `cookies`, `confirm`, and `overlay` selector strings). Pack-time schema validation; no script in rules.
+- Runtime order on a matching origin: set remembered first-party state from the content script at `document_start`, click the declared confirm selector if needed, then hide a declared overlay. Sites without a rule use conservative text heuristics only (no date-of-birth entry).
+- Fixtures: saved HTML for storage, button, overlay, date-of-birth, and non-age modal cases.
 
 ## UserCSS import (not a tracer, but format-locked)
 

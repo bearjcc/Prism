@@ -136,10 +136,13 @@ export function describeActivityEvent(event: StoredActivityEvent): string {
     return `${event.modId} activate failed: ${event.error}`;
   }
   if (event.layer === "mod-action") {
-    if ("action" in event) {
+    if ("action" in event && !("capability" in event)) {
       const where =
         event.pageOrigin === undefined ? "" : ` on ${event.pageOrigin}`;
       return `${event.modId} ${event.action} ${event.outcome}${where}`;
+    }
+    if ("action" in event && "capability" in event) {
+      return `${event.modId} ${event.capability} ${event.action} ${event.outcome}`;
     }
     return `${event.modId} ${event.capability} applied ${event.count} replacement(s)`;
   }

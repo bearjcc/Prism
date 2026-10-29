@@ -29,6 +29,7 @@ describe("generate-web-packages", () => {
       "facebook-home-friends.prism",
       "immich-upload.prism",
       "word-replacer.prism",
+      "age-gate-auto-confirm.prism",
     ];
     for (const name of expected) {
       expect(existsSync(join(packagesRoot, name))).toBe(true);

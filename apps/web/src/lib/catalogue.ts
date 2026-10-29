@@ -277,6 +277,38 @@ export const LISTINGS: CatalogueListing[] = [
       },
     ],
   },
+  {
+    id: "age-gate-auto-confirm",
+    packageId: "prism.age-gate-auto-confirm",
+    name: "Age gate auto-confirm",
+    author: "Prism",
+    site: "Any site",
+    siteHost: "any site",
+    version: "1.0.0",
+    updated: "2026-10-17",
+    summary: "Skip common over-18 entry gates.",
+    description:
+      "Declarative sites.json rules where available; conservative heuristics elsewhere. Storage, confirm click, and overlay hide run in the content script.",
+    runtime: "native",
+    scopes: ["<all_urls>"],
+    bundledEntry: bundledEntryPath("prism.age-gate-auto-confirm"),
+    previewSrc: "/previews/age-gate-auto-confirm.webp",
+    previewAlt: "Age gate overlay dismissed on a fixture page",
+    capabilities: [
+      {
+        id: "site.ageGate.autoConfirm",
+        summary: capabilitySummary("site.ageGate.autoConfirm"),
+        required: true,
+      },
+    ],
+    versions: [
+      {
+        version: "1.0.0",
+        released: "2026-10-17",
+        notes: "First public package.",
+      },
+    ],
+  },
 ];
 
 export function modPreviewProps(mod: CatalogueListing): {

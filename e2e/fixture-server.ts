@@ -14,6 +14,13 @@ const ROUTES: Readonly<Record<string, string>> = {
     "fixtures",
     "ads.html",
   ),
+  "/age-gate/button-gate.html": join(
+    repoRoot,
+    "mods",
+    "age-gate-auto-confirm",
+    "fixtures",
+    "button-gate.html",
+  ),
 };
 
 export async function startFixtureServer(): Promise<{

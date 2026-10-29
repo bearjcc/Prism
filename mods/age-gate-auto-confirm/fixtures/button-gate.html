@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Button age gate fixture</title>
+  </head>
+  <body style="overflow: hidden">
+    <div
+      id="gate"
+      data-prism-age-gate
+      role="dialog"
+      aria-modal="true"
+      style="position: fixed; inset: 0; background: #222; color: #fff"
+    >
+      <p>Age verification: adults only.</p>
+      <button id="enter" type="button">Enter site</button>
+      <button id="leave" type="button">Under 18</button>
+    </div>
+    <main id="content" hidden>Fixture article body.</main>
+    <script>
+      document.getElementById("enter").addEventListener("click", () => {
+        document.getElementById("gate").remove();
+        const content = document.getElementById("content");
+        content.hidden = false;
+        document.body.style.overflow = "";
+      });
+    </script>
+  </body>
+</html>

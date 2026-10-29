@@ -1,5 +1,6 @@
 export const SCHEMA_PACKAGE_NAME = "@prism/schema";
 
+export * from "./age-gate-rules.js";
 export * from "./capabilities.js";
 export * from "./capability-diff.js";
 export * from "./egress.js";
