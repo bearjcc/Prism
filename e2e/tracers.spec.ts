@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { strToU8, zipSync } from "fflate";
 import { packMod } from "@prism/schema";
 import { expect, test } from "@playwright/test";
-import { launchChromeExtensionContext } from "./extension.js";
+import { launchChromeExtensionContextWithMarketplaceMods as launchChromeExtensionContext } from "./extension.js";
 import { startFixtureServer } from "./fixture-server.js";
 import {
   assertSubscribeModalTracerOnFixture,

@@ -152,12 +152,7 @@ test("bundled mod generation skips directories without prism.yaml", () => {
     manifest: { id: string };
     entry: string | null;
   }>;
-  expect(index).toEqual([
-    {
-      manifest: expect.objectContaining({ id: "fixture.empty" }),
-      entry: null,
-    },
-  ]);
+  expect(index).toEqual([]);
   const serviceWorker = readFileSync(
     join(outputRoot, "dist", "service-worker.js"),
     "utf8",

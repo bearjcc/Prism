@@ -11,8 +11,10 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { strFromU8 } from "fflate";
 import { isStyleSourcePath, loadPackedMod, packMod } from "../packages/schema/dist/index.js";
+import { BUNDLED_MOD_SLUGS } from "./bundled-mod-slugs.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const bundledSlugSet = new Set(BUNDLED_MOD_SLUGS);
 const modsRoot = resolve(process.argv[2] ?? join(repoRoot, "mods"));
 const chromeRoot = join(repoRoot, "apps", "extension", "targets", "chrome");
 const firefoxRoot = join(repoRoot, "apps", "extension", "targets", "firefox");
@@ -31,6 +33,9 @@ for (const directory of readdirSync(modsRoot, { withFileTypes: true }).sort(
   }
   const sourceRoot = join(modsRoot, directory.name);
   if (!existsSync(join(sourceRoot, "prism.yaml"))) {
+    continue;
+  }
+  if (!bundledSlugSet.has(directory.name)) {
     continue;
   }
 
@@ -91,6 +96,8 @@ const schemaAlias = {
   "@prism/schema/page-text-replace": join(schemaSrc, "page-text-replace.ts"),
   "@prism/schema/age-gate-rules": join(schemaSrc, "age-gate-rules.ts"),
   "@prism/schema/subscribe-dismiss-rules": join(schemaSrc, "subscribe-dismiss-rules.ts"),
+  "@prism/schema/marketplace-bridge": join(schemaSrc, "marketplace-bridge.ts"),
+  "@prism/schema/marketplace-catalogue": join(schemaSrc, "marketplace-catalogue.ts"),
 };
 
 async function buildDist(outputRoot) {

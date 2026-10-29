@@ -33,6 +33,12 @@ describe("prepare-web-build", () => {
     for (const name of expected) {
       expect(existsSync(join(packagesRoot, name))).toBe(true);
     }
+    expect(existsSync(join(repoRoot, "apps", "web", "public", "catalogue-index.json"))).toBe(
+      true,
+    );
+    expect(existsSync(join(repoRoot, "apps", "web", "public", "catalogue-index.sig"))).toBe(
+      true,
+    );
     const onDisk = readdirSync(packagesRoot).filter((name) => name.endsWith(".prism"));
     expect(onDisk.sort()).toEqual(expected.sort());
   });

@@ -111,6 +111,7 @@ import {
   readWordReplacerSettings,
   toPageTextReplaceRules,
 } from "./word-replacer-settings.js";
+import { installCatalogueMarketplaceBridge } from "./catalogue-marketplace-bridge.js";
 
 export interface ContentRuntimeClient {
   getURL(path: string): string;
@@ -2061,6 +2062,21 @@ export function createChromeContentHandlers(
 }
 
 if (typeof chrome !== "undefined") {
+  installCatalogueMarketplaceBridge(
+    {
+      location: globalThis.location,
+      documentElement: document.documentElement,
+      addEventListener: (...args: Parameters<Window["addEventListener"]>) =>
+        globalThis.addEventListener(...args),
+      postMessage: globalThis.postMessage.bind(globalThis),
+    },
+    {
+      sendMessage: (message) => chrome.runtime.sendMessage(message),
+      getManifest: () =>
+        (chrome.runtime as unknown as { getManifest(): { version: string } }).getManifest(),
+    },
+  );
+
   const undo = new TabUndoStack();
   const importedAssets = new Map<string, string>();
   const pasteGuard = installPasteAllowGuard(document, true);

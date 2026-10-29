@@ -354,7 +354,98 @@ export async function mountOptions(
     otherModsRoot,
     optionsOriginRoot,
   );
+  await renderMarketplaceInstallPrompt(api, optionsDocument);
   await renderImmichSetup(api, optionsDocument);
+}
+
+async function renderMarketplaceInstallPrompt(
+  api: PopupChromeApi,
+  optionsDocument: Document,
+): Promise<void> {
+  let root = optionsDocument.getElementById("marketplace-install");
+  if (root === null) {
+    root = optionsDocument.createElement("section");
+    root.id = "marketplace-install";
+    root.className = "marketplace-install";
+    optionsDocument.body.prepend(root);
+  }
+  root.replaceChildren();
+  const response = await api.runtime.sendMessage<{
+    readonly pending?: {
+      readonly packageId: string;
+      readonly version: string;
+      readonly name: string;
+      readonly author: string;
+      readonly requiredCapabilities: readonly string[];
+      readonly optionalCapabilities: readonly string[];
+    } | null;
+  }>({ type: "get-marketplace-install-pending" });
+  const pending = response.pending;
+  if (pending === undefined || pending === null) {
+    root.hidden = true;
+    return;
+  }
+  root.hidden = false;
+  const heading = optionsDocument.createElement("h2");
+  heading.textContent = "Install mod from webprism.app";
+  root.append(heading);
+  const summary = optionsDocument.createElement("p");
+  summary.textContent = `${pending.name} (${pending.packageId} ${pending.version}) by ${pending.author}`;
+  root.append(summary);
+  const caps = optionsDocument.createElement("ul");
+  for (const capability of pending.requiredCapabilities) {
+    const item = optionsDocument.createElement("li");
+    item.textContent = `${capability} (required)`;
+    caps.append(item);
+  }
+  for (const capability of pending.optionalCapabilities) {
+    const item = optionsDocument.createElement("li");
+    item.textContent = `${capability} (optional)`;
+    caps.append(item);
+  }
+  root.append(caps);
+  const actions = optionsDocument.createElement("div");
+  actions.className = "marketplace-install-actions";
+  const approve = optionsDocument.createElement("button");
+  approve.type = "button";
+  approve.textContent = "Install and enable";
+  approve.addEventListener("click", () => {
+    void (async () => {
+      const result = await api.runtime.sendMessage<{
+        readonly ok?: boolean;
+        readonly error?: string;
+      }>({ type: "confirm-marketplace-install" });
+      if (result.ok !== true) {
+        approve.textContent =
+          result.error === undefined ? "Install refused" : result.error;
+        return;
+      }
+      await renderMarketplaceInstallPrompt(api, optionsDocument);
+      const modsRoot = optionsDocument.getElementById("mods");
+      if (modsRoot !== null) {
+        await refreshOptions(
+          api,
+          optionsDocument,
+          modsRoot,
+          requiredElement(optionsDocument, "activity"),
+          requiredElement(optionsDocument, "global-policies"),
+          optionsDocument.getElementById("pin-hint"),
+          optionsDocument.getElementById("other-mods"),
+          optionsDocument.getElementById("options-origin"),
+        );
+      }
+    })();
+  });
+  const cancel = optionsDocument.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", () => {
+    void api.runtime
+      .sendMessage({ type: "cancel-marketplace-install" })
+      .then(() => renderMarketplaceInstallPrompt(api, optionsDocument));
+  });
+  actions.append(approve, cancel);
+  root.append(actions);
 }
 
 async function renderImmichSetup(
@@ -918,6 +1009,19 @@ function renderMod(
   );
   heading.append(name, badge, enabled);
   section.append(heading);
+
+  if (mod.origin === "imported") {
+    const remove = popupDocument.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove installed mod";
+    remove.addEventListener("click", () => {
+      void api.runtime.sendMessage({
+        type: "remove-installed-mod",
+        modId: mod.manifest.id,
+      });
+    });
+    section.append(remove);
+  }
 
   if (detail === "brief") {
     const brief = popupDocument.createElement("p");

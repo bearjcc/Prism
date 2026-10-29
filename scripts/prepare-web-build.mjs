@@ -18,3 +18,7 @@ execFileSync(process.execPath, ["scripts/generate-web-packages.mjs"], {
   cwd: repoRoot,
   stdio: "inherit",
 });
+execFileSync(process.execPath, ["scripts/generate-catalogue-index.mjs"], {
+  cwd: repoRoot,
+  stdio: "inherit",
+});

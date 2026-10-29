@@ -93,7 +93,7 @@ Railway should use monorepo root `/` with `railwayConfigFile` `/apps/web/railway
 
 ## Extension detect
 
-If the extension sets `document.documentElement.dataset.prism = "1"`, install copy switches to enabling the bundled mod in the popup. The website does not change extension code.
+On webprism.app the extension content script sets `data-prism="1"` and answers a versioned postMessage handshake. Mod pages use that to show Add to Prism. The extension downloads `.prism` packages from this site after verifying the signed `catalogue-index.json` (Ed25519 public key pinned in the extension, SHA-256 per release). No mod bytes come from the page.
 
 ## Theme
 

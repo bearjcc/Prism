@@ -58,6 +58,18 @@
     "./subscribe-dismiss-rules": {
       "types": "./dist/subscribe-dismiss-rules.d.ts",
       "import": "./dist/subscribe-dismiss-rules.js"
+    },
+    "./marketplace-bridge": {
+      "types": "./dist/marketplace-bridge.d.ts",
+      "import": "./dist/marketplace-bridge.js"
+    },
+    "./marketplace-catalogue": {
+      "types": "./dist/marketplace-catalogue.d.ts",
+      "import": "./dist/marketplace-catalogue.js"
+    },
+    "./marketplace-catalogue-node": {
+      "types": "./dist/marketplace-catalogue-node.d.ts",
+      "import": "./dist/marketplace-catalogue-node.js"
     }
   },
   "files": [

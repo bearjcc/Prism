@@ -7,8 +7,10 @@ import {
   type Worker,
 } from "@playwright/test";
 import type { ExtensionSession } from "./extension-session.js";
+import { seedMarketplaceMods } from "./marketplace-seed.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packagesRoot = join(repoRoot, "apps", "web", "public", "packages");
 
 export const chromeExtensionPath = join(
   repoRoot,
@@ -54,6 +56,14 @@ export async function launchChromeExtensionContext(): Promise<
       await rm(loadRoot, { recursive: true, force: true });
     },
   };
+}
+
+export async function launchChromeExtensionContextWithMarketplaceMods(): Promise<
+  ExtensionSession & { serviceWorker: Worker }
+> {
+  const session = await launchChromeExtensionContext();
+  await seedMarketplaceMods(session, packagesRoot);
+  return session;
 }
 
 /** @deprecated Use launchChromeExtensionContext */

@@ -1,4 +1,4 @@
-import { InstallControl } from "./install-control";
+import { ModMarketplaceInstall } from "./mod-marketplace-install";
 import type { CatalogueMod } from "../lib/catalogue";
 import { modInstallSteps, packageDownloadPath } from "../lib/mod-install";
 
@@ -14,7 +14,16 @@ export function ModInstallPanel({ mod }: Props) {
     <section className="mod-install-panel" aria-labelledby="install-heading">
       <h2 id="install-heading">Install</h2>
       <p className="mod-install-cta">
-        <InstallControl className="btn btn-solid" labelInstall="Get Prism extension" packageId={mod.packageId} />
+        <ModMarketplaceInstall
+          className="mod-marketplace-install"
+          packageId={mod.packageId}
+          version={mod.version}
+        />
+        <noscript>
+          <a className="btn btn-solid" href="https://chromewebstore.google.com/">
+            Get Prism extension
+          </a>
+        </noscript>
       </p>
       <ol className="install-steps">
         {steps.map((step) => (

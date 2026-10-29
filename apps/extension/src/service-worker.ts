@@ -123,12 +123,21 @@ import {
   WORD_REPLACER_SETTINGS_STORAGE_KEY,
   type WordReplacerStoredSettings,
 } from "./word-replacer-settings.js";
+import {
+  catalogueOriginFromPageUrl,
+  clearMarketplaceInstallPending,
+  confirmMarketplaceInstall,
+  handleMarketplaceInstallRequest,
+  isCatalogueContentScriptSender,
+  marketplaceBridgeState,
+  readMarketplaceInstallPending,
+} from "./marketplace-service-worker.js";
 
 function extensionContextMenus(): ReturnType<typeof readContextMenusApi> {
   if (typeof chrome === "undefined") {
     return undefined;
   }
-  return extensionContextMenus();
+  return readContextMenusApi(chrome);
 }
 
 interface RuntimeMessage {
@@ -159,6 +168,9 @@ interface RuntimeMessage {
   readonly apiKey?: string;
   readonly mobileChip?: boolean;
   readonly settings?: unknown;
+  readonly packageId?: string;
+  readonly version?: string;
+  readonly pageUrl?: string;
 }
 
 export interface RuntimeMessageSender {
@@ -193,6 +205,7 @@ interface ChromeApi {
   readonly runtime: {
     readonly id: string;
     getURL(path: string): string;
+    getManifest(): { readonly version: string };
     readonly onMessage: {
       addListener(
         listener: (
@@ -207,6 +220,11 @@ interface ChromeApi {
     readonly local: {
       get(keys: string[]): Promise<StoredState>;
       set(state: StoredState): Promise<void>;
+    };
+    readonly session?: {
+      get(keys: string | string[]): Promise<Record<string, unknown>>;
+      set(values: Record<string, unknown>): Promise<void>;
+      remove(keys: string | string[]): Promise<void>;
     };
   };
   readonly tabs: {
@@ -1011,6 +1029,113 @@ export async function handleRuntimeMessage(
       dependencies.fetchEgressContract,
     );
   }
+  if (message.type === "get-marketplace-bridge-state") {
+    const manifest = chrome.runtime.getManifest();
+    return marketplaceBridgeState(manifest.version, mods, enabled);
+  }
+  if (
+    message.type === "marketplace-install-request" &&
+    message.packageId !== undefined &&
+    message.version !== undefined &&
+    isCatalogueContentScriptSender(message.pageUrl ?? sender.url)
+  ) {
+    const catalogueOrigin = catalogueOriginFromPageUrl(message.pageUrl ?? sender.url);
+    if (catalogueOrigin === undefined) {
+      return { ok: false, error: "Catalogue origin refused" };
+    }
+    const sessionStorage = chrome.storage.session;
+    if (sessionStorage === undefined) {
+      return { ok: false, error: "Session storage unavailable" };
+    }
+    const manifest = chrome.runtime.getManifest();
+    return handleMarketplaceInstallRequest({
+      catalogueOrigin,
+      packageId: message.packageId,
+      version: message.version,
+      extensionVersion: manifest.version,
+      fetchImpl: fetch.bind(globalThis),
+      sessionStorage,
+      openOptionsPage: async () => {
+        const openOptionsPage = (
+          chrome.runtime as unknown as {
+            openOptionsPage?: () => void;
+          }
+        ).openOptionsPage;
+        openOptionsPage?.();
+      },
+    });
+  }
+  if (message.type === "get-marketplace-install-pending") {
+    const sessionStorage = chrome.storage.session;
+    if (sessionStorage === undefined) {
+      return { pending: null };
+    }
+    const pending = await readMarketplaceInstallPending(sessionStorage);
+    return { pending: pending ?? null };
+  }
+  if (message.type === "cancel-marketplace-install") {
+    const sessionStorage = chrome.storage.session;
+    if (sessionStorage !== undefined) {
+      await clearMarketplaceInstallPending(sessionStorage);
+    }
+    return { ok: true };
+  }
+  if (message.type === "confirm-marketplace-install") {
+    const sessionStorage = chrome.storage.session;
+    if (sessionStorage === undefined) {
+      return { ok: false, error: "Session storage unavailable" };
+    }
+    const pending = await readMarketplaceInstallPending(sessionStorage);
+    if (pending === undefined) {
+      return { ok: false, error: "No pending install" };
+    }
+    const confirmed = await confirmMarketplaceInstall({
+      bundled,
+      importedArchives: state.importedArchives ?? {},
+      pending,
+    });
+    if (!confirmed.ok) {
+      return confirmed;
+    }
+    enabled[pending.packageId] = true;
+    grants[pending.packageId] = pending.requiredCapabilities.filter(isCapabilityId);
+    const nextMods = resolveInstalledMods(bundled, {
+      importedArchives: confirmed.importedArchives,
+    });
+    await syncModSideEffects(
+      dependencies,
+      nextMods,
+      enabled,
+      grants,
+      syncSkips(siteExceptions, modFailureBudget, sessionExceptions.mods),
+    );
+    await dependencies.setState({
+      importedArchives: confirmed.importedArchives,
+      enabled,
+      grants,
+    });
+    await clearMarketplaceInstallPending(sessionStorage);
+    return { ok: true, id: pending.packageId };
+  }
+  if (message.type === "remove-installed-mod" && message.modId !== undefined) {
+    if ((state.importedArchives ?? {})[message.modId] === undefined) {
+      return { ok: false, error: "Mod is not installed from the marketplace" };
+    }
+    const importedArchives = { ...state.importedArchives };
+    delete importedArchives[message.modId];
+    enabled[message.modId] = false;
+    delete grants[message.modId];
+    const nextMods = resolveInstalledMods(bundled, { importedArchives });
+    await syncModSideEffects(
+      dependencies,
+      nextMods,
+      enabled,
+      grants,
+      syncSkips(siteExceptions, modFailureBudget, sessionExceptions.mods),
+    );
+    await dependencies.setState({ importedArchives, enabled, grants });
+    return { ok: true };
+  }
   if (message.type === "import-mod" && message.archive !== undefined) {
     try {
       const imported = installedModFromPackedArchive(
@@ -1218,6 +1343,12 @@ const EXTENSION_MESSAGE_TYPES = new Set([
   "get-element-hides",
   "get-paste-policy",
   "get-popup-chrome",
+  "get-marketplace-bridge-state",
+  "get-marketplace-install-pending",
+  "marketplace-install-request",
+  "confirm-marketplace-install",
+  "cancel-marketplace-install",
+  "remove-installed-mod",
   "import-mod",
   "immich-register-ui",
   "immich-sync-context-menu",
@@ -1243,6 +1374,9 @@ const EXTENSION_MESSAGE_TYPES = new Set([
 ]);
 const EXTENSION_UI_MESSAGE_TYPES = new Set([
   "dismiss-pin-hint",
+  "confirm-marketplace-install",
+  "cancel-marketplace-install",
+  "remove-installed-mod",
   "import-mod",
   "set-immich-config",
   "test-immich-connection",

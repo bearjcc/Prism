@@ -82,6 +82,18 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/subscribe-dismiss-rules.ts"),
       },
       {
+        find: "@prism/schema/marketplace-bridge",
+        replacement: path.join(root, "packages/schema/src/marketplace-bridge.ts"),
+      },
+      {
+        find: "@prism/schema/marketplace-catalogue-node",
+        replacement: path.join(root, "packages/schema/src/marketplace-catalogue-node.ts"),
+      },
+      {
+        find: "@prism/schema/marketplace-catalogue",
+        replacement: path.join(root, "packages/schema/src/marketplace-catalogue.ts"),
+      },
+      {
         find: /^@prism\/schema$/,
         replacement: path.join(root, "packages/schema/src/index.ts"),
       },

@@ -29,7 +29,7 @@ describe("mod install helpers", () => {
     const steps = modInstallSteps(LISTINGS[0]!);
     expect(steps).toHaveLength(3);
     expect(steps[0]?.title).toMatch(/Prism extension/i);
-    expect(steps[1]?.detail).toContain("prism.kitten-ad-replace");
+    expect(steps[1]?.title).toMatch(/Add the mod/i);
     expect(steps[2]?.detail).toMatch(/\.prism/);
   });
 });
