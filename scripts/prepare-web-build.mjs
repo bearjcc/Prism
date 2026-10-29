@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertCatalogueSigningForBuild } from "./catalogue-signing-config.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const schemaPack = join(repoRoot, "packages", "schema", "dist", "pack.js");
@@ -13,6 +14,8 @@ if (!existsSync(schemaPack)) {
     stdio: "inherit",
   });
 }
+
+assertCatalogueSigningForBuild();
 
 execFileSync(process.execPath, ["scripts/generate-web-packages.mjs"], {
   cwd: repoRoot,

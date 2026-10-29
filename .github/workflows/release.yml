@@ -21,6 +21,8 @@ jobs:
           node-version: "22"
       - run: npm install
       - run: npm run build
+        env:
+          PRISM_CATALOGUE_SIGNING_KEY: ${{ secrets.PRISM_CATALOGUE_SIGNING_KEY }}
       - name: Package Chromium unpack directory
         run: |
           mkdir -p dist

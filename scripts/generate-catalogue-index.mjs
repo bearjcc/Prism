@@ -1,11 +1,18 @@
-import { createHash, createPrivateKey, sign } from "node:crypto";
+import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadPackedMod } from "../packages/schema/dist/pack.js";
 import { validateManifest } from "../packages/schema/dist/validate.js";
-import { MARKETPLACE_FIXTURE_PRIVATE_KEY_BASE64 } from "./marketplace-fixture-signing.mjs";
+import {
+  catalogueSigningPrivateKeyForGenerate,
+  catalogueSigningPublicKeyForVerify,
+} from "./catalogue-signing-config.mjs";
+import {
+  signCatalogueIndexBytes,
+  verifyCatalogueIndexBytes,
+} from "./catalogue-signing-crypto.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const modsRoot = join(repoRoot, "mods");
@@ -24,18 +31,15 @@ const MARKETPLACE_SLUGS = new Set([
   "subscribe-modal-dismiss",
 ]);
 
-const privateKeyBytes = Buffer.from(
-  MARKETPLACE_FIXTURE_PRIVATE_KEY_BASE64,
-  "base64",
-);
-const privateKey = createPrivateKey({
-  key: Buffer.concat([
-    Buffer.from("302e020100300506032b657004220420", "hex"),
-    privateKeyBytes,
-  ]),
-  format: "der",
-  type: "pkcs8",
-});
+const privateKeyBase64 = catalogueSigningPrivateKeyForGenerate();
+if (privateKeyBase64 === undefined) {
+  console.error(
+    "generate-catalogue-index: set PRISM_CATALOGUE_SIGNING_KEY or run under VITEST for tests.",
+  );
+  process.exit(1);
+}
+
+const publicKeyBase64 = catalogueSigningPublicKeyForVerify();
 
 const releases = [];
 
@@ -87,14 +91,16 @@ const index = {
 };
 
 const indexBytes = Buffer.from(`${JSON.stringify(index)}\n`, "utf8");
-const signature = sign(null, indexBytes, privateKey);
+const signature = signCatalogueIndexBytes(indexBytes, privateKeyBase64);
+const signatureBase64 = `${signature.toString("base64")}\n`;
+
+if (!verifyCatalogueIndexBytes(indexBytes, signatureBase64, publicKeyBase64)) {
+  console.error("generate-catalogue-index: signature self-check failed");
+  process.exit(1);
+}
 
 writeFileSync(join(webPublic, "catalogue-index.json"), indexBytes);
-writeFileSync(
-  join(webPublic, "catalogue-index.sig"),
-  `${signature.toString("base64")}\n`,
-  "utf8",
-);
+writeFileSync(join(webPublic, "catalogue-index.sig"), signatureBase64, "utf8");
 
 console.log(
   `generate-catalogue-index: wrote ${releases.length} releases to apps/web/public/catalogue-index.json`,

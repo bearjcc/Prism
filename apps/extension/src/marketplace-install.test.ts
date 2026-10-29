@@ -1,11 +1,15 @@
+/** @vitest-environment node */
+
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   catalogueIndexUrl,
   catalogueSignatureUrl,
   packageUrl,
+  verifyCatalogueIndexSignatureWeb,
 } from "@prism/schema/marketplace-catalogue";
 import {
   downloadVerifiedMarketplacePackage,
@@ -17,7 +21,27 @@ import {
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 describe("marketplace install pipeline", () => {
+  beforeAll(() => {
+    execFileSync(process.execPath, ["scripts/prepare-web-build.mjs"], {
+      cwd: repoRoot,
+      env: { ...process.env, VITEST: "true" },
+    });
+  });
+
   const origin = "http://localhost:3000";
+
+  it("verifies the generated test catalogue signature", async () => {
+    const indexBytes = readFileSync(
+      join(repoRoot, "apps", "web", "public", "catalogue-index.json"),
+    );
+    const signature = readFileSync(
+      join(repoRoot, "apps", "web", "public", "catalogue-index.sig"),
+      "utf8",
+    );
+    await expect(
+      verifyCatalogueIndexSignatureWeb(new Uint8Array(indexBytes), signature),
+    ).resolves.toBe(true);
+  });
 
   it("refuses a package when the digest does not match the signed index", async () => {
     const indexBytes = readFileSync(

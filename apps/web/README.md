@@ -78,6 +78,28 @@ Set these on the `@prism/web` service (monorepo root build):
 | `AUTH_GOOGLE_ID` | One provider min | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | With Google | Google OAuth client secret |
 | `GITHUB_TOKEN` | Optional | GitHub API token for `/install` release metadata and Firefox XPI proxy (rate limits) |
+| `PRISM_CATALOGUE_SIGNING_KEY` | Yes (production) | Base64 Ed25519 private seed (32 bytes) for signing `catalogue-index.sig` at build time |
+
+### Catalogue signing (`catalogue-index.sig`)
+
+The extension pins the **production public key** in `packages/schema/src/catalogue-signing-public-key.ts`. The matching private key must **never** be committed.
+
+Generate a new keypair locally (do not run this in CI or cloud agents):
+
+```bash
+node scripts/generate-catalogue-signing-keypair.mjs
+```
+
+Then:
+
+1. Commit the updated `catalogue-signing-public-key.ts`.
+2. Paste the single line from gitignored `catalogue-signing-private-key.local.base64` into:
+   - **GitHub:** Settings → Secrets and variables → Actions → `PRISM_CATALOGUE_SIGNING_KEY`
+   - **Railway:** `@prism/web` service → Variables → `PRISM_CATALOGUE_SIGNING_KEY`
+
+Until both the committed public key and `PRISM_CATALOGUE_SIGNING_KEY` are set, `npm run build` fails closed and the extension refuses signed catalogue installs.
+
+Unit tests use a separate test keypair (`scripts/marketplace-catalogue-test-keys.mjs`); that key is rejected in production builds.
 
 ### Extension install page (`/install`)
 

@@ -4,6 +4,7 @@ import {
   catalogueSignatureUrl,
   constantTimeEqualHex,
   findCatalogueRelease,
+  marketplaceCatalogueSigningConfigured,
   packageUrl,
   parseCatalogueIndex,
   verifyCatalogueIndexSignatureWeb,
@@ -42,6 +43,9 @@ export async function loadVerifiedCatalogueIndex(
   catalogueOrigin: string,
   fetchImpl: FetchLike,
 ): Promise<CatalogueIndex> {
+  if (!marketplaceCatalogueSigningConfigured()) {
+    throw new Error("Catalogue signing is not configured");
+  }
   const indexResponse = await fetchImpl(catalogueIndexUrl(catalogueOrigin));
   const signatureResponse = await fetchImpl(catalogueSignatureUrl(catalogueOrigin));
   if (!indexResponse.ok || !signatureResponse.ok) {

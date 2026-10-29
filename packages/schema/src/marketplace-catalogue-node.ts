@@ -1,5 +1,7 @@
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
-import { MARKETPLACE_CATALOGUE_PUBLIC_KEY_BASE64 } from "./marketplace-catalogue.js";
+import {
+  resolveMarketplaceCataloguePublicKeyBase64,
+} from "./marketplace-catalogue.js";
 
 function publicKeyFromRaw(raw: Buffer) {
   return createPublicKey({
@@ -15,11 +17,15 @@ function publicKeyFromRaw(raw: Buffer) {
 export function verifyCatalogueIndexSignatureNode(
   indexBytes: Uint8Array,
   signatureBase64: string,
-  publicKeyBase64: string = MARKETPLACE_CATALOGUE_PUBLIC_KEY_BASE64,
+  publicKeyBase64?: string,
 ): boolean {
+  const pinned = publicKeyBase64 ?? resolveMarketplaceCataloguePublicKeyBase64();
+  if (pinned === null) {
+    return false;
+  }
   const signature = Buffer.from(signatureBase64.trim(), "base64");
   const publicKey = publicKeyFromRaw(
-    Buffer.from(publicKeyBase64, "base64"),
+    Buffer.from(pinned, "base64"),
   );
   return verifySignature(null, Buffer.from(indexBytes), publicKey, signature);
 }

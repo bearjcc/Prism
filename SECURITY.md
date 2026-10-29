@@ -24,6 +24,12 @@ Maintainers will acknowledge, fix or reject, and agree timing before any public 
 
 There is no paid bug bounty yet.
 
+## Catalogue signing keys
+
+The web marketplace signs `catalogue-index.json` with Ed25519. The extension pins only the **production public key** in source. The private seed must live in `PRISM_CATALOGUE_SIGNING_KEY` (GitHub Actions and Railway), never in git.
+
+An early fixture key pair was once committed under `scripts/marketplace-fixture-signing.mjs`; that private key is compromised and the public key is blocked. Rotate using `node scripts/generate-catalogue-signing-keypair.mjs` and follow `apps/web/README.md`.
+
 ## Corresponding source
 
 Store listings and hosted copies of modified first-party code must offer AGPL corresponding source. That is a licence duty, not extra safety.

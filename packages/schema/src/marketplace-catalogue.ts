@@ -1,10 +1,13 @@
 import { isCapabilityId } from "./capabilities.js";
+import { MARKETPLACE_CATALOGUE_SIGNING_PUBLIC_KEY_BASE64 } from "./catalogue-signing-public-key.js";
+import { MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64 } from "./catalogue-signing-test-keys.js";
 
 export const MARKETPLACE_CATALOGUE_SCHEMA_VERSION = 1 as const;
 
-/** Pinned Ed25519 public key for the first-party webprism.app fixture index. */
-export const MARKETPLACE_CATALOGUE_PUBLIC_KEY_BASE64 =
-  "NA6FNpXz+eP/5SRPqxKuVaFGUGV5r9NXMEPm2tXinLY=";
+/** Former in-repo fixture key (private was committed). Never trust again. */
+export const REVOKED_CATALOGUE_PUBLIC_KEYS_BASE64 = [
+  "NA6FNpXz+eP/5SRPqxKuVaFGUGV5r9NXMEPm2tXinLY=",
+] as const;
 
 export const PRODUCTION_CATALOGUE_ORIGIN = "https://webprism.app";
 export const DEV_CATALOGUE_ORIGIN = "http://localhost:3000";
@@ -27,6 +30,41 @@ export type CatalogueIndex = {
   readonly generatedAt: string;
   readonly releases: readonly CatalogueRelease[];
 };
+
+export function isForbiddenProductionCataloguePublicKey(publicKeyBase64: string): boolean {
+  const key = publicKeyBase64.trim();
+  if (key.length === 0) {
+    return true;
+  }
+  if ((REVOKED_CATALOGUE_PUBLIC_KEYS_BASE64 as readonly string[]).includes(key)) {
+    return true;
+  }
+  if (key === MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64) {
+    return true;
+  }
+  return false;
+}
+
+/** Production public key pinned in extension builds; null until configured. */
+export function resolveMarketplaceCataloguePublicKeyBase64(): string | null {
+  if (process.env.VITEST === "true") {
+    return MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64;
+  }
+  const committed = MARKETPLACE_CATALOGUE_SIGNING_PUBLIC_KEY_BASE64.trim();
+  if (isForbiddenProductionCataloguePublicKey(committed)) {
+    return null;
+  }
+  return committed;
+}
+
+export function marketplaceCatalogueSigningConfigured(): boolean {
+  return resolveMarketplaceCataloguePublicKeyBase64() !== null;
+}
+
+/** @deprecated Use resolveMarketplaceCataloguePublicKeyBase64(); empty when signing is not configured. */
+export function marketplaceCataloguePublicKeyBase64ForLegacyExports(): string {
+  return resolveMarketplaceCataloguePublicKeyBase64() ?? "";
+}
 
 export function catalogueOriginsForPackages(): readonly string[] {
   return [PRODUCTION_CATALOGUE_ORIGIN, DEV_CATALOGUE_ORIGIN];
@@ -51,15 +89,25 @@ export function packageUrl(origin: string, packagePath: string): string {
 export async function verifyCatalogueIndexSignatureWeb(
   indexBytes: Uint8Array,
   signatureBase64: string,
-  publicKeyBase64: string = MARKETPLACE_CATALOGUE_PUBLIC_KEY_BASE64,
+  publicKeyBase64?: string,
 ): Promise<boolean> {
+  const pinned = publicKeyBase64 ?? resolveMarketplaceCataloguePublicKeyBase64();
+  if (pinned === null) {
+    return false;
+  }
+  if (
+    process.env.VITEST !== "true" &&
+    isForbiddenProductionCataloguePublicKey(pinned)
+  ) {
+    return false;
+  }
   const subtle = globalThis.crypto?.subtle;
   if (subtle === undefined) {
     return false;
   }
   const publicKey = await subtle.importKey(
     "raw",
-    Uint8Array.from(atob(publicKeyBase64), (char) => char.charCodeAt(0)),
+    Uint8Array.from(atob(pinned), (char) => char.charCodeAt(0)),
     { name: "Ed25519" },
     false,
     ["verify"],
@@ -156,6 +204,13 @@ export function findCatalogueRelease(
   return index.releases.find(
     (release) => release.packageId === packageId && release.version === version,
   );
+}
+
+export function findCatalogueReleaseForPackage(
+  index: CatalogueIndex,
+  packageId: string,
+): CatalogueRelease | undefined {
+  return index.releases.find((release) => release.packageId === packageId);
 }
 
 export function constantTimeEqualHex(left: string, right: string): boolean {
