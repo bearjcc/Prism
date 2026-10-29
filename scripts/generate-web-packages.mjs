@@ -14,6 +14,7 @@ const HOMEgrown = new Set([
   "linkedin-home-first-degree",
   "facebook-home-friends",
   "immich-upload",
+  "word-replacer",
 ]);
 
 mkdirSync(outputRoot, { recursive: true });
