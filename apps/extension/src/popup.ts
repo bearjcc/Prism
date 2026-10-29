@@ -355,6 +355,7 @@ export async function mountOptions(
     optionsOriginRoot,
   );
   await renderMarketplaceInstallPrompt(api, optionsDocument);
+  await renderMarketplaceUpdatePrompt(api, optionsDocument);
   await renderImmichSetup(api, optionsDocument);
 }
 
@@ -443,6 +444,69 @@ async function renderMarketplaceInstallPrompt(
     void api.runtime
       .sendMessage({ type: "cancel-marketplace-install" })
       .then(() => renderMarketplaceInstallPrompt(api, optionsDocument));
+  });
+  actions.append(approve, cancel);
+  root.append(actions);
+}
+
+async function renderMarketplaceUpdatePrompt(
+  api: PopupChromeApi,
+  optionsDocument: Document,
+): Promise<void> {
+  let root = optionsDocument.getElementById("marketplace-update");
+  if (root === null) {
+    root = optionsDocument.createElement("section");
+    root.id = "marketplace-update";
+    root.className = "marketplace-install";
+    optionsDocument.body.prepend(root);
+  }
+  root.replaceChildren();
+  const response = await api.runtime.sendMessage<{
+    readonly pending?: {
+      readonly packageId: string;
+      readonly fromVersion: string;
+      readonly toVersion: string;
+      readonly name: string;
+      readonly author: string;
+      readonly capabilityIncreases: readonly string[];
+    } | null;
+  }>({ type: "get-marketplace-update-pending" });
+  const pending = response.pending;
+  if (pending === undefined || pending === null) {
+    root.hidden = true;
+    return;
+  }
+  root.hidden = false;
+  const heading = optionsDocument.createElement("h2");
+  heading.textContent = "Mod update needs approval";
+  root.append(heading);
+  const summary = optionsDocument.createElement("p");
+  summary.textContent = `${pending.name} (${pending.packageId}) ${pending.fromVersion} → ${pending.toVersion} by ${pending.author}`;
+  root.append(summary);
+  const increases = optionsDocument.createElement("ul");
+  for (const line of pending.capabilityIncreases) {
+    const item = optionsDocument.createElement("li");
+    item.textContent = line;
+    increases.append(item);
+  }
+  root.append(increases);
+  const actions = optionsDocument.createElement("div");
+  actions.className = "marketplace-install-actions";
+  const approve = optionsDocument.createElement("button");
+  approve.type = "button";
+  approve.textContent = "Update and re-grant capabilities";
+  approve.addEventListener("click", () => {
+    void api.runtime
+      .sendMessage({ type: "confirm-marketplace-update" })
+      .then(() => renderMarketplaceUpdatePrompt(api, optionsDocument));
+  });
+  const cancel = optionsDocument.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = "Keep current version";
+  cancel.addEventListener("click", () => {
+    void api.runtime
+      .sendMessage({ type: "cancel-marketplace-update" })
+      .then(() => renderMarketplaceUpdatePrompt(api, optionsDocument));
   });
   actions.append(approve, cancel);
   root.append(actions);

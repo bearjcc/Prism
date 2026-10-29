@@ -94,8 +94,8 @@ Then:
 
 1. Commit the updated `catalogue-signing-public-key.ts`.
 2. Paste the single line from gitignored `catalogue-signing-private-key.local.base64` into:
-   - **GitHub:** Settings → Secrets and variables → Actions → `PRISM_CATALOGUE_SIGNING_KEY`
-   - **Railway:** `@prism/web` service → Variables → `PRISM_CATALOGUE_SIGNING_KEY`
+   - **GitHub:** Settings -> Secrets and variables -> Actions -> `PRISM_CATALOGUE_SIGNING_KEY`
+   - **Railway:** `@prism/web` service -> Variables -> `PRISM_CATALOGUE_SIGNING_KEY`
 
 Until both the committed public key and `PRISM_CATALOGUE_SIGNING_KEY` are set, `npm run build` fails closed and the extension refuses signed catalogue installs.
 

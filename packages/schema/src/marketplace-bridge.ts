@@ -26,6 +26,10 @@ export {
 
 export const MARKETPLACE_ENABLE_PENDING_STORAGE_KEY = "marketplaceInstallPending";
 
+export const MARKETPLACE_UPDATE_PENDING_STORAGE_KEY = "marketplaceUpdatePending";
+export const MARKETPLACE_UPDATE_LAST_CHECK_STORAGE_KEY = "marketplaceUpdateLastCheckMs";
+export const MARKETPLACE_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 export type InstalledModSummary = {
   readonly packageId: string;
   readonly version: string;
