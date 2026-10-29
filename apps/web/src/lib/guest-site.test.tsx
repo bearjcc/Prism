@@ -9,6 +9,7 @@ import { CreateForm } from "../components/create-form";
 import { ExploreBrowser } from "../components/explore-browser";
 import { InstallControl } from "../components/install-control";
 import { catalogue } from "./catalogue";
+import { EXTENSION_INSTALL_PATH } from "./extension-store";
 import { useWebSession } from "./web-session";
 
 const push = vi.fn();
@@ -94,7 +95,7 @@ describe("guest access", () => {
 
   it("offers Install without an account", async () => {
     await render(<InstallControl labelInstall="Install" />);
-    const link = host.querySelector("a[href='https://chromewebstore.google.com/']");
+    const link = host.querySelector(`a[href='${EXTENSION_INSTALL_PATH}']`);
     expect(link?.textContent).toMatch(/Install/);
     expect(host.querySelector("form")).toBeNull();
   });

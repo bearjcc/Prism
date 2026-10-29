@@ -20,8 +20,8 @@ export default function AboutPage() {
           convenience, not extra safety. Donations buy an optional badge with no product power.
         </p>
         <p id="get-the-extension">
-          Get the extension: Chromium unpacked load from this repository until a Chrome Web Store listing
-          exists. Firefox as a store listing is not shipped yet.
+          Get the extension from <a href="/install">webprism.app/install</a> (load unpacked from the
+          latest GitHub release) until Chrome Web Store and AMO listings exist.
         </p>
         <p>
           Stylus and UserStyles.world UserCSS can come across after sanitise. Violentmonkey-style

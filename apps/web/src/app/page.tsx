@@ -4,7 +4,7 @@ import { HomeSurface } from "../components/home-surface";
 import { ModShot } from "../components/mod-shot";
 import { PrismScene } from "../components/prism-scene";
 import { PrismMark } from "../components/wordmark";
-import { CHROME_STORE } from "../lib/extension-store";
+import { EXTENSION_INSTALL_PATH } from "../lib/extension-store";
 import { catalogue, modPreviewProps } from "../lib/catalogue";
 import styles from "./home.module.css";
 
@@ -72,7 +72,7 @@ export default function HomePage() {
           <h2 id="start-heading">Install, enable, reshape</h2>
           <ol className={styles.startList}>
             <li>
-              <a href={CHROME_STORE}>Install the Prism extension</a>
+              <a href={EXTENSION_INSTALL_PATH}>Install the Prism extension</a>
             </li>
             <li>
               <Link href="/explore">Enable a mod from Explore</Link>

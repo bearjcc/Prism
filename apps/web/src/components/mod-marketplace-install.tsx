@@ -11,7 +11,7 @@ import {
   MARKETPLACE_PONG_TYPE,
   type MarketplacePongPayload,
 } from "@prism/schema/marketplace-bridge";
-import { CHROME_STORE, GITHUB_RELEASES_URL } from "../lib/extension-store";
+import { EXTENSION_INSTALL_PATH, GITHUB_RELEASES_URL } from "../lib/extension-store";
 
 type Props = {
   className?: string;
@@ -28,10 +28,6 @@ type BridgeState = {
     enabled: boolean;
   }>;
 };
-
-function isFirefox(): boolean {
-  return /firefox/i.test(navigator.userAgent);
-}
 
 function readInitialBridgeState(): BridgeState | null {
   if (typeof document === "undefined") {
@@ -53,7 +49,6 @@ export function ModMarketplaceInstall({
   const [bridge, setBridge] = useState<BridgeState | null>(() => readInitialBridgeState());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [firefox] = useState(() => isFirefox());
 
   const refreshBridge = useCallback(() => {
     window.postMessage(
@@ -120,13 +115,9 @@ export function ModMarketplaceInstall({
     );
   };
 
-  if (firefox) {
-    return <span className={className}>Available on Chromium</span>;
-  }
-
   if (bridge === null) {
     return (
-      <a className={className ?? "btn btn-solid"} href={CHROME_STORE}>
+      <a className={className ?? "btn btn-solid"} href={EXTENSION_INSTALL_PATH}>
         Get Prism extension
       </a>
     );

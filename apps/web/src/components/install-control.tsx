@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CHROME_STORE } from "../lib/extension-store";
-
-function isFirefox(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-  return /firefox/i.test(navigator.userAgent);
-}
+import { EXTENSION_INSTALL_PATH } from "../lib/extension-store";
 
 function extensionPresent(): boolean {
   if (typeof document === "undefined") {
@@ -30,11 +23,9 @@ export function InstallControl({
   packageId,
 }: Props) {
   const [installed, setInstalled] = useState(false);
-  const [firefox, setFirefox] = useState(false);
 
   useEffect(() => {
     setInstalled(extensionPresent());
-    setFirefox(isFirefox());
   }, []);
 
   if (installed) {
@@ -47,12 +38,8 @@ export function InstallControl({
     );
   }
 
-  if (firefox) {
-    return <span className={className}>Available on Chromium</span>;
-  }
-
   return (
-    <a className={className ?? "btn btn-solid"} href={CHROME_STORE}>
+    <a className={className ?? "btn btn-solid"} href={EXTENSION_INSTALL_PATH}>
       {labelInstall}
     </a>
   );

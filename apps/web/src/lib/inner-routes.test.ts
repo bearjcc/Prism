@@ -19,6 +19,7 @@ describe("inner catalogue routes", () => {
     expect(rels).toContain("explore/page.tsx");
     expect(rels).toContain("mods/[id]/page.tsx");
     expect(rels).toContain("about/page.tsx");
+    expect(rels).toContain("install/page.tsx");
     expect(rels).toContain("create/page.tsx");
     expect(rels).toContain("signin/page.tsx");
     expect(rels).toContain("not-found.tsx");

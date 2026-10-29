@@ -31,6 +31,24 @@ jobs:
       - name: Package Firefox sideload archive
         run: |
           (cd apps/extension/targets/firefox && zip -r "$GITHUB_WORKSPACE/dist/prism-firefox.xpi" .)
+      - name: Sign Firefox XPI with AMO (unlisted self-distribution)
+        if: env.AMO_JWT_ISSUER != ''
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          npx web-ext sign \
+            --source-dir=apps/extension/targets/firefox \
+            --api-key="$AMO_JWT_ISSUER" \
+            --api-secret="$AMO_JWT_SECRET" \
+            --channel=unlisted \
+            --artifacts-dir=dist/amo-artifacts
+          signed="$(find dist/amo-artifacts -name '*.xpi' -type f | head -n 1)"
+          if [ -z "$signed" ]; then
+            echo "AMO sign did not produce an XPI" >&2
+            exit 1
+          fi
+          cp "$signed" dist/prism-firefox-signed.xpi
       - name: Pack Chromium CRX with an ephemeral CI key
         continue-on-error: true
         run: |

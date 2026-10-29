@@ -1,4 +1,4 @@
-import { CHROME_STORE } from "./extension-store";
+import { CHROME_STORE, EXTENSION_INSTALL_PATH } from "./extension-store";
 
 export type ModInstallStep = {
   title: string;
@@ -13,7 +13,7 @@ export function modInstallSteps(mod: { id: string; packageId: string }): ModInst
   return [
     {
       title: "Install the Prism extension",
-      detail: `Load unpacked from a GitHub release or ${CHROME_STORE}. v0.1.2+ installs mods from this site over HTTPS.`,
+      detail: `Install from ${EXTENSION_INSTALL_PATH} (load unpacked from the latest GitHub release). v0.1.2+ installs mods from this site over HTTPS.`,
     },
     {
       title: "Add the mod from this page",
@@ -26,4 +26,4 @@ export function modInstallSteps(mod: { id: string; packageId: string }): ModInst
   ];
 }
 
-export { CHROME_STORE };
+export { CHROME_STORE, EXTENSION_INSTALL_PATH };

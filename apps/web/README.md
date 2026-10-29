@@ -77,6 +77,20 @@ Set these on the `@prism/web` service (monorepo root build):
 | `AUTH_GITHUB_SECRET` | With GitHub | GitHub OAuth client secret |
 | `AUTH_GOOGLE_ID` | One provider min | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | With Google | Google OAuth client secret |
+| `GITHUB_TOKEN` | Optional | GitHub API token for `/install` release metadata and Firefox XPI proxy (rate limits) |
+
+### Extension install page (`/install`)
+
+Release assets are fetched from the latest [GitHub release](https://github.com/bearjcc/Prism/releases). Binaries are not stored in this repo.
+
+**GitHub Actions (repository secrets, for maintainers):**
+
+| Secret | Purpose |
+|--------|---------|
+| `AMO_JWT_ISSUER` | Mozilla AMO API JWT issuer (unlisted / self-distribution signing in `release.yml`) |
+| `AMO_JWT_SECRET` | AMO API JWT secret paired with the issuer |
+
+When both are set, CI attaches `prism-firefox-signed.xpi` to releases. The site serves it from `/api/extension-download/firefox` with `Content-Type: application/x-xpinstall` for one-click Firefox install. Until then, `/install` documents temporary `about:debugging` steps.
 
 Do not commit secrets. Callback paths are fixed by Auth.js:
 

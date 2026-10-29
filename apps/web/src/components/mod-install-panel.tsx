@@ -1,5 +1,6 @@
 import { ModMarketplaceInstall } from "./mod-marketplace-install";
 import type { CatalogueMod } from "../lib/catalogue";
+import { EXTENSION_INSTALL_PATH } from "../lib/extension-store";
 import { modInstallSteps, packageDownloadPath } from "../lib/mod-install";
 
 type Props = {
@@ -20,7 +21,7 @@ export function ModInstallPanel({ mod }: Props) {
           version={mod.version}
         />
         <noscript>
-          <a className="btn btn-solid" href="https://chromewebstore.google.com/">
+          <a className="btn btn-solid" href={EXTENSION_INSTALL_PATH}>
             Get Prism extension
           </a>
         </noscript>

@@ -30,6 +30,7 @@ describe("mod install helpers", () => {
     expect(steps).toHaveLength(3);
     expect(steps[0]?.title).toMatch(/Prism extension/i);
     expect(steps[1]?.title).toMatch(/Add the mod/i);
+    expect(steps[0]?.detail).toMatch(/\/install/);
     expect(steps[2]?.detail).toMatch(/\.prism/);
   });
 });
