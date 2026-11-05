@@ -15,6 +15,10 @@
       "types": "./dist/capabilities.d.ts",
       "import": "./dist/capabilities.js"
     },
+    "./capability-diff": {
+      "types": "./dist/capability-diff.d.ts",
+      "import": "./dist/capability-diff.js"
+    },
     "./validate": {
       "types": "./dist/validate.d.ts",
       "import": "./dist/validate.js"

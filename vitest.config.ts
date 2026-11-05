@@ -66,6 +66,10 @@ export default defineConfig({
         replacement: path.join(root, "packages/schema/src/capabilities.ts"),
       },
       {
+        find: "@prism/schema/capability-diff",
+        replacement: path.join(root, "packages/schema/src/capability-diff.ts"),
+      },
+      {
         find: "@prism/schema/validate",
         replacement: path.join(root, "packages/schema/src/validate.ts"),
       },

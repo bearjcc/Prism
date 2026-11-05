@@ -1,4 +1,5 @@
-import { capabilityDiff, type PrismManifest } from "@prism/schema";
+import type { PrismManifest } from "@prism/schema";
+import { capabilityDiff } from "@prism/schema/capability-diff";
 import { compareExtensionVersions } from "@prism/schema/marketplace-bridge";
 import type { CatalogueRelease } from "@prism/schema/marketplace-catalogue";
 import {
