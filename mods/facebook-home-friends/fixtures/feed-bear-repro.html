@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Facebook Home Bear repro fixture</title>
+  </head>
+  <body>
+    <aside>
+      <div role="feed" data-fixture-kind="sidebar-feed">
+        <div role="article">Sidebar story noise</div>
+      </div>
+    </aside>
+    <main role="main">
+      <div role="feed" data-facebook-home-feed>
+        <div class="feed-scroll-wrapper">
+          <div
+            role="article"
+            data-fixture-kind="module"
+            data-urn="urn:fb:module:stories-tray"
+            aria-label="Stories tray"
+          >
+            <div role="article" aria-label="Story from Alex"></div>
+            <div role="article" aria-label="Story from Sam"></div>
+          </div>
+          <div
+            role="article"
+            data-fixture-kind="page"
+            data-urn="urn:fb:story:bear-page"
+          >
+            <h2>
+              <span><a href="/pages/aunties">Auntie's Overstock Meme Emporium</a></span>
+            </h2>
+            <a href="/pages/aunties/follow">Follow</a>
+            <div class="fb-post-content">Are all ships with Theseus then?</div>
+          </div>
+          <div
+            role="article"
+            data-fixture-kind="friend"
+            data-urn="urn:fb:story:bear-friend"
+          >
+            <h2>
+              <span><a href="/profile.php?id=1">Jordan Friend</a></span>
+            </h2>
+            <span>7 hours ago</span>
+            <div class="fb-post-content">Organic friend post without a Friends badge</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

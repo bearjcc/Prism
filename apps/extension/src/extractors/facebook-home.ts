@@ -35,12 +35,21 @@ const FEED_ITEM_SELECTOR = [
 
 const AUTHOR_SELECTOR = ".fb-feed-author";
 const AUTHOR_NAME_SELECTOR = ".fb-author-name";
+const ACTOR_NAME_SELECTORS = [
+  AUTHOR_NAME_SELECTOR,
+  "h2 span a",
+  "h3 span a",
+  "h2 a",
+  "h3 a",
+  "strong a",
+];
 const ACTIVITY_HEADER_SELECTOR = ".fb-activity-header";
 
 const MODULE_HEADINGS = [
   /people you may know/iu,
   /reels(?:\s+for you)?/iu,
   /suggested reels/iu,
+  /\bstories\b/iu,
 ];
 
 const ACTIVITY_HEADER_PATTERN =
@@ -51,17 +60,32 @@ const SUGGESTED_PATTERN = /\bsuggested for you\b/iu;
 const GROUP_PATTERN = /\b(?:posted in|shared (?:to|with) .+ group)\b/iu;
 const FRIEND_PATTERN = /\bfriends?\b/iu;
 
+const STORIES_ARIA_PATTERN =
+  /\b(?:stories|story reel|reels tray|create a story|create story)\b/iu;
+
+const DOCUMENT_POSITION_FOLLOWING = 4;
+const DOCUMENT_POSITION_PRECEDING = 2;
+
 export function findFacebookHomeFeed(root: ParentNode): Element | undefined {
   try {
     const pathname = readPathname(root);
     if (pathname !== undefined && !isFacebookHomePath(pathname)) {
       return undefined;
     }
-    const feed = querySelectorDeep(root, FEED_ROOT_SELECTOR);
-    if (feed === undefined) {
+    const feeds = querySelectorAllDeep(root, FEED_ROOT_SELECTOR);
+    if (feeds.length === 0) {
       return undefined;
     }
-    return feedHasItems(feed) ? feed : undefined;
+    let best: Element | undefined;
+    let bestScore = -1;
+    for (const feed of feeds) {
+      const score = scoreFeedCandidate(feed);
+      if (score > bestScore && feedHasItems(feed)) {
+        bestScore = score;
+        best = feed;
+      }
+    }
+    return best;
   } catch {
     return undefined;
   }
@@ -69,13 +93,39 @@ export function findFacebookHomeFeed(root: ParentNode): Element | undefined {
 
 export function facebookHomeFeedChildren(feed: Element): Element[] {
   try {
-    return Array.from(feed.children).filter(
-      (child): child is Element =>
-        typeof child === "object" &&
-        child !== null &&
-        "tagName" in child &&
-        typeof (child as Element).getAttribute === "function",
+    const directChildren = Array.from(feed.children).filter(isElementNode);
+    const feedItems = topLevelFeedItems(feed);
+
+    if (feedItems.length === 0) {
+      return directChildren;
+    }
+
+    const allItemsAreDirectChildren = feedItems.every(
+      (item) => item.parentElement === feed,
     );
+    if (allItemsAreDirectChildren) {
+      return feedItems;
+    }
+
+    if (
+      directChildren.length === 1 &&
+      feedItems.length > 0 &&
+      directChildren[0]!.contains(feedItems[0]!)
+    ) {
+      return feedItems;
+    }
+
+    const placements: Element[] = [];
+    for (const child of directChildren) {
+      if (feedItems.some((item) => child === item || child.contains(item))) {
+        placements.push(child);
+      }
+    }
+    if (placements.length > 0) {
+      return placements;
+    }
+
+    return feedItems;
   } catch {
     return [];
   }
@@ -159,6 +209,9 @@ function classifyReason(element: Element): FacebookHomeReason {
   if (authorReason !== "unknown") {
     return authorReason;
   }
+  if (isOrganicFriendPost(element)) {
+    return "friend";
+  }
   return "unknown";
 }
 
@@ -189,8 +242,31 @@ function isModule(element: Element): boolean {
   if (element.getAttribute("data-fixture-kind") === "module") {
     return true;
   }
+  if (isStoriesReelsTray(element)) {
+    return true;
+  }
   const heading = element.textContent ?? "";
   return MODULE_HEADINGS.some((pattern) => pattern.test(heading));
+}
+
+function isStoriesReelsTray(element: Element): boolean {
+  try {
+    const nestedArticles = querySelectorAllDeep(element, '[role="article"]').filter(
+      (article) => article !== element,
+    );
+    if (nestedArticles.length >= 2) {
+      return true;
+    }
+    for (const labelled of querySelectorAllDeep(element, "[aria-label]")) {
+      const label = labelled.getAttribute("aria-label") ?? "";
+      if (STORIES_ARIA_PATTERN.test(label)) {
+        return true;
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+  return false;
 }
 
 function isSponsored(element: Element): boolean {
@@ -225,6 +301,9 @@ function isGroupPost(element: Element): boolean {
 }
 
 function isPageAuthor(scope: Element): boolean {
+  if (hasActorFollowPrompt(scope)) {
+    return true;
+  }
   if (scope.getAttribute("data-page-indicator") !== null) {
     return true;
   }
@@ -236,6 +315,23 @@ function isPageAuthor(scope: Element): boolean {
   }
   const text = collectText(scope);
   return /\bpage\b/iu.test(text) && !FRIEND_PATTERN.test(text);
+}
+
+function hasActorFollowPrompt(scope: Element): boolean {
+  try {
+    for (const node of querySelectorAllDeep(
+      scope,
+      "a, [role='link'], [role='button']",
+    )) {
+      const text = (node.textContent ?? "").trim();
+      if (/^follow$/iu.test(text)) {
+        return true;
+      }
+    }
+  } catch {
+    // Best-effort only.
+  }
+  return false;
 }
 
 function isFriendAuthor(scope: Element): boolean {
@@ -260,6 +356,27 @@ function isFriendAuthor(scope: Element): boolean {
   }
   const text = readAuthorScopeText(scope);
   return FRIEND_PATTERN.test(text);
+}
+
+function isOrganicFriendPost(element: Element): boolean {
+  if (element.getAttribute("role") !== "article") {
+    return false;
+  }
+  if (hasActorFollowPrompt(element)) {
+    return false;
+  }
+  if (isStoriesReelsTray(element)) {
+    return false;
+  }
+  if (
+    isSponsored(element) ||
+    isSuggested(element) ||
+    isGroupPost(element) ||
+    isActivityCard(element)
+  ) {
+    return false;
+  }
+  return readActorName(element) !== undefined;
 }
 
 function isActivityCard(element: Element): boolean {
@@ -323,6 +440,13 @@ function readItemTitle(element: Element): string | undefined {
 
 function readActorName(element: Element): string | undefined {
   try {
+    for (const selector of ACTOR_NAME_SELECTORS) {
+      const name = querySelectorDeep(element, selector);
+      const text = name?.textContent?.trim() ?? "";
+      if (text.length > 0 && !/^follow$/iu.test(text)) {
+        return text;
+      }
+    }
     const name = querySelectorDeep(element, AUTHOR_NAME_SELECTOR);
     const text = name?.textContent?.trim() ?? "";
     return text.length > 0 ? text : undefined;
@@ -349,6 +473,41 @@ function collectText(element: Element): string {
   }
 }
 
+function topLevelFeedItems(feed: Element): Element[] {
+  const items = querySelectorAllDeep(feed, FEED_ITEM_SELECTOR);
+  const topLevel = items.filter(
+    (item) => !items.some((other) => other !== item && other.contains(item)),
+  );
+  return topLevel.sort(compareDocumentOrder);
+}
+
+function compareDocumentOrder(a: Element, b: Element): number {
+  const position = a.compareDocumentPosition(b);
+  if (position & DOCUMENT_POSITION_FOLLOWING) {
+    return -1;
+  }
+  if (position & DOCUMENT_POSITION_PRECEDING) {
+    return 1;
+  }
+  return 0;
+}
+
+function scoreFeedCandidate(feed: Element): number {
+  let score = 0;
+  if (feed.getAttribute("data-facebook-home-feed") !== null) {
+    score += 10_000;
+  }
+  if (feed.closest('[role="main"]') !== null) {
+    score += 1_000;
+  }
+  try {
+    score += querySelectorAllDeep(feed, '[role="article"]').length;
+  } catch {
+    // Best-effort only.
+  }
+  return score;
+}
+
 function feedHasItems(feed: Element): boolean {
   try {
     if (feed.children.length > 0) {
@@ -358,6 +517,15 @@ function feedHasItems(feed: Element): boolean {
   } catch {
     return false;
   }
+}
+
+function isElementNode(node: unknown): node is Element {
+  return (
+    typeof node === "object" &&
+    node !== null &&
+    "tagName" in node &&
+    typeof (node as Element).getAttribute === "function"
+  );
 }
 
 function readPathname(root: ParentNode): string | undefined {

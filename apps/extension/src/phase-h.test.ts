@@ -109,6 +109,37 @@ describe("Phase H Facebook Home tracer", () => {
     ).toBe(stray);
   });
 
+  test("allowlist strips nested stories tray and Follow-link page posts (Bear repro)", async () => {
+    const fixture = readFileSync(
+      join(facebookModRoot, "fixtures", "feed-bear-repro.html"),
+      "utf8",
+    );
+    const dom = new JSDOM(fixture, { url: "https://www.facebook.com/" });
+    const manifest = loadUnpackedMod(facebookModRoot).manifest;
+    const prism = createPrismApi({
+      manifest,
+      grants: ["facebook.home.allowlist"],
+      tabId: 7,
+      handlers: createContentHandlers(dom.window.document),
+    });
+
+    await activateFacebookHomeMod(prism);
+
+    const feed = findHomeFeed(dom.window.document);
+    expect(
+      feed?.querySelectorAll('[data-prism-owned="facebook-home-kept"]'),
+    ).toHaveLength(1);
+    expect(
+      feed?.querySelectorAll("[data-fixture-kind='module']"),
+    ).toHaveLength(0);
+    expect(
+      feed?.querySelectorAll("[data-fixture-kind='page']"),
+    ).toHaveLength(0);
+    expect(
+      feed?.querySelectorAll("[data-fixture-kind='friend']"),
+    ).toHaveLength(1);
+  });
+
   test("allowlist does not activate on non-Home Facebook URLs", async () => {
     const fixture = readFileSync(
       join(facebookModRoot, "fixtures", "feed.html"),
