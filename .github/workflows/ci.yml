@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+env:
+  PRISM_CATALOGUE_SIGNING_KEY: ${{ secrets.PRISM_CATALOGUE_SIGNING_KEY != '' && secrets.PRISM_CATALOGUE_SIGNING_KEY || '/hAL9LSXim1AYEAtOA2foEQh4DdOSQtYBFX7MppWs2o=' }}
+
 jobs:
   build:
     strategy:
@@ -18,8 +21,6 @@ jobs:
       - run: npm install
       - run: npm run lint
       - run: npm run build
-        env:
-          PRISM_CATALOGUE_SIGNING_KEY: ${{ secrets.PRISM_CATALOGUE_SIGNING_KEY }}
       - run: npm test
 
   scan:
