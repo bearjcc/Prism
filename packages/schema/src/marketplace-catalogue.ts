@@ -7,6 +7,7 @@ export const MARKETPLACE_CATALOGUE_SCHEMA_VERSION = 1 as const;
 /** Former in-repo fixture key (private was committed). Never trust again. */
 export const REVOKED_CATALOGUE_PUBLIC_KEYS_BASE64 = [
   "NA6FNpXz+eP/5SRPqxKuVaFGUGV5r9NXMEPm2tXinLY=",
+  MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64,
 ] as const;
 
 export const PRODUCTION_CATALOGUE_ORIGIN = "https://webprism.app";

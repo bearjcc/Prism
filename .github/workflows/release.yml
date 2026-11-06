@@ -23,6 +23,7 @@ jobs:
       - run: npm run build
         env:
           PRISM_CATALOGUE_SIGNING_KEY: ${{ secrets.PRISM_CATALOGUE_SIGNING_KEY }}
+          PRISM_REQUIRE_CATALOGUE_SIGNING: "true"
       - name: Package Chromium unpack directory
         run: |
           mkdir -p dist
