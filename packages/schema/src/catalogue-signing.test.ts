@@ -19,6 +19,9 @@ describe("catalogue signing configuration", () => {
     expect(isForbiddenProductionCataloguePublicKey(MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64)).toBe(
       true,
     );
+    expect(REVOKED_CATALOGUE_PUBLIC_KEYS_BASE64).toContain(
+      MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64,
+    );
   });
 
   it("uses test public key only under vitest", () => {

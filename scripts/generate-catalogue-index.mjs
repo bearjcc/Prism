@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { loadPackedMod } from "../packages/schema/dist/pack.js";
 import { validateManifest } from "../packages/schema/dist/validate.js";
 import {
+  assertTrustedCataloguePublicKeyBase64,
   catalogueSigningPrivateKeyForGenerate,
   catalogueSigningPublicKeyForVerify,
 } from "./catalogue-signing-config.mjs";
@@ -40,6 +41,9 @@ if (privateKeyBase64 === undefined) {
 }
 
 const publicKeyBase64 = catalogueSigningPublicKeyForVerify();
+if (process.env.VITEST !== "true") {
+  assertTrustedCataloguePublicKeyBase64(publicKeyBase64);
+}
 
 const releases = [];
 

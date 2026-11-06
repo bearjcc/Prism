@@ -12,6 +12,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /** Former in-repo fixture key (private was committed). Never trust again. */
 export const REVOKED_CATALOGUE_PUBLIC_KEYS_BASE64 = [
   "NA6FNpXz+eP/5SRPqxKuVaFGUGV5r9NXMEPm2tXinLY=",
+  MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64,
 ];
 
 export function readCommittedCataloguePublicKeyBase64() {
@@ -46,20 +47,51 @@ export function isForbiddenProductionCataloguePublicKey(publicKeyBase64) {
   return false;
 }
 
-export function resolveCatalogueSigningPrivateKeyBase64() {
+export function readCatalogueSigningPrivateKeyFromEnv() {
   const fromEnv = process.env.PRISM_CATALOGUE_SIGNING_KEY?.trim();
-  if (fromEnv !== undefined && fromEnv.length > 0) {
-    return fromEnv;
+  if (fromEnv === undefined || fromEnv.length === 0) {
+    return undefined;
   }
-  return undefined;
+  return fromEnv;
 }
 
-export function isCiTestCatalogueSigningEnabled() {
-  if (process.env.GITHUB_ACTIONS !== "true") {
+export function resolveCatalogueSigningPrivateKeyBase64() {
+  const fromEnv = readCatalogueSigningPrivateKeyFromEnv();
+  if (fromEnv === undefined) {
+    return undefined;
+  }
+  if (
+    process.env.VITEST !== "true" &&
+    fromEnv === MARKETPLACE_CATALOGUE_TEST_PRIVATE_KEY_BASE64
+  ) {
+    console.error(
+      "catalogue-signing: test-only PRISM_CATALOGUE_SIGNING_KEY is not allowed outside unit tests.",
+    );
+    process.exit(1);
+  }
+  return fromEnv;
+}
+
+export function isProductionCatalogueSigningConfigured() {
+  const publicKey = readCommittedCataloguePublicKeyBase64();
+  if (isForbiddenProductionCataloguePublicKey(publicKey)) {
     return false;
   }
-  const privateKey = resolveCatalogueSigningPrivateKeyBase64();
-  return privateKey === MARKETPLACE_CATALOGUE_TEST_PRIVATE_KEY_BASE64;
+  const privateKey = readCatalogueSigningPrivateKeyFromEnv();
+  if (privateKey === undefined) {
+    return false;
+  }
+  if (
+    process.env.VITEST !== "true" &&
+    privateKey === MARKETPLACE_CATALOGUE_TEST_PRIVATE_KEY_BASE64
+  ) {
+    return false;
+  }
+  try {
+    return derivePublicKeyBase64FromPrivateSeed(privateKey) === publicKey;
+  } catch {
+    return false;
+  }
 }
 
 export function assertProductionCatalogueSigningReady() {
@@ -96,10 +128,9 @@ export function assertCatalogueSigningForBuild() {
   if (process.env.VITEST === "true") {
     return;
   }
-  if (isCiTestCatalogueSigningEnabled()) {
-    return;
+  if (process.env.PRISM_REQUIRE_CATALOGUE_SIGNING === "true") {
+    assertProductionCatalogueSigningReady();
   }
-  assertProductionCatalogueSigningReady();
 }
 
 export function catalogueSigningPrivateKeyForGenerate() {
@@ -114,17 +145,28 @@ export function catalogueSigningPrivateKeyForGenerate() {
 }
 
 export function catalogueSigningPublicKeyForVerify() {
-  if (isCiTestCatalogueSigningEnabled()) {
+  if (process.env.VITEST === "true") {
+    const committed = readCommittedCataloguePublicKeyBase64();
+    if (!isForbiddenProductionCataloguePublicKey(committed)) {
+      return committed;
+    }
     return MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64;
   }
+
   const committed = readCommittedCataloguePublicKeyBase64();
-  if (!isForbiddenProductionCataloguePublicKey(committed)) {
+  if (isForbiddenProductionCataloguePublicKey(committed)) {
     return committed;
   }
-  if (process.env.VITEST === "true") {
-    return MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64;
-  }
+  assertTrustedCataloguePublicKeyBase64(committed);
   return committed;
+}
+
+export function assertTrustedCataloguePublicKeyBase64(publicKeyBase64) {
+  if (publicKeyBase64 === MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64) {
+    throw new Error(
+      "Test catalogue public key must not be used as a trusted verification key outside unit tests",
+    );
+  }
 }
 
 export {
