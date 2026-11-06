@@ -22,6 +22,7 @@ const modRoot = join(
 
 const fixturePath = join(modRoot, "fixtures", "feed.html");
 const liveFixturePath = join(modRoot, "fixtures", "feed-live.html");
+const bearReproFixturePath = join(modRoot, "fixtures", "feed-bear-repro.html");
 
 const GOLDEN_CLASSIFICATIONS: Record<
   string,
@@ -81,7 +82,9 @@ describe("extractFacebookHome", () => {
     const dom = new JSDOM(readFileSync(fixturePath, "utf8"), {
       url: "https://www.facebook.com/",
     });
-    for (const child of feedChildren(dom.window.document)) {
+    const children = feedChildren(dom.window.document);
+    expect(children.length).toBeGreaterThan(0);
+    for (const child of children) {
       const kind = child.getAttribute("data-fixture-kind");
       expect(kind).not.toBeNull();
       const expected = GOLDEN_CLASSIFICATIONS[kind!];
@@ -124,5 +127,49 @@ describe("extractFacebookHome", () => {
       url: "https://www.facebook.com/messages",
     });
     expect(findFacebookHomeFeed(dom.window.document)).toBeUndefined();
+  });
+
+  test("findFacebookHomeFeed prefers the main-column feed over sidebar feeds", () => {
+    const dom = new JSDOM(readFileSync(bearReproFixturePath, "utf8"), {
+      url: "https://www.facebook.com/",
+    });
+    const feed = findFacebookHomeFeed(dom.window.document);
+    expect(feed?.getAttribute("data-facebook-home-feed")).toBe("");
+    expect(feed?.closest('[role="main"]')).not.toBeNull();
+  });
+
+  test("feed-bear-repro.html exposes nested story rows as feed children", () => {
+    const dom = new JSDOM(readFileSync(bearReproFixturePath, "utf8"), {
+      url: "https://www.facebook.com/",
+    });
+    const children = feedChildren(dom.window.document);
+    expect(children).toHaveLength(3);
+    const kinds = children.map((child) => child.getAttribute("data-fixture-kind"));
+    expect(kinds).toEqual(["module", "page", "friend"]);
+  });
+
+  test("classifies feed-bear-repro.html rows including Follow-link page posts", () => {
+    const dom = new JSDOM(readFileSync(bearReproFixturePath, "utf8"), {
+      url: "https://www.facebook.com/",
+    });
+    for (const child of feedChildren(dom.window.document)) {
+      const kind = child.getAttribute("data-fixture-kind");
+      expect(kind).not.toBeNull();
+      const expected = GOLDEN_CLASSIFICATIONS[kind!];
+      expect(expected).toBeDefined();
+      const item = classifyFacebookHomeItem(child);
+      expect(item.allowlisted).toBe(expected.allowlisted);
+      expect(item.reason).toBe(expected.reason);
+    }
+  });
+
+  test("extractFacebookHome keeps only the organic friend row in feed-bear-repro.html", () => {
+    const dom = new JSDOM(readFileSync(bearReproFixturePath, "utf8"), {
+      url: "https://www.facebook.com/",
+    });
+    const result = extractFacebookHome(dom.window.document);
+    expect(result.items).toHaveLength(3);
+    expect(result.items.filter((item) => item.allowlisted)).toHaveLength(1);
+    expect(result.items.find((item) => item.allowlisted)?.reason).toBe("friend");
   });
 });

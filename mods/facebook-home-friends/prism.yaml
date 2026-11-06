@@ -9,3 +9,4 @@ scopes:
 fixtures:
   - fixtures/feed.html
   - fixtures/feed-live.html
+  - fixtures/feed-bear-repro.html

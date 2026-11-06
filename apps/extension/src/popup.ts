@@ -481,7 +481,7 @@ async function renderMarketplaceUpdatePrompt(
   heading.textContent = "Mod update needs approval";
   root.append(heading);
   const summary = optionsDocument.createElement("p");
-  summary.textContent = `${pending.name} (${pending.packageId}) ${pending.fromVersion} → ${pending.toVersion} by ${pending.author}`;
+  summary.textContent = `${pending.name} (${pending.packageId}) ${pending.fromVersion} -> ${pending.toVersion} by ${pending.author}`;
   root.append(summary);
   const increases = optionsDocument.createElement("ul");
   for (const line of pending.capabilityIncreases) {

@@ -54,6 +54,14 @@ export function resolveCatalogueSigningPrivateKeyBase64() {
   return undefined;
 }
 
+export function isCiTestCatalogueSigningEnabled() {
+  if (process.env.GITHUB_ACTIONS !== "true") {
+    return false;
+  }
+  const privateKey = resolveCatalogueSigningPrivateKeyBase64();
+  return privateKey === MARKETPLACE_CATALOGUE_TEST_PRIVATE_KEY_BASE64;
+}
+
 export function assertProductionCatalogueSigningReady() {
   const publicKey = readCommittedCataloguePublicKeyBase64();
   if (isForbiddenProductionCataloguePublicKey(publicKey)) {
@@ -88,6 +96,9 @@ export function assertCatalogueSigningForBuild() {
   if (process.env.VITEST === "true") {
     return;
   }
+  if (isCiTestCatalogueSigningEnabled()) {
+    return;
+  }
   assertProductionCatalogueSigningReady();
 }
 
@@ -103,6 +114,9 @@ export function catalogueSigningPrivateKeyForGenerate() {
 }
 
 export function catalogueSigningPublicKeyForVerify() {
+  if (isCiTestCatalogueSigningEnabled()) {
+    return MARKETPLACE_CATALOGUE_TEST_PUBLIC_KEY_BASE64;
+  }
   const committed = readCommittedCataloguePublicKeyBase64();
   if (!isForbiddenProductionCataloguePublicKey(committed)) {
     return committed;
